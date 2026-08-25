@@ -131,8 +131,8 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node .lifespan-outline { fill: none; stroke: #555; stroke-width: 1.6; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-node.male .lifespan { fill: #bbdefb; }
 .timeline-node.female .lifespan { fill: #fce4ec; }
-.timeline-node.male .lifespan-outline { stroke: #5686ad; }
-.timeline-node.female .lifespan-outline { stroke: #bf7189; }
+.timeline-node.male .lifespan-outline { stroke: #7fb2d7; }
+.timeline-node.female .lifespan-outline { stroke: #dfa8bb; }
 .timeline-node.reigned .lifespan-outline { stroke-width: 2.2; }
 .timeline-node.selected .lifespan-outline { stroke-width: 3; }
 .global-event-range { pointer-events: none; }

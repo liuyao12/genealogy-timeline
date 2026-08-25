@@ -1521,8 +1521,8 @@ function renderTimeline() {
   });
   canvas.append(connectors);
 
-  const nodeTextMasks = svg('defs');
-  canvas.append(nodeTextMasks);
+  const nodeDefs = svg('defs');
+  canvas.append(nodeDefs);
 
   order.forEach((id, nodeIndex) => {
     const person = state.people[id];
@@ -1533,6 +1533,11 @@ function renderTimeline() {
     const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
     group.append(svg('rect', { class: 'lifespan', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    const eventClipId = `node-events-${nodeIndex}`;
+    const eventClip = svg('clipPath', { id: eventClipId, clipPathUnits: 'userSpaceOnUse' });
+    eventClip.append(svg('rect', { x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    nodeDefs.append(eventClip);
+    const personalEventLayer = svg('g', { class: 'personal-event-layer', 'clip-path': `url(#${eventClipId})` });
     person.personalEvents.forEach(event => {
       const start = Math.max(birthYear(person), event.startYear);
       const finish = Math.min(endYear(person), event.endYear ?? event.startYear);
@@ -1541,22 +1546,23 @@ function renderTimeline() {
       const eventWidth = Math.max(0, (finish - start) * yearWidth);
       const eventColor = isReignLabel(event.name) ? state.reignColor : paletteColor(event.color, DEFAULT_PERSONAL_EVENT_COLOR);
       if (eventWidth > 0) {
-        const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 2, width: eventWidth, height: rowHeight - 4, fill: eventColor, 'fill-opacity': '.58' });
+        const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 0, width: eventWidth, height: rowHeight, fill: eventColor });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
-        group.append(mark);
-        group.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1, stroke: eventColor }));
-        group.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 1, x2: eventX + eventWidth, y2: rowHeight - 1, stroke: eventColor }));
+        personalEventLayer.append(mark);
+        personalEventLayer.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 0, x2: eventX, y2: rowHeight, stroke: eventColor }));
+        personalEventLayer.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 0, x2: eventX + eventWidth, y2: rowHeight, stroke: eventColor }));
       } else {
-        const mark = svg('line', { class: 'personal-event-point', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1, stroke: eventColor });
+        const mark = svg('line', { class: 'personal-event-point', x1: eventX, y1: 0, x2: eventX, y2: rowHeight, stroke: eventColor });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
-        group.append(mark);
+        personalEventLayer.append(mark);
       }
     });
-    // Paint the rounded outline after event bands so their fill and boundary
-    // marks can never obscure the node border.
+    // The opaque event layer is clipped to the rounded lifespan, then painted
+    // over the base outline so no gender-color trace crosses an event segment.
     group.append(svg('rect', { class: 'lifespan-outline', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    group.append(personalEventLayer);
     // Marriage stems cross above both spouse boxes, including their borders,
     // so each stem reads as one uninterrupted line down to its children. Text
     // and controls are painted afterward to remain legible and interactive.
@@ -1595,7 +1601,7 @@ function renderTimeline() {
     const textMask = svg('mask', { id: textMaskId, maskUnits: 'userSpaceOnUse', x: -80, y: -12, width: Math.max(lifespanWidth, layoutNodes[nodeIndex].occupancyWidth) + 180, height: rowHeight + 24 });
     textMask.append(svg('rect', { x: -80, y: -12, width: Math.max(lifespanWidth, layoutNodes[nodeIndex].occupancyWidth) + 180, height: rowHeight + 24, fill: '#fff' }));
     textMask.append(svg('rect', { x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5, fill: '#000' }));
-    nodeTextMasks.append(textMask);
+    nodeDefs.append(textMask);
     const makeLabel = className => {
       const text = svg('text', { class: className, x: 48, y: 19 });
       text.append(svg('tspan', { class: 'timeline-name' }, fullName(person)));

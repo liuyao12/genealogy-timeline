@@ -18,7 +18,7 @@ Confirmed spouses and former spouses are always included in the timeline and in 
 
 Selecting any bundled node opens its editable local copy. **Load complete immediate family** is the first action that requires Geni authorization; after OAuth returns, the app merges the selected profile's current public parents, spouses, children, union dates, and newly encountered profiles by Geni ID. A local relative can be attached to that Geni profile only after this immediate-family step has completed. The resulting working tree, including imported records and local edits, is saved in `localStorage`.
 
-When two people already descended from the active root marry, the renderer keeps the spouse's natal position and marks the connection into the later marriage with a distinct dotted transport line. The bundled line exercises this with William III and Mary II, George V and Mary of Teck, and Elizabeth II and Philip.
+When two people already descended from the active root marry, the renderer keeps the spouse's natal position and marks the vertical relocation span with a distinct dotted transport line. A divorced marriage uses a dashed vertical span. Horizontal parent, spouse, and child segments always remain solid. The bundled line exercises transport with William III and Mary II, George V and Mary of Teck, and Elizabeth II and Philip, and divorce with Charles III and Diana.
 
 ## Run locally
 
@@ -37,7 +37,7 @@ Then open <http://localhost:4173>.
 - The web app has its own profile model and does not modify or depend on the mini-program runtime.
 - Profiles use the Western `First Last` display order.
 - When a source supplies a display name, the app preserves and shows it in preference to reconstructing a name from separate fields. This keeps titles such as “King of England” searchable and visible on the timeline.
-- Tree ordering and line weight prioritize paternal descent while retaining maternal relationships as secondary dotted links.
+- Tree ordering and line weight prioritize paternal descent while retaining maternal relationships with a lighter solid line.
 - Timeline labels keep the name and lifespan on one line. They do not display age.
 - Personal events are edited in the selected profile drawer, where their dates remain visible. Global events are managed from the header's **Events** dialog and appear as bands behind the full timeline. Event years are not printed over the timeline itself. Both kinds retain a user-selected colour in local storage and JSON backups.
 - Public-source imports use a small provider-adapter layer. Geni uses its documented `profile/immediate-family` API; WikiTree uses its public read-only `getRelatives` API. Geni now requires an OAuth access token even when the requested profiles are public.

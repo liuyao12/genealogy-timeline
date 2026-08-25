@@ -285,6 +285,7 @@ function normalizePerson(source, fallbackId) {
     partners,
     spouses: uniqueRefs(source.spouses || source.spouseIds || Object.keys(marriageYears)),
     nonSpouses: uniqueRefs(source.nonSpouses || source.nonSpouseIds),
+    divorcedSpouses: uniqueRefs(source.divorcedSpouses || source.divorcedSpouseIds),
     marriageYears,
     personalEvents: normalizePersonalEvents([...(Array.isArray(source.personalEvents) ? source.personalEvents : []), ...extractGeniReignFacts(source)]),
     sourceUrl,
@@ -536,13 +537,17 @@ function createBritishRoyalSample() {
    ['albert','victoria','1840'], ['alice-uk','louis-iv-hesse','1862'], ['edward-vii','alexandra-denmark','1863'],
    ['mary-adelaide','francis-teck','1866'], ['victoria-hesse','louis-battenberg','1884'], ['george-v','mary-teck','1893'],
    ['alice-battenberg','andrew-greece','1903'], ['george-vi','queen-mother','1923'], ['edward-viii','wallis-simpson','1937'],
-   ['philip','elizabeth-ii','1947'], ['charles-iii','diana','1981'], ['charles-iii','camilla','2005']
-  ].forEach(([a, b, marriageYear]) => {
+   ['philip','elizabeth-ii','1947'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005']
+  ].forEach(([a, b, marriageYear, marriageStatus]) => {
     if (!people[id(a)] || !people[id(b)]) return;
     people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
     people[id(b)].partners = unique([...people[id(b)].partners, id(a)]);
     people[id(a)].spouses = unique([...people[id(a)].spouses, id(b)]);
     people[id(b)].spouses = unique([...people[id(b)].spouses, id(a)]);
+    if (marriageStatus === 'divorced') {
+      people[id(a)].divorcedSpouses = unique([...people[id(a)].divorcedSpouses, id(b)]);
+      people[id(b)].divorcedSpouses = unique([...people[id(b)].divorcedSpouses, id(a)]);
+    }
     people[id(a)].marriageYears[id(b)] = marriageYear;
     people[id(b)].marriageYears[id(a)] = marriageYear;
   });
@@ -639,10 +644,12 @@ function inferRelationsFromUnions(nodes) {
     ).match(/-?\d{3,4}/)?.[0] || '';
     const status = clean(union.status || union.relationship_status || union.type).toLowerCase().replace(/[\s-]+/g, '_');
     const isSpouseUnion = ['spouse', 'ex_spouse', 'married', 'divorced'].includes(status) || Boolean(marriageYear);
+    const isDivorcedUnion = ['ex_spouse', 'divorced'].includes(status);
     partners.forEach(id => {
       profileMap[id].partners = unique([...(profileMap[id].partners || []), ...partners.filter(other => other !== id)]);
       const relationKey = isSpouseUnion ? 'spouses' : 'nonSpouses';
       profileMap[id][relationKey] = unique([...(profileMap[id][relationKey] || []), ...partners.filter(other => other !== id)]);
+      if (isDivorcedUnion) profileMap[id].divorcedSpouses = unique([...(profileMap[id].divorcedSpouses || []), ...partners.filter(other => other !== id)]);
       profileMap[id].children = unique([...(profileMap[id].children || []), ...children]);
       if (marriageYear) {
         profileMap[id].marriageYears = { ...(profileMap[id].marriageYears || {}) };
@@ -767,6 +774,7 @@ function mergePersonRecords(existing, incoming) {
   merged.partners = unique([...incoming.partners, ...existing.partners]);
   merged.spouses = unique([...incoming.spouses, ...existing.spouses]);
   merged.nonSpouses = unique([...incoming.nonSpouses, ...existing.nonSpouses]).filter(id => !merged.spouses.includes(id));
+  merged.divorcedSpouses = unique([...incoming.divorcedSpouses, ...existing.divorcedSpouses]).filter(id => merged.spouses.includes(id));
   merged.marriageYears = { ...incoming.marriageYears, ...existing.marriageYears };
   merged.personalEvents = normalizePersonalEvents([...incoming.personalEvents, ...existing.personalEvents]);
   merged.sourceUrl = incoming.sourceUrl || existing.sourceUrl;
@@ -1044,6 +1052,9 @@ function importBackup(payload) {
     });
     person.spouses.forEach(spouseId => {
       if (people[spouseId]) people[spouseId].spouses = unique([...people[spouseId].spouses, person.id]);
+    });
+    person.divorcedSpouses.forEach(spouseId => {
+      if (people[spouseId]) people[spouseId].divorcedSpouses = unique([...people[spouseId].divorcedSpouses, person.id]);
     });
   });
   state.people = people;
@@ -1342,6 +1353,9 @@ function renderTimeline() {
     if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id))) return '';
     return parentIds.find(id => state.people[id]?.gender === 'female') || parentIds[1];
   };
+  const marriageIsDivorced = parentIds => parentIds.some(id =>
+    parentIds.some(other => other !== id && state.people[id]?.divorcedSpouses?.includes(other))
+  );
 
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
   const layoutNodes = order.map((id, index) => {
@@ -1363,17 +1377,23 @@ function renderTimeline() {
       const trunkX = xForYear(recordedMarriageYear ?? fallbackYear);
       const parentYs = parentIds.map(id => positions.get(id).y + rowHeight / 2);
       const childYs = childIds.map(id => positions.get(id).y + rowHeight / 2);
-      const hasPaternalParent = parentIds.some(id => state.people[id]?.gender === 'male');
       const transportedId = transportedParent(parentIds);
+      const isDivorced = marriageIsDivorced(parentIds);
       parentIds.forEach(id => {
         const pos = positions.get(id);
-        lines.push({ type: 'branch', x: Math.min(pos.x + 24, trunkX), y: pos.y + rowHeight / 2, w: Math.abs(trunkX - pos.x - 24), isDashed: id === transportedId || state.people[id]?.gender !== 'male' });
+        lines.push({ type: 'branch', x: Math.min(pos.x + 24, trunkX), y: pos.y + rowHeight / 2, w: Math.abs(trunkX - pos.x - 24), isDashed: false });
       });
-      const allYs = [...parentYs, ...childYs];
-      if (Math.max(...allYs) > Math.min(...allYs)) lines.push({ type: 'stem', x: trunkX, y: Math.min(...allYs), h: Math.max(...allYs) - Math.min(...allYs), isDashed: !hasPaternalParent });
+      if (parentYs.length > 1) {
+        lines.push({ type: 'stem', x: trunkX, y: Math.min(...parentYs), h: Math.max(...parentYs) - Math.min(...parentYs), isDashed: Boolean(transportedId) || isDivorced });
+      }
+      const familyBaseY = parentYs.length > 1 ? Math.max(...parentYs) : parentYs[0];
+      if (childYs.length) {
+        const descendantYs = [familyBaseY, ...childYs];
+        if (Math.max(...descendantYs) > Math.min(...descendantYs)) lines.push({ type: 'stem', x: trunkX, y: Math.min(...descendantYs), h: Math.max(...descendantYs) - Math.min(...descendantYs), isDashed: false });
+      }
       childIds.forEach(id => {
         const pos = positions.get(id);
-        lines.push({ type: 'branch', x: Math.min(trunkX, pos.x + 1), y: pos.y + rowHeight / 2, w: Math.abs(pos.x + 1 - trunkX), isDashed: !hasPaternalParent });
+        lines.push({ type: 'branch', x: Math.min(trunkX, pos.x + 1), y: pos.y + rowHeight / 2, w: Math.abs(pos.x + 1 - trunkX), isDashed: false });
       });
     });
     return lines;
@@ -1439,23 +1459,32 @@ function renderTimeline() {
     const trunkX = xForYear(junctionYear);
     const parentYs = parentIds.map(id => positions.get(id).y + rowHeight / 2);
     const childYs = childIds.map(id => positions.get(id).y + rowHeight / 2);
-    const allYs = [...parentYs, ...childYs];
     const hasPaternalParent = parentIds.some(id => state.people[id]?.gender === 'male');
     const stemClass = hasPaternalParent ? 'paternal' : 'maternal';
     const transportedId = transportedParent(parentIds);
+    const isDivorced = marriageIsDivorced(parentIds);
     parentIds.forEach(id => {
       const pos = positions.get(id);
       const lineage = state.people[id]?.gender === 'male' ? 'paternal' : 'maternal';
-      const branch = svg('path', { d: `M ${pos.x + 24} ${pos.y + rowHeight / 2} H ${trunkX}`, class: `timeline-edge ${lineage}${id === transportedId ? ' transport' : ''}` });
-      if (id === transportedId) branch.append(svg('title', {}, `${fullName(state.people[id])} transported from their birth branch to this cousin marriage`));
-      connectors.append(branch);
+      connectors.append(svg('path', { d: `M ${pos.x + 24} ${pos.y + rowHeight / 2} H ${trunkX}`, class: `timeline-edge horizontal ${lineage}` }));
     });
-    if (Math.max(...allYs) > Math.min(...allYs)) {
-      connectors.append(svg('line', { x1: trunkX, y1: Math.min(...allYs), x2: trunkX, y2: Math.max(...allYs), class: `timeline-edge family-stem ${stemClass}`, 'data-marriage-year': recordedMarriageYear || '' }));
+    if (parentYs.length > 1 && Math.max(...parentYs) > Math.min(...parentYs)) {
+      const marriageClass = transportedId ? 'transport' : isDivorced ? 'divorced' : stemClass;
+      const marriageLine = svg('line', { x1: trunkX, y1: Math.min(...parentYs), x2: trunkX, y2: Math.max(...parentYs), class: `timeline-edge family-stem vertical ${marriageClass}`, 'data-marriage-year': recordedMarriageYear || '' });
+      if (transportedId) marriageLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from their birth branch to this marriage`));
+      else if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => fullName(state.people[id])).join(' and ')}`));
+      connectors.append(marriageLine);
+    }
+    const familyBaseY = parentYs.length > 1 ? Math.max(...parentYs) : parentYs[0];
+    if (childYs.length) {
+      const descendantYs = [familyBaseY, ...childYs];
+      if (Math.max(...descendantYs) > Math.min(...descendantYs)) {
+        connectors.append(svg('line', { x1: trunkX, y1: Math.min(...descendantYs), x2: trunkX, y2: Math.max(...descendantYs), class: `timeline-edge family-stem vertical ${stemClass}` }));
+      }
     }
     childIds.forEach(id => {
       const pos = positions.get(id);
-      connectors.append(svg('path', { d: `M ${trunkX} ${pos.y + rowHeight / 2} H ${pos.x + 1}`, class: `timeline-edge ${stemClass}` }));
+      connectors.append(svg('path', { d: `M ${trunkX} ${pos.y + rowHeight / 2} H ${pos.x + 1}`, class: `timeline-edge horizontal ${stemClass}` }));
     });
     if (recordedMarriageYear) {
       const markerY = parentYs.length > 1 ? (Math.min(...parentYs) + Math.max(...parentYs)) / 2 : parentYs[0];
@@ -1811,6 +1840,7 @@ els['delete-person'].addEventListener('click', () => {
     other.partners = other.partners.filter(x => x !== id);
     other.spouses = other.spouses.filter(x => x !== id);
     other.nonSpouses = other.nonSpouses.filter(x => x !== id);
+    other.divorcedSpouses = other.divorcedSpouses.filter(x => x !== id);
   });
   state.rootId = state.rootId === id ? Object.keys(state.people)[0] || '' : state.rootId; state.selectedId = '';
   persist('Profile deleted'); render();

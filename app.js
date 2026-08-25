@@ -104,7 +104,7 @@ function matchesKeyword(person, keyword) {
 function life(person) {
   const start = clean(person.birthYear) || '?';
   const end = person.isLiving ? 'living' : (clean(person.deathYear) || '?');
-  return `${start} – ${end}`;
+  return `${start}–${end}`;
 }
 function numericYear(value) {
   const parsed = Number.parseInt(clean(value), 10);
@@ -1460,6 +1460,7 @@ function renderTimeline() {
   canvas.append(globalEvents);
 
   const connectors = svg('g', { class: 'timeline-connectors' });
+  const marriageOverlaysByParent = new Map();
   families.forEach(family => {
     const parentIds = family.parents.filter(id => positions.has(id));
     const childIds = family.children.filter(id => positions.has(id));
@@ -1476,17 +1477,30 @@ function renderTimeline() {
     const stemClass = hasPaternalParent ? 'paternal' : 'maternal';
     const transportedId = transportedParent(parentIds);
     const isDivorced = marriageIsDivorced(parentIds);
+    const marriageClass = transportedId ? 'transport' : isDivorced ? 'divorced' : stemClass;
     parentIds.forEach(id => {
       const pos = positions.get(id);
       const lineage = state.people[id]?.gender === 'male' ? 'paternal' : 'maternal';
       connectors.append(svg('path', { d: `M ${pos.x + 24} ${pos.y + rowHeight / 2} H ${trunkX}`, class: `timeline-edge horizontal ${lineage}` }));
     });
     if (parentYs.length > 1 && Math.max(...parentYs) > Math.min(...parentYs)) {
-      const marriageClass = transportedId ? 'transport' : isDivorced ? 'divorced' : stemClass;
       const marriageLine = svg('line', { x1: trunkX, y1: Math.min(...parentYs), x2: trunkX, y2: Math.max(...parentYs), class: `timeline-edge family-stem vertical ${marriageClass}`, 'data-marriage-year': recordedMarriageYear || '' });
       if (transportedId) marriageLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from their birth branch to this marriage`));
       else if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => fullName(state.people[id])).join(' and ')}`));
       connectors.append(marriageLine);
+    }
+    // The continuous stem stays behind the whole tree. Repaint only the two
+    // short sections that cross the married profiles when the year is known.
+    if (recordedMarriageYear != null && parentIds.length === 2) {
+      parentIds.forEach(parentId => {
+        if (!marriageOverlaysByParent.has(parentId)) marriageOverlaysByParent.set(parentId, []);
+        marriageOverlaysByParent.get(parentId).push({
+          x: trunkX,
+          year: recordedMarriageYear,
+          className: marriageClass,
+          title: `Married ${fullName(state.people[parentIds.find(id => id !== parentId)])} in ${recordedMarriageYear}`
+        });
+      });
     }
     const familyBaseY = parentYs.length > 1 ? Math.max(...parentYs) : parentYs[0];
     if (childYs.length) {
@@ -1507,7 +1521,10 @@ function renderTimeline() {
   });
   canvas.append(connectors);
 
-  order.forEach(id => {
+  const nodeTextMasks = svg('defs');
+  canvas.append(nodeTextMasks);
+
+  order.forEach((id, nodeIndex) => {
     const person = state.people[id];
     const pos = positions.get(id);
     const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
@@ -1537,8 +1554,19 @@ function renderTimeline() {
         group.append(mark);
       }
     });
+    (marriageOverlaysByParent.get(id) || []).forEach(marriage => {
+      const localX = marriage.x - pos.x;
+      if (localX < 0 || localX > lifespanWidth) return;
+      const overlay = svg('line', {
+        class: `timeline-edge marriage-node-overlay vertical ${marriage.className}`,
+        x1: localX, y1: 0, x2: localX, y2: rowHeight,
+        'data-marriage-year': marriage.year
+      });
+      overlay.append(svg('title', {}, marriage.title));
+      group.append(overlay);
+    });
     // Paint the rounded outline after event bands so their fill and boundary
-    // marks can never obscure the node border.
+    // marks and marriage overlays can never obscure the node border.
     group.append(svg('rect', { class: 'lifespan-outline', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
     const hasChildren = person.children.some(childId => state.people[childId]);
     const isCollapsed = state.collapsedIds.has(id);
@@ -1560,9 +1588,21 @@ function renderTimeline() {
       icon.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') toggleBranch(event); });
     }
     group.append(icon);
-    const label = svg('text', { class: 'timeline-label', x: 48, y: 19 });
-    label.append(svg('tspan', { class: 'timeline-name' }, fullName(person)));
-    label.append(svg('tspan', { class: 'timeline-life-label', dx: 12 }, life(person)));
+    const textMaskId = `node-text-outside-${nodeIndex}`;
+    const textMask = svg('mask', { id: textMaskId, maskUnits: 'userSpaceOnUse', x: -80, y: -12, width: Math.max(lifespanWidth, layoutNodes[nodeIndex].occupancyWidth) + 180, height: rowHeight + 24 });
+    textMask.append(svg('rect', { x: -80, y: -12, width: Math.max(lifespanWidth, layoutNodes[nodeIndex].occupancyWidth) + 180, height: rowHeight + 24, fill: '#fff' }));
+    textMask.append(svg('rect', { x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5, fill: '#000' }));
+    nodeTextMasks.append(textMask);
+    const makeLabel = className => {
+      const text = svg('text', { class: className, x: 48, y: 19 });
+      text.append(svg('tspan', { class: 'timeline-name' }, fullName(person)));
+      text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, life(person)));
+      return text;
+    };
+    const halo = makeLabel('timeline-label timeline-label-halo');
+    halo.setAttribute('mask', `url(#${textMaskId})`);
+    group.append(halo);
+    const label = makeLabel('timeline-label');
     group.append(label);
     if (person.isLiving) group.append(svg('line', { class: 'current-year-edge', x1: lifespanWidth, y1: 0, x2: lifespanWidth, y2: rowHeight }));
     group.addEventListener('click', () => selectPerson(id));

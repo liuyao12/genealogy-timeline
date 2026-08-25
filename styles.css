@@ -124,6 +124,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-edge.transport { stroke: #000; stroke-width: 1.5; stroke-dasharray: 1 5; stroke-linecap: round; shape-rendering: auto; }
 .timeline-edge.divorced { stroke: #000; stroke-width: 1.5; stroke-dasharray: 7 4; stroke-linecap: butt; shape-rendering: auto; }
 .timeline-edge.family-stem { shape-rendering: crispEdges; }
+.timeline-edge.marriage-node-overlay { pointer-events: none; }
 .marriage-marker { fill: #fff; stroke: #000; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .timeline-node { cursor: pointer; }
 .timeline-node .lifespan { fill: #fff; stroke: none; }
@@ -146,9 +147,11 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node .node-symbol { fill: #fff; font: 700 15px/1 Inter, sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .timeline-marriage-link { pointer-events: none; }
 .timeline-marriage-link .marriage-symbol { fill: #000; font: 20px/1 "Apple Symbols", "Segoe UI Symbol", serif; text-anchor: middle; dominant-baseline: central; }
-.timeline-label { fill: #000; stroke: rgba(255,255,255,.86); stroke-width: 3px; paint-order: stroke fill; font: 400 12px Georgia, serif; dominant-baseline: central; pointer-events: none; }
+.timeline-label { fill: #000; stroke: none; font: 400 14px Georgia, serif; dominant-baseline: central; pointer-events: none; }
+.timeline-label-halo { fill: none; stroke: rgba(255,255,255,.94); stroke-width: 4px; paint-order: stroke; }
+.timeline-label-halo .timeline-life-label { fill: none; stroke: rgba(255,255,255,.94); }
 .timeline-node.spouse .timeline-label { font-style: italic; }
-.timeline-life-label { fill: #444; font: 9px Consolas, monospace; font-weight: 400; }
+.timeline-life-label { fill: #444; font: 11px Consolas, monospace; font-weight: 400; }
 .timeline-node.spouse .timeline-life-label { font-style: italic; }
 .timeline-node .current-year-edge { stroke: #000; stroke-width: 2; vector-effect: non-scaling-stroke; }
 

@@ -1554,6 +1554,12 @@ function renderTimeline() {
         group.append(mark);
       }
     });
+    // Paint the rounded outline after event bands so their fill and boundary
+    // marks can never obscure the node border.
+    group.append(svg('rect', { class: 'lifespan-outline', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    // Marriage stems cross above both spouse boxes, including their borders,
+    // so each stem reads as one uninterrupted line down to its children. Text
+    // and controls are painted afterward to remain legible and interactive.
     (marriageOverlaysByParent.get(id) || []).forEach(marriage => {
       const localX = marriage.x - pos.x;
       if (localX < 0 || localX > lifespanWidth) return;
@@ -1565,9 +1571,6 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    // Paint the rounded outline after event bands so their fill and boundary
-    // marks and marriage overlays can never obscure the node border.
-    group.append(svg('rect', { class: 'lifespan-outline', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
     const hasChildren = person.children.some(childId => state.people[childId]);
     const isCollapsed = state.collapsedIds.has(id);
     const icon = isSpouseNode

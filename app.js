@@ -1,10 +1,41 @@
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
+const GENI_TOKEN_SESSION_KEY = 'lineage-geni-access-token';
+const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
-const oauthFragment = new URLSearchParams(location.hash.replace(/^#/, ''));
-const initialGeniAccessToken = clean(oauthFragment.get('access_token'));
-if (initialGeniAccessToken) history.replaceState(null, '', `${location.pathname}${location.search}`);
+
+function sessionValue(key, value) {
+  try {
+    if (value === null) sessionStorage.removeItem(key);
+    else if (value !== undefined) sessionStorage.setItem(key, value);
+    return sessionStorage.getItem(key) || '';
+  } catch { return ''; }
+}
+
+function oauthCallbackParams() {
+  const query = new URLSearchParams(location.search);
+  const rawHash = location.hash.replace(/^#/, '').replace(/^\/?\?/, '');
+  const hash = new URLSearchParams(rawHash);
+  return {
+    accessToken: clean(hash.get('access_token') || query.get('access_token')),
+    status: clean(hash.get('status') || query.get('status')),
+    message: clean(hash.get('message') || query.get('message'))
+  };
+}
+
+const oauthCallback = oauthCallbackParams();
+if (oauthCallback.accessToken) {
+  sessionValue(GENI_TOKEN_SESSION_KEY, oauthCallback.accessToken);
+  sessionValue(GENI_OAUTH_PENDING_KEY, null);
+}
+const initialGeniAccessToken = oauthCallback.accessToken || sessionValue(GENI_TOKEN_SESSION_KEY);
+if (oauthCallback.accessToken || oauthCallback.status || oauthCallback.message) {
+  const cleanUrl = new URL(location.href);
+  ['access_token', 'expires_in', 'status', 'message'].forEach(name => cleanUrl.searchParams.delete(name));
+  cleanUrl.hash = '';
+  history.replaceState(null, '', `${cleanUrl.pathname}${cleanUrl.search}`);
+}
 
 const state = {
   title: 'Untitled family',
@@ -21,7 +52,7 @@ const els = Object.fromEntries([
   'tree-title', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-geni-button', 'empty-file-button',
-  'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
+  'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
@@ -387,10 +418,16 @@ async function loadBritishRoyalExample() {
       throw new Error('Live Geni loading needs the public Geni application ID in the geni-app-id meta tag.');
     }
     const redirectUri = `${location.origin}${location.pathname}`;
+    const pendingSince = Number(sessionValue(GENI_OAUTH_PENDING_KEY));
+    if (pendingSince && Date.now() - pendingSince < 120000) {
+      sessionValue(GENI_OAUTH_PENDING_KEY, null);
+      throw new Error('Geni returned without an access token. Authorization was stopped to prevent a redirect loop.');
+    }
     const authorize = new URL('https://www.geni.com/platform/oauth/authorize');
     authorize.searchParams.set('client_id', appId);
     authorize.searchParams.set('redirect_uri', redirectUri);
     authorize.searchParams.set('response_type', 'token');
+    sessionValue(GENI_OAUTH_PENDING_KEY, String(Date.now()));
     location.assign(authorize.href);
     return;
   }
@@ -1255,6 +1292,8 @@ function renderPersonList() {
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const people = Object.values(state.people).filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
   people.sort((a, b) => fullName(a).localeCompare(fullName(b)));
+  els['people-count'].textContent = people.length;
+  els['people-label'].textContent = keywords.length ? (people.length === 1 ? 'match' : 'matches') : (people.length === 1 ? 'profile' : 'profiles');
   els['people-list'].replaceChildren(...people.map(person => {
     const button = document.createElement('button');
     const source = sourceMeta(person);
@@ -1266,13 +1305,17 @@ function renderPersonList() {
 }
 function renderDetails() {
   const person = state.people[state.selectedId];
+  const isOpen = !!person;
+  els['detail-sidebar'].classList.toggle('open', isOpen);
+  els['detail-sidebar'].setAttribute('aria-hidden', String(!isOpen));
+  els['detail-sidebar'].inert = !isOpen;
   els['detail-empty'].hidden = !!person;
   els['person-form'].hidden = !person;
   if (!person) return;
   els['person-heading'].textContent = fullName(person);
   els['person-life'].textContent = life(person);
   els['person-avatar'].textContent = initials(person);
-  els['person-avatar'].style.background = person.gender === 'female' ? 'var(--rose)' : person.gender === 'male' ? 'var(--blue)' : '#e7e1d8';
+  els['person-avatar'].style.background = '#fff';
   const form = els['person-form'];
   ['firstName', 'lastName', 'birthYear', 'deathYear', 'gender', 'place', 'note', 'sourceUrl'].forEach(name => { form.elements[name].value = person[name] || ''; });
   const sourceLink = els['person-source-link'];
@@ -1372,6 +1415,12 @@ els['canvas-viewport'].addEventListener('pointercancel', endCanvasDrag);
 els['canvas-viewport'].addEventListener('dragstart', event => event.preventDefault());
 
 els['close-detail'].addEventListener('click', () => { state.selectedId = ''; render(); });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && state.selectedId && !els['add-dialog'].open) {
+    state.selectedId = '';
+    render();
+  }
+});
 els['person-form'].addEventListener('submit', event => {
   event.preventDefault(); const person = state.people[state.selectedId]; if (!person) return;
   const data = new FormData(event.currentTarget);

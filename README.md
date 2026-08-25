@@ -4,7 +4,9 @@
 
 A desktop-first, static web version of the family-tree viewer. It works on GitHub Pages without a server or build step.
 
-The shared generational timeline is the interface. It remains a family tree: genealogical branches determine row order, while birth year and lifespan determine each profile's horizontal position and width. Its compact profile bars follow the established blue/pink/green person encoding without changing the web app's oxblood-and-parchment interface. Names use a regular-weight face so more rows remain readable at once. The semitransparent five-year ruler sticks to the top while profiles pass behind it, and the canvas can be panned by dragging its empty background.
+The shared generational timeline is the interface. It remains a family tree: genealogical branches determine row order, while birth year and lifespan determine each profile's horizontal position and width. The interface and profile bars use a restrained monochrome palette, with line weight, dashes, and lightness carrying the visual distinctions. Names use a regular-weight face so more rows remain readable at once. The semitransparent five-year ruler sticks to the top while profiles pass behind it, and the canvas can be panned by dragging its empty background.
+
+The timeline receives all space not used by the compact left search column. That column lists only profiles matching the current keyword filter and reports the number of matches. Profile details do not reserve a permanent column: selecting a node or search result slides a monochrome editor over the right edge, and closing it immediately restores the unobstructed canvas.
 
 Timeline rows use the mini-program's two-pass bottom-up compaction approach. Branches move upward in half-row steps when their lifespan-plus-label ranges fit, retain a half-row of breathing room, and stay put whenever a node or external connector would be crossed. A final stable-order pass prevents compaction from moving unrelated profiles between a spouse and that union's children.
 
@@ -46,7 +48,7 @@ Then open <http://localhost:4173>.
 - GitHub Pages has no backend, so it cannot proxy API requests, hold an OAuth client secret, or bypass Geni authentication/CORS rules.
 - Every imported profile retains a source link, and the UI includes the required non-affiliation statement.
 
-Live Geni loading uses the public Geni application ID `2164` from the `geni-app-id` meta tag in `index.html`. In the Geni application settings, use `liuyao12.github.io` as the Site Domain and `https://liuyao12.github.io/genealogy-timeline/` as both the Site URL and Callback URL. The app uses Geni's client-side OAuth flow and authorized JSONP API calls, keeps the returned access token in memory, and never needs or embeds an application secret. Until the user authorizes it, the app deliberately shows the authorization error instead of falling back to stale royal data.
+Live Geni loading uses the public Geni application ID `2164` from the `geni-app-id` meta tag in `index.html`. In the Geni application settings, use `liuyao12.github.io` as the Site Domain and `https://liuyao12.github.io/genealogy-timeline/` as both the Site URL and Callback URL. The app uses Geni's client-side OAuth flow and authorized JSONP API calls, keeps the returned access token only in the current tab's session storage, and never needs or embeds an application secret. It accepts the callback token from either the URL fragment or query string, removes it from the visible address immediately, and stops rather than redirecting repeatedly if Geni returns without a token. Until the user authorizes it, the app deliberately shows the authorization error instead of falling back to stale royal data.
 
 ## GitHub Pages
 

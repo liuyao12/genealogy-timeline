@@ -262,6 +262,8 @@ function normalizePerson(source, fallbackId) {
   const birth = source.birth || {};
   const death = source.death || {};
   const sourceUrl = validPublicUrl(source.sourceUrl || source.profile_url || source.profileUrl || '');
+  const marriageYears = Object.fromEntries(Object.entries(source.marriageYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
+  const partners = uniqueRefs(source.partners || source.spouses);
   return {
     id,
     firstName: clean(source.firstName || source.firstname || source.first_name),
@@ -277,8 +279,13 @@ function normalizePerson(source, fallbackId) {
     note: clean(source.note || source.addendum || source.about_me),
     parents: uniqueRefs(source.parents || [source.fatherId, source.motherId]),
     children: uniqueRefs(source.children),
-    partners: uniqueRefs(source.partners || source.spouses),
-    marriageYears: Object.fromEntries(Object.entries(source.marriageYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null)),
+    // `partners` preserves the complete imported graph. Only `spouses` is
+    // rendered; Geni partners, engagements, and mistresses stay available as
+    // parentage facts without appearing as spouse boxes or marriage lines.
+    partners,
+    spouses: uniqueRefs(source.spouses || source.spouseIds || Object.keys(marriageYears)),
+    nonSpouses: uniqueRefs(source.nonSpouses || source.nonSpouseIds),
+    marriageYears,
     personalEvents: normalizePersonalEvents([...(Array.isArray(source.personalEvents) ? source.personalEvents : []), ...extractGeniReignFacts(source)]),
     sourceUrl,
     sourceId: clean(source.sourceId || (/^profile-/i.test(id) ? id : '')),
@@ -364,6 +371,52 @@ function createBritishRoyalSample() {
     ['charlotte-wales', 'Charlotte', 'of Wales', '2015', '', 'female', 'Princess; granddaughter of Charles III', historyUrl],
     ['louis-wales', 'Louis', 'of Wales', '2018', '', 'male', 'Prince; grandson of Charles III', historyUrl]
   );
+  // Public Geni-linked spouses of the bundled line. Unmarried partners and
+  // mistresses are deliberately not part of the starter data.
+  rows.push(
+    ['victoria-saxe-coburg', 'Victoria', 'of Saxe-Coburg-Saalfeld', '1786', '1861', 'female', 'Duchess of Kent; wife of Prince Edward', historyUrl],
+    ['maria-fitzherbert', 'Maria', 'Fitzherbert', '1756', '1837', 'female', 'Wife of George IV in a marriage not recognized under English law', historyUrl],
+    ['caroline-brunswick', 'Caroline', 'of Brunswick', '1768', '1821', 'female', 'Queen consort; wife of George IV', historyUrl],
+    ['adelaide-saxe-meiningen', 'Adelaide', 'of Saxe-Meiningen', '1792', '1849', 'female', 'Queen consort; wife of William IV', historyUrl],
+    ['henrietta-maria', 'Henrietta Maria', 'of France', '1609', '1669', 'female', 'Queen consort; wife of Charles I', historyUrl],
+    ['caroline-ansbach', 'Caroline', 'of Ansbach', '1683', '1737', 'female', 'Queen consort; wife of George II', historyUrl],
+    ['philip-ii-spain', 'Philip', 'II of Spain', '1527', '1598', 'male', 'King consort of England; husband of Mary I', historyUrl],
+    ['wallis-simpson', 'Wallis', 'Simpson', '1896', '1986', 'female', 'Duchess of Windsor; wife of Edward VIII', historyUrl],
+    ['augusta-hesse-kassel', 'Augusta', 'of Hesse-Kassel', '1797', '1889', 'female', 'Duchess of Cambridge; wife of Adolphus', historyUrl],
+    ['louis-xii-france', 'Louis', 'XII of France', '1462', '1515', 'male', 'King of France; first husband of Mary Tudor', historyUrl],
+    ['charles-brandon', 'Charles Brandon', 'Duke of Suffolk', '1484', '1545', 'male', 'Second husband of Mary Tudor', historyUrl],
+    ['louis-iv-hesse', 'Louis', 'IV of Hesse', '1837', '1892', 'male', 'Grand Duke of Hesse; husband of Princess Alice', historyUrl],
+    ['queen-mother', 'Elizabeth', 'the Queen Mother', '1900', '2002', 'female', 'Queen consort; wife of George VI', historyUrl],
+    ['alexandra-denmark', 'Alexandra', 'of Denmark', '1844', '1925', 'female', 'Queen consort; wife of Edward VII', historyUrl],
+    ['catherine-braganza', 'Catherine', 'of Braganza', '1638', '1705', 'female', 'Queen consort; wife of Charles II', historyUrl],
+    ['camilla', 'Camilla', 'Queen of the United Kingdom', '1947', '', 'female', 'Queen consort; wife of Charles III', historyUrl],
+    ['diana', 'Diana', 'Princess of Wales', '1961', '1997', 'female', 'First wife of Charles III', historyUrl],
+    ['andrew-greece', 'Andrew', 'of Greece and Denmark', '1882', '1944', 'male', 'Prince; husband of Alice of Battenberg', historyUrl],
+    ['charlotte-mecklenburg', 'Charlotte', 'of Mecklenburg-Strelitz', '1744', '1818', 'female', 'Queen consort; wife of George III', historyUrl],
+    ['louis-battenberg', 'Louis', 'of Battenberg', '1854', '1921', 'male', 'Marquess of Milford Haven; husband of Victoria of Hesse', historyUrl],
+    ['mary-lorraine', 'Mary', 'of Guise', '1515', '1560', 'female', 'Queen consort; wife of James V', historyUrl],
+    ['madeleine-valois', 'Madeleine', 'of Valois', '1520', '1537', 'female', 'Queen consort; first wife of James V', historyUrl],
+    ['james-hepburn', 'James Hepburn', 'Earl of Bothwell', '1534', '1578', 'male', 'Third husband of Mary, Queen of Scots', historyUrl],
+    ['francis-ii-france', 'Francis', 'II of France', '1544', '1560', 'male', 'King of France; first husband of Mary, Queen of Scots', historyUrl],
+    ['francis-teck', 'Francis', 'Duke of Teck', '1837', '1900', 'male', 'Husband of Mary Adelaide of Cambridge', historyUrl],
+    ['george-cumberland', 'George', 'of Denmark', '1653', '1708', 'male', 'Prince consort; husband of Queen Anne', historyUrl],
+    ['henry-grey', 'Henry Grey', 'Duke of Suffolk', '1517', '1554', 'male', 'Husband of Frances Brandon', historyUrl],
+    ['archibald-douglas', 'Archibald Douglas', 'Earl of Angus', '1489', '1557', 'male', 'Second husband of Margaret Tudor', historyUrl],
+    ['william-ii-orange', 'William', 'II of Orange', '1626', '1650', 'male', 'Prince of Orange; husband of Mary Stuart', historyUrl],
+    ['augusta-saxe-gotha', 'Augusta', 'of Saxe-Gotha', '1719', '1772', 'female', 'Princess of Wales; wife of Frederick', historyUrl],
+    ['catherine-aragon', 'Catherine', 'of Aragon', '1485', '1536', 'female', 'Queen consort; first wife of Henry VIII', historyUrl],
+    ['anne-boleyn', 'Anne', 'Boleyn', '1501', '1536', 'female', 'Queen consort; second wife of Henry VIII', historyUrl],
+    ['jane-seymour', 'Jane', 'Seymour', '1508', '1537', 'female', 'Queen consort; third wife of Henry VIII', historyUrl],
+    ['anne-cleves', 'Anne', 'of Cleves', '1515', '1557', 'female', 'Queen consort; fourth wife of Henry VIII', historyUrl],
+    ['catherine-howard', 'Catherine', 'Howard', '1523', '1542', 'female', 'Queen consort; fifth wife of Henry VIII', historyUrl],
+    ['catherine-parr', 'Catherine', 'Parr', '1512', '1548', 'female', 'Queen consort; sixth wife of Henry VIII', historyUrl],
+    ['anne-hyde', 'Anne', 'Hyde', '1637', '1671', 'female', 'Duchess of York; first wife of James II', historyUrl],
+    ['mary-modena', 'Mary', 'of Modena', '1658', '1718', 'female', 'Queen consort; second wife of James II', historyUrl],
+    ['anne-denmark', 'Anne', 'of Denmark', '1574', '1619', 'female', 'Queen consort; wife of James VI and I', historyUrl],
+    ['sophia-dorothea-celle', 'Sophia Dorothea', 'of Celle', '1666', '1726', 'female', 'Wife of George I', historyUrl],
+    ['guildford-dudley', 'Guildford', 'Dudley', '1535', '1554', 'male', 'Husband of Lady Jane Grey', historyUrl],
+    ['henry-methven', 'Henry Stewart', 'Lord Methven', '1495', '1552', 'male', 'Third husband of Margaret Tudor', historyUrl]
+  );
   // Geni IDs are bundled so the starter timeline works without authorization.
   // They are also the merge keys used when an authorized visitor refreshes a profile.
   const geniIds = {
@@ -374,6 +427,7 @@ function createBritishRoyalSample() {
     'mary-scots': '6000000003234018546', 'darnley': '6000000003876051113',
     'james-vi-i': '6000000028418914022', 'elizabeth-stuart': '304430340510004215',
     'frederick-v': '304433105310001815', 'sophia-hanover': '6000000003879438150',
+    'ernest-augustus': '6000000003890906681',
     'george-i': '6000000017824487111', 'george-ii': '4555899',
     'frederick-wales': '6000000003891739213', 'george-iii': '6000000003091034586',
     'edward-kent': '4087038607800049893', 'victoria': '6000000008852088113',
@@ -389,7 +443,28 @@ function createBritishRoyalSample() {
     'george-iv': '4137986493320052463', 'william-iv': '4137989648200126749',
     'adolphus-cambridge': '6000000000307240333', 'mary-adelaide': '6000000003245250586',
     'mary-teck': '6000000001324056123', 'alice-uk': '6000000000703284437',
-    'victoria-hesse': '6000000003221554850', 'alice-battenberg': '6000000003075330310'
+    'victoria-hesse': '6000000003221554850', 'alice-battenberg': '6000000003075330310',
+    'victoria-saxe-coburg': '6000000000697437319', 'maria-fitzherbert': '6000000000769944531',
+    'caroline-brunswick': '4138652783200125692', 'adelaide-saxe-meiningen': '4138662614410074729',
+    'henrietta-maria': '6000000000851678345', 'caroline-ansbach': '4555944',
+    'philip-ii-spain': '6000000001600060051', 'wallis-simpson': '6000000000701830018',
+    'augusta-hesse-kassel': '6000000001260403655', 'louis-xii-france': '6000000000440363134',
+    'charles-brandon': '6000000003572141177', 'louis-iv-hesse': '6000000000703378021',
+    'queen-mother': '3940609086280075061', 'alexandra-denmark': '6000000003070981015',
+    'catherine-braganza': '6000000001566391625', 'camilla': '6000000003081589893',
+    'diana': '6000000013313514628', 'andrew-greece': '5495575341940116659',
+    'charlotte-mecklenburg': '6000000003891728922', 'louis-battenberg': '6000000003221640265',
+    'mary-lorraine': '6000000001323878378', 'madeleine-valois': '6000000002322323932',
+    'james-hepburn': '6000000001723257706', 'francis-ii-france': '6000000003232545902',
+    'francis-teck': '6000000001543481636', 'george-cumberland': '4033341615700026163',
+    'henry-grey': '6000000000307262142', 'archibald-douglas': '6000000003232538566',
+    'william-ii-orange': '6000000001562593113', 'augusta-saxe-gotha': '6000000003891753089',
+    'catherine-aragon': '4475169', 'anne-boleyn': '6000000003702650070',
+    'jane-seymour': '6000000001465721422', 'anne-cleves': '4475232',
+    'catherine-howard': '6000000001465827019', 'catherine-parr': '6000000001465762273',
+    'anne-hyde': '4033453667340030515', 'mary-modena': '6000000001573653856',
+    'anne-denmark': '4104662', 'sophia-dorothea-celle': '4555856',
+    'guildford-dudley': '6000000003409098325', 'henry-methven': '6000000005412245713'
   };
   const people = {};
   const displayNameOverrides = { 'henry-vii': 'Henry VII, King of England' };
@@ -397,7 +472,8 @@ function createBritishRoyalSample() {
     const geniId = geniIds[slug];
     const id = `profile-${geniId}`;
     const baseName = [firstName, lastName].filter(Boolean).join(' ');
-    const royalTitle = clean(note).match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+[^;,]+/i)?.[0] || '';
+    const titleClause = clean(note).split(/[;,]/)[0];
+    const royalTitle = titleClause.match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+.+$/i)?.[0] || '';
     const displayName = displayNameOverrides[slug] || (royalTitle && !/\b(?:king|queen)\b/i.test(baseName) ? `${baseName}, ${royalTitle}` : baseName);
     people[id] = normalizePerson({
       id, firstName, lastName, displayName, title: royalTitle, birthYear, deathYear, gender, note,
@@ -410,24 +486,24 @@ function createBritishRoyalSample() {
   const parentLinks = {
     'arthur-tudor': ['henry-vii', 'elizabeth-york'], 'henry-viii': ['henry-vii', 'elizabeth-york'],
     'margaret-tudor': ['henry-vii', 'elizabeth-york'], 'mary-tudor': ['henry-vii', 'elizabeth-york'],
-    'mary-i': ['henry-viii'], 'elizabeth-i': ['henry-viii'], 'edward-vi': ['henry-viii'],
-    'frances-brandon': ['mary-tudor'], 'jane-grey': ['frances-brandon'],
-    'james-v': ['james-iv', 'margaret-tudor'], 'mary-scots': ['james-v'],
-    'james-vi-i': ['darnley', 'mary-scots'], 'charles-i': ['james-vi-i'], 'elizabeth-stuart': ['james-vi-i'],
-    'charles-ii': ['charles-i'], 'james-ii-vii': ['charles-i'], 'mary-princess-royal': ['charles-i'],
-    'william-iii': ['mary-princess-royal'], 'mary-ii': ['james-ii-vii'], 'anne': ['james-ii-vii'],
+    'mary-i': ['henry-viii', 'catherine-aragon'], 'elizabeth-i': ['henry-viii', 'anne-boleyn'], 'edward-vi': ['henry-viii', 'jane-seymour'],
+    'frances-brandon': ['mary-tudor', 'charles-brandon'], 'jane-grey': ['frances-brandon', 'henry-grey'],
+    'james-v': ['james-iv', 'margaret-tudor'], 'mary-scots': ['james-v', 'mary-lorraine'],
+    'james-vi-i': ['darnley', 'mary-scots'], 'charles-i': ['james-vi-i', 'anne-denmark'], 'elizabeth-stuart': ['james-vi-i', 'anne-denmark'],
+    'charles-ii': ['charles-i', 'henrietta-maria'], 'james-ii-vii': ['charles-i', 'henrietta-maria'], 'mary-princess-royal': ['charles-i', 'henrietta-maria'],
+    'william-iii': ['mary-princess-royal', 'william-ii-orange'], 'mary-ii': ['james-ii-vii', 'anne-hyde'], 'anne': ['james-ii-vii', 'anne-hyde'],
     'sophia-hanover': ['frederick-v', 'elizabeth-stuart'], 'george-i': ['ernest-augustus', 'sophia-hanover'],
-    'george-ii': ['george-i'], 'frederick-wales': ['george-ii'], 'george-iii': ['frederick-wales'],
+    'george-ii': ['george-i', 'sophia-dorothea-celle'], 'frederick-wales': ['george-ii', 'caroline-ansbach'], 'george-iii': ['frederick-wales', 'augusta-saxe-gotha'],
     'george-iv': ['george-iii'], 'william-iv': ['george-iii'], 'edward-kent': ['george-iii'],
     'ernest-cumberland': ['george-iii'], 'adolphus-cambridge': ['george-iii'], 'mary-adelaide': ['adolphus-cambridge'],
-    'mary-teck': ['mary-adelaide'], 'victoria': ['edward-kent'],
+    'mary-teck': ['mary-adelaide', 'francis-teck'], 'victoria': ['edward-kent', 'victoria-saxe-coburg'],
     'victoria-royal': ['albert', 'victoria'], 'edward-vii': ['albert', 'victoria'], 'alice-uk': ['albert', 'victoria'],
     'alfred-saxe': ['albert', 'victoria'], 'helena-uk': ['albert', 'victoria'], 'louise-uk': ['albert', 'victoria'],
     'arthur-connaught': ['albert', 'victoria'], 'leopold-albany': ['albert', 'victoria'], 'beatrice-uk': ['albert', 'victoria'],
-    'victoria-hesse': ['alice-uk'], 'alice-battenberg': ['victoria-hesse'], 'philip': ['alice-battenberg'],
-    'george-v': ['edward-vii'], 'maud-norway': ['edward-vii'], 'olav-v': ['maud-norway'], 'harald-v': ['olav-v'],
+    'victoria-hesse': ['alice-uk', 'louis-iv-hesse'], 'alice-battenberg': ['victoria-hesse', 'louis-battenberg'], 'philip': ['alice-battenberg', 'andrew-greece'],
+    'george-v': ['edward-vii', 'alexandra-denmark'], 'maud-norway': ['edward-vii', 'alexandra-denmark'], 'olav-v': ['maud-norway'], 'harald-v': ['olav-v'],
     'edward-viii': ['george-v', 'mary-teck'], 'george-vi': ['george-v', 'mary-teck'],
-    'elizabeth-ii': ['george-vi'], 'margaret-snowdon': ['george-vi'],
+    'elizabeth-ii': ['george-vi', 'queen-mother'], 'margaret-snowdon': ['george-vi', 'queen-mother'],
     'charles-iii': ['philip', 'elizabeth-ii'], 'anne-royal': ['philip', 'elizabeth-ii'],
     'andrew-york': ['philip', 'elizabeth-ii'], 'edward-edinburgh': ['philip', 'elizabeth-ii'],
     'william-wales': ['charles-iii'], 'harry-sussex': ['charles-iii'],
@@ -440,12 +516,33 @@ function createBritishRoyalSample() {
     people[childId].parents = retainedParents;
     retainedParents.forEach(parentId => { people[parentId].children = unique([...people[parentId].children, childId]); });
   });
-  [['henry-vii','elizabeth-york','1486'], ['james-iv','margaret-tudor','1503'], ['darnley','mary-scots','1565'],
-   ['william-iii','mary-ii','1677'], ['frederick-v','elizabeth-stuart','1613'], ['ernest-augustus','sophia-hanover','1658'],
-   ['albert','victoria','1840'], ['george-v','mary-teck','1893'], ['philip','elizabeth-ii','1947']].forEach(([a, b, marriageYear]) => {
+  [
+   ['henry-vii','elizabeth-york','1486'], ['james-iv','margaret-tudor','1503'],
+   ['margaret-tudor','archibald-douglas','1514'], ['margaret-tudor','henry-methven','1528'],
+   ['mary-tudor','louis-xii-france','1514'], ['mary-tudor','charles-brandon','1515'],
+   ['frances-brandon','henry-grey','1533'], ['jane-grey','guildford-dudley','1553'],
+   ['henry-viii','catherine-aragon','1509'], ['henry-viii','anne-boleyn','1533'],
+   ['henry-viii','jane-seymour','1536'], ['henry-viii','anne-cleves','1540'], ['henry-viii','catherine-howard','1540'], ['henry-viii','catherine-parr','1543'],
+   ['mary-i','philip-ii-spain','1554'], ['james-v','madeleine-valois','1537'], ['james-v','mary-lorraine','1538'],
+   ['mary-scots','francis-ii-france','1558'], ['darnley','mary-scots','1565'], ['mary-scots','james-hepburn','1567'],
+   ['james-vi-i','anne-denmark','1589'], ['frederick-v','elizabeth-stuart','1613'], ['ernest-augustus','sophia-hanover','1658'],
+   ['george-i','sophia-dorothea-celle','1682'], ['charles-i','henrietta-maria','1625'],
+   ['mary-princess-royal','william-ii-orange','1641'],
+   ['james-ii-vii','anne-hyde','1659'], ['charles-ii','catherine-braganza','1662'], ['james-ii-vii','mary-modena','1673'],
+   ['william-iii','mary-ii','1677'], ['anne','george-cumberland','1683'], ['george-ii','caroline-ansbach','1705'],
+   ['frederick-wales','augusta-saxe-gotha','1736'], ['george-iii','charlotte-mecklenburg','1761'],
+   ['george-iv','maria-fitzherbert','1785'], ['george-iv','caroline-brunswick','1795'],
+   ['edward-kent','victoria-saxe-coburg','1818'], ['william-iv','adelaide-saxe-meiningen','1818'], ['adolphus-cambridge','augusta-hesse-kassel','1818'],
+   ['albert','victoria','1840'], ['alice-uk','louis-iv-hesse','1862'], ['edward-vii','alexandra-denmark','1863'],
+   ['mary-adelaide','francis-teck','1866'], ['victoria-hesse','louis-battenberg','1884'], ['george-v','mary-teck','1893'],
+   ['alice-battenberg','andrew-greece','1903'], ['george-vi','queen-mother','1923'], ['edward-viii','wallis-simpson','1937'],
+   ['philip','elizabeth-ii','1947'], ['charles-iii','diana','1981'], ['charles-iii','camilla','2005']
+  ].forEach(([a, b, marriageYear]) => {
     if (!people[id(a)] || !people[id(b)]) return;
     people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
     people[id(b)].partners = unique([...people[id(b)].partners, id(a)]);
+    people[id(a)].spouses = unique([...people[id(a)].spouses, id(b)]);
+    people[id(b)].spouses = unique([...people[id(b)].spouses, id(a)]);
     people[id(a)].marriageYears[id(b)] = marriageYear;
     people[id(b)].marriageYears[id(a)] = marriageYear;
   });
@@ -540,8 +637,12 @@ function inferRelationsFromUnions(nodes) {
       union.marriage?.date?.year ?? union.marriage?.year ?? union.marriage?.date
       ?? union.marriage_date?.year ?? union.marriage_date
     ).match(/-?\d{3,4}/)?.[0] || '';
+    const status = clean(union.status || union.relationship_status || union.type).toLowerCase().replace(/[\s-]+/g, '_');
+    const isSpouseUnion = ['spouse', 'ex_spouse', 'married', 'divorced'].includes(status) || Boolean(marriageYear);
     partners.forEach(id => {
       profileMap[id].partners = unique([...(profileMap[id].partners || []), ...partners.filter(other => other !== id)]);
+      const relationKey = isSpouseUnion ? 'spouses' : 'nonSpouses';
+      profileMap[id][relationKey] = unique([...(profileMap[id][relationKey] || []), ...partners.filter(other => other !== id)]);
       profileMap[id].children = unique([...(profileMap[id].children || []), ...children]);
       if (marriageYear) {
         profileMap[id].marriageYears = { ...(profileMap[id].marriageYears || {}) };
@@ -664,6 +765,8 @@ function mergePersonRecords(existing, incoming) {
   merged.parents = unique([...incoming.parents, ...existing.parents]);
   merged.children = unique([...incoming.children, ...existing.children]);
   merged.partners = unique([...incoming.partners, ...existing.partners]);
+  merged.spouses = unique([...incoming.spouses, ...existing.spouses]);
+  merged.nonSpouses = unique([...incoming.nonSpouses, ...existing.nonSpouses]).filter(id => !merged.spouses.includes(id));
   merged.marriageYears = { ...incoming.marriageYears, ...existing.marriageYears };
   merged.personalEvents = normalizePersonalEvents([...incoming.personalEvents, ...existing.personalEvents]);
   merged.sourceUrl = incoming.sourceUrl || existing.sourceUrl;
@@ -827,13 +930,17 @@ function applyWikiTreePayload(payload, requestedWikiId = '') {
   if (!focus) throw new Error('WikiTree returned an unsupported profile response.');
   focus.children = Object.values(item.person.Children || {}).map(child => `wikitree-${child.Id}`);
   focus.partners = Object.values(item.person.Spouses || {}).map(spouse => `wikitree-${spouse.Id}`);
+  focus.spouses = [...focus.partners];
   Object.values(item.person.Children || {}).forEach(child => {
     const childId = `wikitree-${child.Id}`;
     if (imported[childId]) imported[childId].parents = [child.Father, child.Mother].filter(Boolean).map(value => `wikitree-${value}`);
   });
   Object.values(item.person.Spouses || {}).forEach(spouse => {
     const spouseId = `wikitree-${spouse.Id}`;
-    if (imported[spouseId]) imported[spouseId].partners = unique([...imported[spouseId].partners, focusId]);
+    if (imported[spouseId]) {
+      imported[spouseId].partners = unique([...imported[spouseId].partners, focusId]);
+      imported[spouseId].spouses = unique([...imported[spouseId].spouses, focusId]);
+    }
   });
   Object.assign(state.people, imported);
   state.rootId = state.rootId || focusId;
@@ -895,6 +1002,7 @@ function importGedcom(text, fileName = 'GEDCOM tree') {
     parents.forEach(parentId => {
       people[parentId].children = unique([...people[parentId].children, ...children]);
       people[parentId].partners = unique([...people[parentId].partners, ...parents.filter(id => id !== parentId)]);
+      people[parentId].spouses = unique([...people[parentId].spouses, ...parents.filter(id => id !== parentId)]);
       if (marriageYear) parents.filter(id => id !== parentId).forEach(partnerId => { people[parentId].marriageYears[partnerId] = marriageYear; });
     });
     children.forEach(childId => { people[childId].parents = unique([...people[childId].parents, ...parents]); });
@@ -934,6 +1042,9 @@ function importBackup(payload) {
     person.partners.forEach(partnerId => {
       if (people[partnerId]) people[partnerId].partners = unique([...people[partnerId].partners, person.id]);
     });
+    person.spouses.forEach(spouseId => {
+      if (people[spouseId]) people[spouseId].spouses = unique([...people[spouseId].spouses, person.id]);
+    });
   });
   state.people = people;
   state.rootId = clean(payload.activeRootId || payload.db?.activeRootId) || Object.keys(people)[0] || '';
@@ -961,7 +1072,11 @@ function exportBackup() {
 }
 
 function branchFilterIds() {
-  const ids = Object.keys(state.people);
+  const nonSpouseOnly = new Set();
+  Object.values(state.people).forEach(person => person.nonSpouses.forEach(id => nonSpouseOnly.add(id)));
+  Object.values(state.people).forEach(person => person.spouses.forEach(id => nonSpouseOnly.delete(id)));
+  nonSpouseOnly.delete(state.rootId);
+  const ids = Object.keys(state.people).filter(id => !nonSpouseOnly.has(id));
   const query = clean(els['tree-filter']?.value).toLocaleLowerCase();
   if (!query) return new Set(ids);
   const keywords = query.split(/\s+/).filter(Boolean);
@@ -974,7 +1089,7 @@ function branchFilterIds() {
     person.parents.forEach(parentId => {
       if (state.people[parentId] && !visible.has(parentId)) { visible.add(parentId); queue.push(parentId); }
     });
-    person.partners.forEach(partnerId => {
+    person.spouses.forEach(partnerId => {
       if (state.people[partnerId] && !visible.has(partnerId)) { visible.add(partnerId); queue.push(partnerId); }
     });
   }
@@ -1111,7 +1226,7 @@ function renderTimeline() {
       const childId = queue.shift();
       if (hiddenDescendants.has(childId)) continue;
       hiddenDescendants.add(childId);
-      queue.push(...(state.people[childId]?.children || []), ...(state.people[childId]?.partners || []));
+      queue.push(...(state.people[childId]?.children || []), ...(state.people[childId]?.spouses || []));
     }
     hiddenDescendants.forEach(childId => visibleIds.delete(childId));
   });
@@ -1167,7 +1282,7 @@ function renderTimeline() {
 
     const groups = new Map();
     (childrenByParent.get(id) || []).forEach(childId => {
-      const otherParent = state.people[childId]?.parents.find(parentId => parentId !== id && datedIds.has(parentId)) || '';
+      const otherParent = state.people[childId]?.parents.find(parentId => parentId !== id && datedIds.has(parentId) && state.people[id].spouses.includes(parentId)) || '';
       const partnerId = otherParent;
       if (!groups.has(partnerId)) groups.set(partnerId, []);
       groups.get(partnerId).push(childId);
@@ -1189,7 +1304,7 @@ function renderTimeline() {
       pendingChildren.forEach(visit);
     });
 
-    state.people[id].partners
+    state.people[id].spouses
       .filter(partnerId => datedIds.has(partnerId) && !groupedPartners.has(partnerId))
       .sort(byBirth)
       .forEach(partnerId => place(partnerId, true));
@@ -1206,7 +1321,7 @@ function renderTimeline() {
     if (!families.has(key)) families.set(key, { parents: parentIds, children: [] });
     families.get(key).children.push(child.id);
   });
-  people.forEach(person => person.partners.forEach(partnerId => {
+  people.forEach(person => person.spouses.forEach(partnerId => {
     if (person.id >= partnerId || !datedIds.has(partnerId)) return;
     const key = familyKey([person.id, partnerId]);
     if (!families.has(key)) families.set(key, { parents: [person.id, partnerId], children: [] });
@@ -1692,7 +1807,13 @@ els['delete-person'].addEventListener('click', () => {
   const person = state.people[state.selectedId];
   if (!person || !window.confirm(`Delete ${fullName(person)} from this local tree?`)) return;
   const id = person.id; delete state.people[id];
-  Object.values(state.people).forEach(other => { other.parents = other.parents.filter(x => x !== id); other.children = other.children.filter(x => x !== id); other.partners = other.partners.filter(x => x !== id); });
+  Object.values(state.people).forEach(other => {
+    other.parents = other.parents.filter(x => x !== id);
+    other.children = other.children.filter(x => x !== id);
+    other.partners = other.partners.filter(x => x !== id);
+    other.spouses = other.spouses.filter(x => x !== id);
+    other.nonSpouses = other.nonSpouses.filter(x => x !== id);
+  });
   state.rootId = state.rootId === id ? Object.keys(state.people)[0] || '' : state.rootId; state.selectedId = '';
   persist('Profile deleted'); render();
 });

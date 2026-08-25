@@ -59,6 +59,7 @@ const els = Object.fromEntries([
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
+  'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'add-local-relative',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
 
@@ -162,7 +163,7 @@ function normalizePersonalEvents(events) {
 }
 
 function isReignLabel(value) {
-  return /^reign$/i.test(clean(value));
+  return /^reign(?:\b|\s*·)/i.test(clean(value));
 }
 
 function parseReignValue(value) {
@@ -249,7 +250,9 @@ function normalizePerson(source, fallbackId) {
     sourceUrl,
     sourceId: clean(source.sourceId || (/^profile-/i.test(id) ? id : '')),
     sourceProvider: clean(source.sourceProvider || source.provenance?.provider || sourceProviderFromUrl(sourceUrl)),
-    importedAt: clean(source.importedAt || source.provenance?.importedAt)
+    importedAt: clean(source.importedAt || source.provenance?.importedAt),
+    geniImmediateFamilyLoaded: source.geniImmediateFamilyLoaded === true,
+    starterProfile: source.starterProfile === true
   };
 }
 
@@ -303,7 +306,7 @@ function createBritishRoyalSample() {
     ['william-iv', 'William', 'IV', '1765', '1837', 'male', 'King of the United Kingdom, 1830–1837', historyUrl],
     ['ernest-cumberland', 'Ernest Augustus', 'of Cumberland', '1771', '1851', 'male', 'King of Hanover, 1837–1851', historyUrl],
     ['adolphus-cambridge', 'Adolphus', 'of Cambridge', '1774', '1850', 'male', 'Duke of Cambridge; son of George III', historyUrl],
-    ['augusta-cambridge', 'Augusta', 'of Cambridge', '1822', '1916', 'female', 'Grand Duchess of Mecklenburg-Strelitz', historyUrl],
+    ['mary-adelaide', 'Mary Adelaide', 'of Cambridge', '1833', '1897', 'female', 'Duchess of Teck; granddaughter of George III', historyUrl],
     ['mary-teck', 'Mary', 'of Teck', '1867', '1953', 'female', 'Queen consort of the United Kingdom; great-granddaughter of George III', historyUrl],
     ['victoria-royal', 'Victoria', 'Princess Royal', '1840', '1901', 'female', 'German Empress and Queen of Prussia; daughter of Victoria', historyUrl],
     ['alice-uk', 'Alice', 'of the United Kingdom', '1843', '1878', 'female', 'Grand Duchess of Hesse; daughter of Victoria', historyUrl],
@@ -328,20 +331,49 @@ function createBritishRoyalSample() {
     ['charlotte-wales', 'Charlotte', 'of Wales', '2015', '', 'female', 'Princess; granddaughter of Charles III', historyUrl],
     ['louis-wales', 'Louis', 'of Wales', '2018', '', 'male', 'Prince; grandson of Charles III', historyUrl]
   );
+  // Geni IDs are bundled so the starter timeline works without authorization.
+  // They are also the merge keys used when an authorized visitor refreshes a profile.
+  const geniIds = {
+    'henry-vii': '6000000003760873898', 'elizabeth-york': '5111879481690102566',
+    'henry-viii': '6000000007442241030', 'margaret-tudor': '6000000003858820967',
+    'mary-i': '5027356653020040914', 'elizabeth-i': '4476035', 'edward-vi': '6000000008813849008',
+    'james-iv': '4229916861440069622', 'james-v': '6000000003233882803',
+    'mary-scots': '6000000003234018546', 'darnley': '6000000003876051113',
+    'james-vi-i': '6000000028418914022', 'elizabeth-stuart': '304430340510004215',
+    'frederick-v': '304433105310001815', 'sophia-hanover': '6000000003879438150',
+    'george-i': '6000000017824487111', 'george-ii': '4555899',
+    'frederick-wales': '6000000003891739213', 'george-iii': '6000000003091034586',
+    'edward-kent': '4087038607800049893', 'victoria': '6000000008852088113',
+    'albert': '6000000000697518124', 'edward-vii': '6000000001651648070',
+    'george-v': '6000000000701511040', 'edward-viii': '5031922362950130285',
+    'george-vi': '6000000001217955606', 'elizabeth-ii': '6000000003075071669',
+    'philip': '6000000003075171096', 'charles-iii': '6000000003075030887',
+    'mary-tudor': '6000000000307250674', 'frances-brandon': '6000000003760910764',
+    'jane-grey': '368988617700011508', 'charles-i': '4498828',
+    'charles-ii': '6000000002529545042', 'james-ii-vii': '6000000013038690528',
+    'mary-princess-royal': '6000000003885198846', 'william-iii': '6000000003285553237',
+    'mary-ii': '6000000003285472970', 'anne': '6000000003285572645',
+    'george-iv': '4137986493320052463', 'william-iv': '4137989648200126749',
+    'adolphus-cambridge': '6000000000307240333', 'mary-adelaide': '6000000003245250586',
+    'mary-teck': '6000000001324056123', 'alice-uk': '6000000000703284437',
+    'victoria-hesse': '6000000003221554850', 'alice-battenberg': '6000000003075330310'
+  };
   const people = {};
   const displayNameOverrides = { 'henry-vii': 'Henry VII, King of England' };
-  rows.forEach(([slug, firstName, lastName, birthYear, deathYear, gender, note, sourceUrl]) => {
-    const id = `royal-${slug}`;
+  rows.filter(([slug]) => geniIds[slug]).forEach(([slug, firstName, lastName, birthYear, deathYear, gender, note]) => {
+    const geniId = geniIds[slug];
+    const id = `profile-${geniId}`;
     const baseName = [firstName, lastName].filter(Boolean).join(' ');
     const royalTitle = clean(note).match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+[^;,]+/i)?.[0] || '';
     const displayName = displayNameOverrides[slug] || (royalTitle && !/\b(?:king|queen)\b/i.test(baseName) ? `${baseName}, ${royalTitle}` : baseName);
     people[id] = normalizePerson({
       id, firstName, lastName, displayName, title: royalTitle, birthYear, deathYear, gender, note,
       nameOrder: 'western', isLiving: slug === 'charles-iii', place: '',
-      sourceUrl, sourceProvider: 'royal', sourceId: slug
+      sourceUrl: `https://www.geni.com/profile/index/${geniId}`, sourceProvider: 'geni', sourceId: id,
+      starterProfile: true
     }, id);
   });
-  const id = slug => `royal-${slug}`;
+  const id = slug => geniIds[slug] ? `profile-${geniIds[slug]}` : '';
   const parentLinks = {
     'arthur-tudor': ['henry-vii', 'elizabeth-york'], 'henry-viii': ['henry-vii', 'elizabeth-york'],
     'margaret-tudor': ['henry-vii', 'elizabeth-york'], 'mary-tudor': ['henry-vii', 'elizabeth-york'],
@@ -354,8 +386,8 @@ function createBritishRoyalSample() {
     'sophia-hanover': ['frederick-v', 'elizabeth-stuart'], 'george-i': ['ernest-augustus', 'sophia-hanover'],
     'george-ii': ['george-i'], 'frederick-wales': ['george-ii'], 'george-iii': ['frederick-wales'],
     'george-iv': ['george-iii'], 'william-iv': ['george-iii'], 'edward-kent': ['george-iii'],
-    'ernest-cumberland': ['george-iii'], 'adolphus-cambridge': ['george-iii'], 'augusta-cambridge': ['adolphus-cambridge'],
-    'mary-teck': ['augusta-cambridge'], 'victoria': ['edward-kent'],
+    'ernest-cumberland': ['george-iii'], 'adolphus-cambridge': ['george-iii'], 'mary-adelaide': ['adolphus-cambridge'],
+    'mary-teck': ['mary-adelaide'], 'victoria': ['edward-kent'],
     'victoria-royal': ['albert', 'victoria'], 'edward-vii': ['albert', 'victoria'], 'alice-uk': ['albert', 'victoria'],
     'alfred-saxe': ['albert', 'victoria'], 'helena-uk': ['albert', 'victoria'], 'louise-uk': ['albert', 'victoria'],
     'arthur-connaught': ['albert', 'victoria'], 'leopold-albany': ['albert', 'victoria'], 'beatrice-uk': ['albert', 'victoria'],
@@ -370,12 +402,15 @@ function createBritishRoyalSample() {
   };
   Object.entries(parentLinks).forEach(([childSlug, parentSlugs]) => {
     const childId = id(childSlug);
-    people[childId].parents = parentSlugs.map(id);
-    parentSlugs.forEach(parentSlug => { people[id(parentSlug)].children = unique([...people[id(parentSlug)].children, childId]); });
+    if (!people[childId]) return;
+    const retainedParents = parentSlugs.map(id).filter(parentId => people[parentId]);
+    people[childId].parents = retainedParents;
+    retainedParents.forEach(parentId => { people[parentId].children = unique([...people[parentId].children, childId]); });
   });
   [['henry-vii','elizabeth-york','1486'], ['james-iv','margaret-tudor','1503'], ['darnley','mary-scots','1565'],
    ['william-iii','mary-ii','1677'], ['frederick-v','elizabeth-stuart','1613'], ['ernest-augustus','sophia-hanover','1658'],
    ['albert','victoria','1840'], ['george-v','mary-teck','1893'], ['philip','elizabeth-ii','1947']].forEach(([a, b, marriageYear]) => {
+    if (!people[id(a)] || !people[id(b)]) return;
     people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
     people[id(b)].partners = unique([...people[id(b)].partners, id(a)]);
     people[id(a)].marriageYears[id(b)] = marriageYear;
@@ -396,61 +431,23 @@ function createBritishRoyalSample() {
     'harald-v': [['Reign · Norway', 1991, new Date().getFullYear()]], 'charles-iii': [['Reign', 2022, new Date().getFullYear()]]
   };
   Object.entries(reigns).forEach(([slug, events]) => {
+    if (!people[id(slug)]) return;
     people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal' }));
   });
   return people;
 }
 
-async function loadBritishRoyalExample() {
+function loadBritishRoyalExample({ persistResult = true } = {}) {
   const button = els['royal-example-button'];
-  button.disabled = true;
-  button.textContent = '♔ Importing Henry VII descendants…';
-  state.people = {};
-  state.rootId = '';
+  state.people = createBritishRoyalSample();
+  state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
   state.selectedId = '';
-  state.ephemeral = true;
-  state.title = 'Descendants of Henry VII';
+  state.ephemeral = false;
+  state.title = 'The British royal line from Henry VII';
   els['tree-filter'].value = 'king queen';
-  els['save-status'].textContent = 'Connecting to Geni · not saved';
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(LEGACY_STORAGE_KEY);
+  if (persistResult) persist('Bundled royal line restored');
   render();
-  if (!state.geniAccessToken) {
-    const appId = clean(document.querySelector('meta[name="geni-app-id"]')?.content);
-    if (!appId) {
-      button.disabled = false;
-      button.textContent = '♔ Import Henry VII descendants from Geni';
-      throw new Error('Live Geni loading needs the public Geni application ID in the geni-app-id meta tag.');
-    }
-    const redirectUri = `${location.origin}${location.pathname}`;
-    const pendingSince = Number(sessionValue(GENI_OAUTH_PENDING_KEY));
-    if (pendingSince && Date.now() - pendingSince < 120000) {
-      sessionValue(GENI_OAUTH_PENDING_KEY, null);
-      sessionValue(GENI_IMPORT_INTENT_KEY, null);
-      throw new Error('Geni returned without an access token. Authorization was stopped to prevent a redirect loop.');
-    }
-    const authorize = new URL('https://www.geni.com/platform/oauth/authorize');
-    authorize.searchParams.set('client_id', appId);
-    authorize.searchParams.set('redirect_uri', redirectUri);
-    authorize.searchParams.set('response_type', 'token');
-    sessionValue(GENI_OAUTH_PENDING_KEY, String(Date.now()));
-    sessionValue(GENI_IMPORT_INTENT_KEY, 'henry-vii');
-    location.assign(authorize.href);
-    return;
-  }
-  try {
-    await importFromGeni(HENRY_VII_GENI_URL, 14, {
-      mode: 'descendants',
-      persistResult: false,
-      title: 'Descendants of Henry VII'
-    });
-  } catch (error) {
-    els['save-status'].textContent = 'Geni authorization required · no cached data';
-    throw error;
-  } finally {
-    button.disabled = false;
-    button.textContent = '♔ Import Henry VII descendants from Geni';
-  }
+  button.textContent = '♔ Restore the bundled British royal line';
 }
 
 function restore() {
@@ -458,15 +455,6 @@ function restore() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY));
     if (!saved || typeof saved !== 'object') return;
     const savedRootId = clean(saved.rootId);
-    const savedIds = Object.keys(saved.people || {});
-    const isRoyalCache = savedRootId === 'royal-henry-vii'
-      || (savedRootId === 'profile-6000000003760873898' && clean(saved.title) === 'Descendants of Henry VII')
-      || (savedIds.length && savedIds.every(id => id.startsWith('royal-')));
-    if (isRoyalCache) {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
-      return;
-    }
     state.title = clean(saved.title) || state.title;
     state.rootId = savedRootId;
     Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
@@ -481,6 +469,24 @@ function persist(message = 'All changes saved locally') {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
+}
+
+function beginGeniAuthorization(intent) {
+  const appId = clean(document.querySelector('meta[name="geni-app-id"]')?.content);
+  if (!appId) throw new Error('Live Geni loading needs the public Geni application ID.');
+  const pendingSince = Number(sessionValue(GENI_OAUTH_PENDING_KEY));
+  if (pendingSince && Date.now() - pendingSince < 120000) {
+    sessionValue(GENI_OAUTH_PENDING_KEY, null);
+    sessionValue(GENI_IMPORT_INTENT_KEY, null);
+    throw new Error('Geni returned without an access token. Authorization was stopped to prevent a redirect loop.');
+  }
+  const authorize = new URL('https://www.geni.com/platform/oauth/authorize');
+  authorize.searchParams.set('client_id', appId);
+  authorize.searchParams.set('redirect_uri', `${location.origin}${location.pathname}`);
+  authorize.searchParams.set('response_type', 'token');
+  sessionValue(GENI_OAUTH_PENDING_KEY, String(Date.now()));
+  sessionValue(GENI_IMPORT_INTENT_KEY, intent);
+  location.assign(authorize.href);
 }
 function toast(message, long = false) {
   els.toast.textContent = message;
@@ -546,6 +552,52 @@ async function fetchGeniNeighborhood(id) {
   return { mapped, focusRaw };
 }
 
+async function loadGeniImmediateFamily(profileId) {
+  const person = state.people[profileId];
+  if (!person || person.sourceProvider !== 'geni' || !/^profile-/i.test(profileId)) {
+    throw new Error('This local profile is not linked to a Geni profile ID.');
+  }
+  if (!state.geniAccessToken) {
+    beginGeniAuthorization(`immediate-family:${profileId}`);
+    return;
+  }
+  const button = els['load-immediate-family'];
+  button.disabled = true;
+  button.textContent = 'Loading public family…';
+  try {
+    const importedAt = new Date().toISOString();
+    const { mapped } = await fetchGeniNeighborhood(profileId);
+    Object.entries(mapped).forEach(([id, raw]) => {
+      if (raw.public === false) return;
+      const incoming = normalizePerson({
+        ...raw,
+        id,
+        sourceId: id,
+        sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${id.replace(/^profile-/i, '')}`,
+        sourceProvider: 'geni',
+        importedAt
+      }, id);
+      state.people[id] = mergePersonRecords(state.people[id], incoming);
+    });
+    if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
+    state.people[profileId].geniImmediateFamilyLoaded = true;
+    try {
+      const eventsByProfile = await fetchGeniReignEvents(Object.keys(mapped));
+      Object.entries(eventsByProfile).forEach(([id, events]) => {
+        if (state.people[id] && events.length) {
+          state.people[id].personalEvents = normalizePersonalEvents([...state.people[id].personalEvents, ...events]);
+        }
+      });
+    } catch { /* Optional event enrichment must not block family import. */ }
+    persist('Immediate family imported from Geni');
+    render();
+    toast(`Loaded ${Object.keys(mapped).length} public profiles from this immediate family.`, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Refresh complete immediate family';
+  }
+}
+
 async function fetchGeniReignEvents(profileIds) {
   const eventsByProfile = {};
   const ids = unique(profileIds).filter(id => /^profile-/i.test(id));
@@ -583,6 +635,8 @@ function mergePersonRecords(existing, incoming) {
   merged.sourceId = incoming.sourceId || existing.sourceId;
   merged.sourceProvider = incoming.sourceProvider || existing.sourceProvider;
   merged.importedAt = incoming.importedAt || existing.importedAt;
+  merged.geniImmediateFamilyLoaded = incoming.geniImmediateFamilyLoaded || existing.geniImmediateFamilyLoaded;
+  merged.starterProfile = incoming.starterProfile || existing.starterProfile;
   return merged;
 }
 
@@ -1333,6 +1387,16 @@ function renderDetails() {
   else sourceLink.removeAttribute('href');
   sourceLink.textContent = person.sourceUrl ? 'Open original profile ↗' : 'No profile linked';
   els['source-updated'].textContent = person.importedAt ? `Imported ${new Date(person.importedAt).toLocaleString()}.` : 'Add a source URL to preserve attribution.';
+  const isGeniProfile = person.sourceProvider === 'geni' && /^profile-/i.test(person.id);
+  els['geni-family-actions'].hidden = !isGeniProfile;
+  if (isGeniProfile) {
+    const complete = person.geniImmediateFamilyLoaded === true;
+    els['geni-family-status'].textContent = complete
+      ? 'The complete public immediate family has been imported. You can now add a local relative to this profile.'
+      : 'Load this profile’s complete public immediate family before adding local relatives.';
+    els['load-immediate-family'].textContent = complete ? 'Refresh complete immediate family' : 'Load complete immediate family';
+    els['add-local-relative'].disabled = !complete;
+  }
 }
 function renderParentOptions() {
   const options = ['<option value="">No parent selected</option>', ...Object.values(state.people).sort((a,b) => fullName(a).localeCompare(fullName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(fullName(person))}</option>`)].join('');
@@ -1375,12 +1439,19 @@ els['file-input'].addEventListener('change', async () => {
   els['file-input'].value = '';
 });
 els['export-button'].addEventListener('click', exportBackup);
-function openAddPersonDialog() { els['add-dialog'].showModal(); }
-els['empty-add-person-button'].addEventListener('click', openAddPersonDialog);
-els['royal-example-button'].addEventListener('click', async () => {
+function openAddPersonDialog(parentId = '') {
+  const parent = state.people[parentId];
+  if (parent?.sourceProvider === 'geni' && !parent.geniImmediateFamilyLoaded) {
+    toast('Load this Geni profile’s complete immediate family before adding a local relative.', true);
+    return;
+  }
+  els['add-dialog'].showModal();
+  els['parent-select'].value = parent ? parent.id : '';
+}
+els['empty-add-person-button'].addEventListener('click', () => openAddPersonDialog());
+els['royal-example-button'].addEventListener('click', () => {
   if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with the British royal example? Export first if you want to keep it.')) return;
-  try { await loadBritishRoyalExample(); }
-  catch (error) { toast(`${error.message} No cached royal data was used.`, true); }
+  loadBritishRoyalExample();
 });
 els['tree-filter'].addEventListener('input', render);
 els['tree-title'].addEventListener('click', () => {
@@ -1423,6 +1494,11 @@ els['canvas-viewport'].addEventListener('pointercancel', endCanvasDrag);
 els['canvas-viewport'].addEventListener('dragstart', event => event.preventDefault());
 
 els['close-detail'].addEventListener('click', () => { state.selectedId = ''; render(); });
+els['load-immediate-family'].addEventListener('click', async () => {
+  try { await loadGeniImmediateFamily(state.selectedId); }
+  catch (error) { toast(error.message || 'Could not load this Geni family.', true); render(); }
+});
+els['add-local-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.selectedId && !els['add-dialog'].open) {
     state.selectedId = '';
@@ -1448,7 +1524,11 @@ els['delete-person'].addEventListener('click', () => {
   state.rootId = state.rootId === id ? Object.keys(state.people)[0] || '' : state.rootId; state.selectedId = '';
   persist('Profile deleted'); render();
 });
-els['add-person-button'].addEventListener('click', openAddPersonDialog);
+els['add-person-button'].addEventListener('click', () => {
+  if (state.selectedId) return openAddPersonDialog(state.selectedId);
+  if (Object.keys(state.people).length) return toast('Select the profile to whom you want to add a local relative.', true);
+  openAddPersonDialog();
+});
 els['add-form'].addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault(); const data = new FormData(event.currentTarget); const id = `local-${crypto.randomUUID()}`;
@@ -1460,11 +1540,16 @@ els['add-form'].addEventListener('submit', event => {
 });
 
 restore();
+if (!Object.keys(state.people).length) loadBritishRoyalExample({ persistResult: true });
 render();
-if (initialGeniAccessToken && sessionValue(GENI_IMPORT_INTENT_KEY) === 'henry-vii') {
+const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);
+if (initialGeniAccessToken && pendingGeniIntent.startsWith('immediate-family:')) {
   sessionValue(GENI_IMPORT_INTENT_KEY, null);
-  loadBritishRoyalExample().catch(error => {
-    toast(`${error.message} No cached royal data was used.`, true);
+  const profileId = pendingGeniIntent.slice('immediate-family:'.length);
+  state.selectedId = state.people[profileId] ? profileId : '';
+  render();
+  loadGeniImmediateFamily(profileId).catch(error => {
+    toast(error.message || 'Could not load this Geni family.', true);
     render();
   });
 }

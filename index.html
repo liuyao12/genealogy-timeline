@@ -61,7 +61,7 @@
             </div>
           </form>
           <p class="source-note">Geni first · OAuth required · Public profiles only · 160-profile safety limit</p>
-          <button class="example-button" id="royal-example-button" type="button">♔ Import Henry VII descendants from Geni</button>
+          <button class="example-button" id="royal-example-button" type="button">♔ Restore the bundled British royal line</button>
           <a id="source-download-link" class="source-download-link" href="#" target="_blank" rel="noreferrer" hidden>Open official API JSON ↗</a>
         </section>
 
@@ -149,6 +149,13 @@
               <small id="source-updated">Add a source URL to preserve attribution.</small>
             </div>
 
+            <div class="geni-family-actions" id="geni-family-actions" hidden>
+              <span class="eyebrow">Local Geni working copy</span>
+              <p id="geni-family-status">Load this profile’s complete public immediate family before adding local relatives.</p>
+              <button class="button secondary grow" id="load-immediate-family" type="button">Load complete immediate family</button>
+              <button class="button primary grow" id="add-local-relative" type="button" disabled>Add local relative</button>
+            </div>
+
             <div class="form-actions">
               <button class="button primary grow" type="submit">Save profile</button>
               <button class="button danger" id="delete-person" type="button">Delete</button>
@@ -183,6 +190,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=16"></script>
+  <script type="module" src="./app.js?v=18"></script>
 </body>
 </html>

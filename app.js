@@ -5,7 +5,13 @@ const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
-const DEFAULT_PERSONAL_EVENT_COLOR = '#5fa8d3';
+const EVENT_COLOR_PALETTE = [
+  ['#c62828', 'Red'], ['#e65100', 'Orange'], ['#c2892b', 'Amber'], ['#6b7d2a', 'Olive'],
+  ['#2e7d32', 'Green'], ['#00796b', 'Teal'], ['#00838f', 'Cyan'], ['#1565c0', 'Blue'],
+  ['#3949ab', 'Indigo'], ['#7b1fa2', 'Violet'], ['#ad1457', 'Rose'], ['#616161', 'Grey']
+];
+const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
+const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 
 function sessionValue(key, value) {
@@ -52,6 +58,7 @@ const state = {
   rootId: '',
   zoom: 1,
   ephemeral: false,
+  reignColor: DEFAULT_REIGN_EVENT_COLOR,
   geniAccessToken: initialGeniAccessToken,
   collapsedIds: new Set()
 };
@@ -70,6 +77,10 @@ const els = Object.fromEntries([
 
 function clean(value) { return value == null ? '' : String(value).trim(); }
 function normalizeColor(value, fallback) { return /^#[0-9a-f]{6}$/i.test(clean(value)) ? clean(value).toLowerCase() : fallback; }
+function paletteColor(value, fallback) {
+  const normalized = normalizeColor(value, fallback);
+  return EVENT_COLOR_PALETTE.some(([candidate]) => candidate === normalized) ? normalized : fallback;
+}
 function uniqueId(prefix = 'id') {
   const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   return `${prefix}-${random}`;
@@ -172,7 +183,7 @@ function normalizePersonalEvents(events) {
       startYear,
       endYear: endYear ?? startYear,
       source: clean(event?.source || ''),
-      color: normalizeColor(event?.color, isReignLabel(name) ? '#d59a00' : DEFAULT_PERSONAL_EVENT_COLOR)
+      color: isReignLabel(name) ? state.reignColor : paletteColor(event?.color, DEFAULT_PERSONAL_EVENT_COLOR)
     };
   }).filter(event => event.name && event.startYear != null);
   return [...new Map(normalized.map(event => [`${event.name.toLocaleLowerCase()}|${event.startYear}|${event.endYear}`, event])).values()];
@@ -190,7 +201,7 @@ function normalizeGlobalEvents(events) {
       name,
       startYear,
       endYear: endYear ?? startYear,
-      color: normalizeColor(event?.color, DEFAULT_GLOBAL_EVENT_COLOR)
+      color: paletteColor(event?.color, DEFAULT_GLOBAL_EVENT_COLOR)
     };
   }).filter(Boolean);
 }
@@ -567,7 +578,7 @@ function createBritishRoyalSample() {
   };
   Object.entries(reigns).forEach(([slug, events]) => {
     if (!people[id(slug)]) return;
-    people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal', color: '#d59a00' }));
+    people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal', color: state.reignColor }));
   });
   return people;
 }
@@ -593,6 +604,7 @@ function restore() {
     const savedRootId = clean(saved.rootId);
     state.title = clean(saved.title) || state.title;
     state.rootId = savedRootId;
+    state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
     Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
   } catch { /* A malformed local cache should not prevent the app from opening. */ }
@@ -603,7 +615,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1040,6 +1052,7 @@ function importBackup(payload) {
   if (wikiEnvelope?.items?.[0]?.person) return applyWikiTreePayload(payload);
   const rawPeople = payload.people || payload.db?.people;
   if (!rawPeople || typeof rawPeople !== 'object') throw new Error('This file does not contain a supported people collection.');
+  state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
   const people = {};
   Object.entries(rawPeople).forEach(([id, source]) => { people[id] = normalizePerson(source, id); });
   // The mini-program stores children/spouses on profiles. Reconstruct reverse parent links for the web layout.
@@ -1069,7 +1082,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1436,7 +1449,7 @@ function renderTimeline() {
     const endYear = Math.min(maxYear, rawEndYear);
     const x = xForYear(startYear);
     const eventWidth = Math.max(2, (Math.max(startYear, endYear) - startYear) * yearWidth);
-    const color = normalizeColor(event.color, DEFAULT_GLOBAL_EVENT_COLOR);
+    const color = paletteColor(event.color, DEFAULT_GLOBAL_EVENT_COLOR);
     const band = svg('rect', { class: 'global-event-range', x, y: 43, width: eventWidth, height: height - 61, fill: color, 'fill-opacity': '.13' });
     band.append(svg('title', {}, `${event.name} · ${formatEventYearRange(event.startYear, event.endYear)}`));
     globalEvents.append(band);
@@ -1502,14 +1515,14 @@ function renderTimeline() {
     const isSpouseNode = spouseIds.has(id);
     const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
-    group.append(svg('rect', { class: 'lifespan', x: 0, y: 0, width: lifespanWidth, height: rowHeight }));
+    group.append(svg('rect', { class: 'lifespan', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
     person.personalEvents.forEach(event => {
       const start = Math.max(birthYear(person), event.startYear);
       const finish = Math.min(endYear(person), event.endYear ?? event.startYear);
       if (finish < start) return;
       const eventX = (start - birthYear(person)) * yearWidth;
       const eventWidth = Math.max(0, (finish - start) * yearWidth);
-      const eventColor = normalizeColor(event.color, isReignLabel(event.name) ? '#d59a00' : DEFAULT_PERSONAL_EVENT_COLOR);
+      const eventColor = isReignLabel(event.name) ? state.reignColor : paletteColor(event.color, DEFAULT_PERSONAL_EVENT_COLOR);
       if (eventWidth > 0) {
         const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 2, width: eventWidth, height: rowHeight - 4, fill: eventColor, 'fill-opacity': '.58' });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
@@ -1524,6 +1537,9 @@ function renderTimeline() {
         group.append(mark);
       }
     });
+    // Paint the rounded outline after event bands so their fill and boundary
+    // marks can never obscure the node border.
+    group.append(svg('rect', { class: 'lifespan-outline', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
     const hasChildren = person.children.some(childId => state.people[childId]);
     const isCollapsed = state.collapsedIds.has(id);
     const icon = isSpouseNode
@@ -1576,19 +1592,46 @@ function renderPersonList() {
   }));
 }
 
-function eventEditorRow(event, onColor, onDelete) {
+function styleEventColorSelect(select) {
+  select.style.setProperty('--event-color', paletteColor(select.value, DEFAULT_PERSONAL_EVENT_COLOR));
+}
+
+function eventColorSelect(value, label, onColor, fallback) {
+  const select = document.createElement('select');
+  select.className = 'event-color-select';
+  EVENT_COLOR_PALETTE.forEach(([optionValue, optionLabel]) => {
+    const option = document.createElement('option');
+    option.value = optionValue;
+    option.textContent = optionLabel;
+    select.append(option);
+  });
+  select.value = paletteColor(value, fallback);
+  select.setAttribute('aria-label', label);
+  styleEventColorSelect(select);
+  select.addEventListener('change', () => {
+    styleEventColorSelect(select);
+    onColor(select.value);
+  });
+  return select;
+}
+
+function setSharedReignColor(value) {
+  state.reignColor = paletteColor(value, DEFAULT_REIGN_EVENT_COLOR);
+  Object.values(state.people).forEach(person => person.personalEvents.forEach(event => {
+    if (isReignLabel(event.name)) event.color = state.reignColor;
+  }));
+  persist('Shared reign colour saved');
+  render();
+}
+
+function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {
   const row = document.createElement('div');
   row.className = 'event-editor-row';
   const name = document.createElement('strong');
   name.textContent = event.name;
   const years = document.createElement('small');
   years.textContent = formatEventYearRange(event.startYear, event.endYear);
-  const color = document.createElement('input');
-  color.type = 'color';
-  color.className = 'event-color-input';
-  color.value = normalizeColor(event.color, DEFAULT_PERSONAL_EVENT_COLOR);
-  color.setAttribute('aria-label', `Colour for ${event.name}`);
-  color.addEventListener('input', () => onColor(color.value));
+  const color = eventColorSelect(isReignLabel(event.name) ? state.reignColor : event.color, `Colour for ${event.name}`, onColor, fallback);
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.className = 'event-delete';
@@ -1609,7 +1652,8 @@ function renderPersonalEvents(person) {
     return;
   }
   list.replaceChildren(...person.personalEvents.map((event, index) => eventEditorRow(event, value => {
-    person.personalEvents[index].color = normalizeColor(value, DEFAULT_PERSONAL_EVENT_COLOR);
+    if (isReignLabel(event.name)) return setSharedReignColor(value);
+    person.personalEvents[index].color = paletteColor(value, DEFAULT_PERSONAL_EVENT_COLOR);
     persist('Event colour saved');
     render();
   }, () => {
@@ -1629,14 +1673,14 @@ function renderGlobalEventsEditor() {
     return;
   }
   list.replaceChildren(...state.globalEvents.map((event, index) => eventEditorRow(event, value => {
-    state.globalEvents[index].color = normalizeColor(value, DEFAULT_GLOBAL_EVENT_COLOR);
+    state.globalEvents[index].color = paletteColor(value, DEFAULT_GLOBAL_EVENT_COLOR);
     persist('Global event colour saved');
     render();
   }, () => {
     state.globalEvents.splice(index, 1);
     persist('Global event deleted');
     render();
-  })));
+  }, DEFAULT_GLOBAL_EVENT_COLOR)));
 }
 
 function renderDetails() {
@@ -1730,7 +1774,7 @@ els['add-global-event'].addEventListener('click', () => {
     name,
     startYear: Math.min(startYear, endYear),
     endYear: Math.max(startYear, endYear),
-    color: normalizeColor(els['global-event-color'].value, DEFAULT_GLOBAL_EVENT_COLOR)
+    color: paletteColor(els['global-event-color'].value, DEFAULT_GLOBAL_EVENT_COLOR)
   });
   state.globalEvents.sort((a, b) => a.startYear - b.startYear || a.endYear - b.endYear);
   els['global-event-name'].value = '';
@@ -1806,11 +1850,17 @@ els['add-personal-event'].addEventListener('click', () => {
   const startYear = numericYear(els['personal-event-start'].value);
   const endYear = numericYear(els['personal-event-end'].value) ?? startYear;
   if (!name || startYear == null) return toast('Enter a personal event name and start year.', true);
+  if (isReignLabel(name)) {
+    state.reignColor = paletteColor(els['personal-event-color'].value, DEFAULT_REIGN_EVENT_COLOR);
+    Object.values(state.people).forEach(profile => profile.personalEvents.forEach(event => {
+      if (isReignLabel(event.name)) event.color = state.reignColor;
+    }));
+  }
   person.personalEvents = normalizePersonalEvents([...person.personalEvents, {
     name,
     startYear: Math.min(startYear, endYear),
     endYear: Math.max(startYear, endYear),
-    color: normalizeColor(els['personal-event-color'].value, DEFAULT_PERSONAL_EVENT_COLOR),
+    color: paletteColor(els['personal-event-color'].value, DEFAULT_PERSONAL_EVENT_COLOR),
     source: 'local'
   }]);
   els['personal-event-name'].value = '';
@@ -1864,6 +1914,21 @@ els['add-form'].addEventListener('submit', event => {
   if (parentId && state.people[parentId]) { person.parents = [parentId]; state.people[parentId].children = unique([...state.people[parentId].children, id]); }
   state.people[id] = person; state.rootId = state.rootId || id; state.selectedId = id;
   els['add-dialog'].close(); event.currentTarget.reset(); persist('Profile added'); render();
+});
+
+els['personal-event-color'].value = DEFAULT_PERSONAL_EVENT_COLOR;
+els['global-event-color'].value = DEFAULT_GLOBAL_EVENT_COLOR;
+[els['personal-event-color'], els['global-event-color']].forEach(select => {
+  styleEventColorSelect(select);
+  select.addEventListener('change', () => styleEventColorSelect(select));
+});
+let personalColorForReign = false;
+els['personal-event-name'].addEventListener('input', () => {
+  const nextIsReign = isReignLabel(els['personal-event-name'].value);
+  if (nextIsReign === personalColorForReign) return;
+  personalColorForReign = nextIsReign;
+  els['personal-event-color'].value = nextIsReign ? state.reignColor : DEFAULT_PERSONAL_EVENT_COLOR;
+  styleEventColorSelect(els['personal-event-color']);
 });
 
 restore();

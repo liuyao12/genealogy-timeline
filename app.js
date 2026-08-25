@@ -1127,95 +1127,6 @@ function svg(tag, attrs = {}, text = '') {
   return node;
 }
 
-function compactTimelineBranchesBottomUp(nodes, lines, rowHeight, rowStep) {
-  if (nodes.length < 2) return;
-  const normalizeRow = row => Math.round(row * 1000) / 1000;
-  const originalRows = nodes.map(node => normalizeRow(node.y / rowStep));
-  const nodeRows = [...originalRows];
-  const ranges = nodes.map(node => ({ left: node.x - 36, right: node.x + Math.max(node.occupancyWidth, 2) + 36 }));
-  const overlaps = (a, b) => a.left < b.right && b.left < a.right;
-  const rowsOverlap = (a, b) => Math.abs(a - b) * rowStep < rowHeight;
-  const rowAtCenter = y => normalizeRow((y - rowHeight / 2) / rowStep);
-  const lineRows = line => line.type === 'stem' ? [rowAtCenter(line.y), rowAtCenter(line.y + line.h)] : [rowAtCenter(line.y)];
-  const currentRowMap = () => {
-    const map = new Map();
-    originalRows.forEach((row, index) => map.set(row, map.has(row) ? Math.min(map.get(row), nodeRows[index]) : nodeRows[index]));
-    return map;
-  };
-  const lineRect = (line, map) => {
-    const remap = y => {
-      const row = rowAtCenter(y);
-      return (map.has(row) ? map.get(row) : row) * rowStep + rowHeight / 2;
-    };
-    if (line.type === 'branch') {
-      const y = remap(line.y);
-      return { left: Math.min(line.x, line.x + line.w) - 3, right: Math.max(line.x, line.x + line.w) + 3, top: y - 3, bottom: y + 3 };
-    }
-    const y1 = remap(line.y), y2 = remap(line.y + line.h);
-    return { left: line.x - 3, right: line.x + 3, top: Math.min(y1, y2) - 3, bottom: Math.max(y1, y2) + 3 };
-  };
-  const rectsOverlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-  const eligibleLines = lines.filter(line => !line.isDashed);
-  const sorted = nodes.map((node, index) => ({ node, index, row: nodeRows[index] })).sort((a, b) => a.row - b.row || a.node.x - b.node.x);
-  const blocks = [];
-  sorted.forEach((item, order) => {
-    if (item.node.isSpouse) return;
-    const indexes = [item.index];
-    for (let next = order + 1; next < sorted.length; next += 1) {
-      const candidate = sorted[next].node;
-      if (!candidate.isSpouse && candidate.x <= item.node.x) break;
-      indexes.push(sorted[next].index);
-    }
-    const parent = [...sorted].slice(0, order).reverse().find(candidate => !candidate.node.isSpouse && candidate.node.x < item.node.x);
-    blocks.push({ indexes, parentIndex: parent ? parent.index : -1, maxX: Math.max(...indexes.map(index => nodes[index].x)), startRow: nodeRows[item.index] });
-  });
-  const locked = new Set();
-  blocks.sort((a, b) => b.maxX - a.maxX || b.startRow - a.startRow || b.indexes.length - a.indexes.length).forEach(block => {
-    if (block.indexes.some(index => locked.has(index))) return;
-    const contained = new Set(block.indexes);
-    const parentRow = block.parentIndex >= 0 ? nodeRows[block.parentIndex] : -1;
-    const canShift = delta => {
-      const blockOriginalRows = new Set(block.indexes.map(index => originalRows[index]));
-      const externalLines = eligibleLines.filter(line => !lineRows(line).some(row => blockOriginalRows.has(row)));
-      const rowMap = currentRowMap();
-      return block.indexes.every(index => {
-        const targetRow = normalizeRow(nodeRows[index] + delta);
-        if (targetRow <= parentRow || targetRow < 0) return false;
-        for (let other = 0; other < nodes.length; other += 1) {
-          if (contained.has(other) || !rowsOverlap(nodeRows[other], targetRow)) continue;
-          if (overlaps(ranges[index], ranges[other])) return false;
-        }
-        const nodeRect = { left: ranges[index].left, right: ranges[index].right, top: targetRow * rowStep, bottom: targetRow * rowStep + rowHeight };
-        return !externalLines.some(line => rectsOverlap(nodeRect, lineRect(line, rowMap)));
-      });
-    };
-    let bestDelta = 0;
-    for (let delta = -0.5; block.indexes.every(index => nodeRows[index] + delta > parentRow && nodeRows[index] + delta >= 0); delta -= 0.5) {
-      if (canShift(delta)) bestDelta = delta;
-    }
-    if (!bestDelta) return;
-    let chosen = 0;
-    for (let delta = Math.min(0, bestDelta + 0.5); delta >= bestDelta; delta -= 0.5) {
-      if (canShift(delta)) { chosen = delta; break; }
-    }
-    if (!chosen) return;
-    block.indexes.forEach(index => { nodeRows[index] = normalizeRow(nodeRows[index] + chosen); locked.add(index); });
-  });
-  nodes.forEach((node, index) => { node.y = nodeRows[index] * rowStep; });
-}
-
-function compactTimelineRows(nodes, rowStep) {
-  const normalizeRow = row => Math.round(row * 1000) / 1000;
-  const rows = [...new Set(nodes.map(node => normalizeRow(node.y / rowStep)))].sort((a, b) => a - b);
-  const map = new Map();
-  let mapped = 0;
-  rows.forEach((row, index) => {
-    if (index) mapped = normalizeRow(mapped + Math.min(Math.max(0, row - rows[index - 1]), 1.5));
-    map.set(row, mapped);
-  });
-  nodes.forEach(node => { node.y = map.get(normalizeRow(node.y / rowStep)) * rowStep; });
-}
-
 function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
   const ranges = nodes.map(node => ({ left: node.x - 36, right: node.x + Math.max(node.occupancyWidth, 2) + 36 }));
   const overlapsHorizontally = (a, b) => a.left < b.right && b.left < a.right;
@@ -1225,7 +1136,7 @@ function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
   // intended six-pixel vertical gutter for the web's 36px boxes on 42px rows.
   const requiredVerticalSeparation = Math.max(rowHeight, rowStep);
   nodes.forEach((node, index) => {
-    let targetY = index ? Math.max(node.y, nodes[index - 1].y + rowStep / 2) : Math.max(0, node.y);
+    let targetY = Math.max(0, node.y);
     for (let previous = 0; previous < index; previous += 1) {
       if (!overlapsHorizontally(ranges[index], ranges[previous])) continue;
       if (targetY - nodes[previous].y < requiredVerticalSeparation) {
@@ -1233,6 +1144,72 @@ function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
       }
     }
     node.y = Math.round(targetY * 1000) / 1000;
+  });
+}
+
+// D3's tidy tree gains its compactness by comparing whole subtree contours,
+// rather than assigning every node a permanently distinct row. This rotated
+// adaptation keeps time on x, preserves each depth-first household block, and
+// lifts that block into the earliest y-space where its occupied x-ranges fit.
+function compactTimelineTidyContours(nodes, displayParentById, rowHeight, rowStep) {
+  if (nodes.length < 2) return;
+  const indexById = new Map(nodes.map((node, index) => [node.id, index]));
+  const childrenByIndex = new Map(nodes.map((_, index) => [index, []]));
+  const parentIndexByIndex = new Map();
+  nodes.forEach((node, index) => {
+    const parentIndex = indexById.get(displayParentById.get(node.id));
+    if (parentIndex == null || parentIndex >= index) return;
+    parentIndexByIndex.set(index, parentIndex);
+    childrenByIndex.get(parentIndex).push(index);
+  });
+  const depthOf = index => {
+    let depth = 0;
+    for (let parent = parentIndexByIndex.get(index); parent != null; parent = parentIndexByIndex.get(parent)) depth += 1;
+    return depth;
+  };
+  const subtreeIndexes = rootIndex => {
+    const result = [];
+    const queue = [rootIndex];
+    while (queue.length) {
+      const index = queue.shift();
+      result.push(index);
+      queue.unshift(...childrenByIndex.get(index));
+    }
+    return result;
+  };
+  const horizontalRanges = nodes.map(node => ({
+    left: node.x - 36,
+    right: node.x + Math.max(node.occupancyWidth, 2) + 36
+  }));
+  const rangesOverlap = (a, b) => a.left < b.right && b.left < a.right;
+  const verticallyOverlap = (a, b) => Math.abs(a - b) < rowStep;
+  const blocks = nodes.map((_, index) => ({
+    rootIndex: index,
+    parentIndex: parentIndexByIndex.get(index),
+    indexes: subtreeIndexes(index),
+    depth: depthOf(index)
+  })).sort((a, b) => b.depth - a.depth || b.rootIndex - a.rootIndex);
+
+  blocks.forEach(block => {
+    const contained = new Set(block.indexes);
+    const rootY = nodes[block.rootIndex].y;
+    const minimumRootY = block.parentIndex == null ? 0 : nodes[block.parentIndex].y + rowStep;
+    const maximumLift = rootY - minimumRootY;
+    if (maximumLift < rowStep / 2) return;
+    const canLift = lift => block.indexes.every(index => {
+      const targetY = nodes[index].y - lift;
+      if (targetY < 0) return false;
+      for (let other = 0; other < nodes.length; other += 1) {
+        if (contained.has(other) || !rangesOverlap(horizontalRanges[index], horizontalRanges[other])) continue;
+        if (verticallyOverlap(targetY, nodes[other].y)) return false;
+      }
+      return true;
+    });
+    let bestLift = 0;
+    for (let lift = rowStep / 2; lift <= maximumLift + 0.01; lift += rowStep / 2) {
+      if (canLift(lift)) bestLift = lift;
+    }
+    if (bestLift) block.indexes.forEach(index => { nodes[index].y -= bestLift; });
   });
 }
 
@@ -1293,15 +1270,17 @@ function renderTimeline() {
   const placed = new Set();
   const expanded = new Set();
   const spouseIds = new Set();
-  function place(id, asSpouse = false) {
+  const displayParentById = new Map();
+  function place(id, asSpouse = false, displayParentId = '') {
     if (!datedIds.has(id) || placed.has(id)) return;
     placed.add(id);
+    if (displayParentId) displayParentById.set(id, displayParentId);
     if (asSpouse) spouseIds.add(id);
     order.push(id);
   }
-  function visit(id) {
+  function visit(id, displayParentId = '') {
     if (!datedIds.has(id) || expanded.has(id)) return;
-    place(id);
+    place(id, false, displayParentId);
     expanded.add(id);
 
     const groups = new Map();
@@ -1321,17 +1300,20 @@ function renderTimeline() {
     orderedGroups.forEach(group => {
       const pendingChildren = group.childIds.filter(childId => !expanded.has(childId));
       if (!pendingChildren.length) return;
+      let householdParentId = id;
       if (group.partnerId) {
         groupedPartners.add(group.partnerId);
-        place(group.partnerId, true);
+        const partnerWasPlaced = placed.has(group.partnerId);
+        place(group.partnerId, true, id);
+        if (!partnerWasPlaced) householdParentId = group.partnerId;
       }
-      pendingChildren.forEach(visit);
+      pendingChildren.forEach(childId => visit(childId, householdParentId));
     });
 
     state.people[id].spouses
       .filter(partnerId => datedIds.has(partnerId) && !groupedPartners.has(partnerId))
       .sort(byBirth)
-      .forEach(partnerId => place(partnerId, true));
+      .forEach(partnerId => place(partnerId, true, id));
   }
   roots.forEach(visit);
   people.map(person => person.id).sort(byBirth).forEach(visit);
@@ -1377,44 +1359,7 @@ function renderTimeline() {
     const labelWidth = 48 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
     return { id, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth), isSpouse: spouseIds.has(id) };
   });
-  const layoutById = () => new Map(layoutNodes.map(node => [node.id, node]));
-  const buildCompactionLines = () => {
-    const positions = layoutById();
-    const lines = [];
-    families.forEach(family => {
-      const parentIds = family.parents.filter(id => positions.has(id));
-      const childIds = family.children.filter(id => positions.has(id));
-      if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
-      const recordedMarriageYear = parentIds.flatMap(id => parentIds.map(other => state.people[id]?.marriageYears?.[other])).map(numericYear).find(year => year != null);
-      const fallbackYear = childIds.length ? Math.min(...childIds.map(id => birthYear(state.people[id]))) - 4.5 : Math.max(...parentIds.map(id => birthYear(state.people[id]))) + 20;
-      const trunkX = xForYear(recordedMarriageYear ?? fallbackYear);
-      const parentYs = parentIds.map(id => positions.get(id).y + rowHeight / 2);
-      const childYs = childIds.map(id => positions.get(id).y + rowHeight / 2);
-      const transportedId = transportedParent(parentIds);
-      const isDivorced = marriageIsDivorced(parentIds);
-      parentIds.forEach(id => {
-        const pos = positions.get(id);
-        lines.push({ type: 'branch', x: Math.min(pos.x + 24, trunkX), y: pos.y + rowHeight / 2, w: Math.abs(trunkX - pos.x - 24), isDashed: false });
-      });
-      if (parentYs.length > 1) {
-        lines.push({ type: 'stem', x: trunkX, y: Math.min(...parentYs), h: Math.max(...parentYs) - Math.min(...parentYs), isDashed: Boolean(transportedId) || isDivorced });
-      }
-      const familyBaseY = parentYs.length > 1 ? Math.max(...parentYs) : parentYs[0];
-      if (childYs.length) {
-        const descendantYs = [familyBaseY, ...childYs];
-        if (Math.max(...descendantYs) > Math.min(...descendantYs)) lines.push({ type: 'stem', x: trunkX, y: Math.min(...descendantYs), h: Math.max(...descendantYs) - Math.min(...descendantYs), isDashed: false });
-      }
-      childIds.forEach(id => {
-        const pos = positions.get(id);
-        lines.push({ type: 'branch', x: Math.min(trunkX, pos.x + 1), y: pos.y + rowHeight / 2, w: Math.abs(pos.x + 1 - trunkX), isDashed: false });
-      });
-    });
-    return lines;
-  };
-  compactTimelineBranchesBottomUp(layoutNodes, buildCompactionLines(), rowHeight, rowStep);
-  compactTimelineRows(layoutNodes, rowStep);
-  compactTimelineBranchesBottomUp(layoutNodes, buildCompactionLines(), rowHeight, rowStep);
-  compactTimelineRows(layoutNodes, rowStep);
+  compactTimelineTidyContours(layoutNodes, displayParentById, rowHeight, rowStep);
   stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep);
 
   const width = Math.max(900, xForYear(maxYear) + 42);

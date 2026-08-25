@@ -1422,7 +1422,7 @@ function renderTimeline() {
     globalEvents.append(band);
     globalEvents.append(svg('line', { class: 'global-event-edge', x1: x, y1: 43, x2: x, y2: height - 18, stroke: color }));
     if (eventWidth > 2) globalEvents.append(svg('line', { class: 'global-event-edge', x1: x + eventWidth, y1: 43, x2: x + eventWidth, y2: height - 18, stroke: color }));
-    globalEvents.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, `${event.name} · ${formatEventYearRange(event.startYear, event.endYear)}`));
+    globalEvents.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, event.name));
   });
   canvas.append(globalEvents);
 
@@ -1487,13 +1487,11 @@ function renderTimeline() {
         group.append(mark);
         group.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1, stroke: eventColor }));
         group.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 1, x2: eventX + eventWidth, y2: rowHeight - 1, stroke: eventColor }));
-        if (isReignLabel(event.name)) group.append(svg('text', { class: 'reign-event-label', x: eventX + 4, y: 8, style: `fill:${eventColor}` }, yearLabel));
       } else {
         const mark = svg('line', { class: 'personal-event-point', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1, stroke: eventColor });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
         group.append(mark);
-        if (isReignLabel(event.name)) group.append(svg('text', { class: 'reign-event-label', x: eventX + 4, y: 8, style: `fill:${eventColor}` }, yearLabel));
       }
     });
     const hasChildren = person.children.some(childId => state.people[childId]);

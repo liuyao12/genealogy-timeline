@@ -136,7 +136,6 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .personal-event-range { pointer-events: none; }
 .personal-event-edge, .personal-event-point { stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
 .personal-event-point { stroke-width: 2.2; }
-.reign-event-label { fill: #000; stroke: rgba(255,255,255,.88); stroke-width: 2px; paint-order: stroke fill; font: 7.5px Consolas, monospace; pointer-events: none; }
 .timeline-expander .expander-box { fill: #000; stroke: #000; stroke-width: 1.5; }
 .timeline-expander.leaf .expander-box { fill: transparent; stroke-width: 3; }
 .timeline-expander:not(.leaf) { cursor: pointer; }

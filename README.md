@@ -4,7 +4,7 @@
 
 A desktop-first, static web version of the family-tree viewer. It works on GitHub Pages without a server or build step.
 
-The shared generational timeline is the interface. It remains a family tree: genealogical branches determine row order, while birth year and lifespan determine each profile's horizontal position and width. The interface and profile bars use a restrained monochrome palette, with line weight, dashes, and lightness carrying the visual distinctions. Names use a regular-weight face so more rows remain readable at once. The semitransparent five-year ruler sticks to the top while profiles pass behind it, and the canvas can be panned by dragging its empty background.
+The shared generational timeline is the interface. It remains a family tree: genealogical branches determine row order, while birth year and lifespan determine each profile's horizontal position and width. The interface stays monochrome, while profile lifespans use the mini-program's Geni-like blue (`#bbdefb`) and pink (`#fce4ec`). Names use a regular-weight face so more rows remain readable at once. The semitransparent five-year ruler sticks to the top while profiles pass behind it, and the canvas can be panned by dragging its empty background.
 
 The timeline receives all space not used by the compact left search column. That column lists only profiles matching the current keyword filter and reports the number of matches. Profile details do not reserve a permanent column: selecting a node or search result slides a monochrome editor over the right edge, and closing it immediately restores the unobstructed canvas.
 
@@ -39,6 +39,7 @@ Then open <http://localhost:4173>.
 - When a source supplies a display name, the app preserves and shows it in preference to reconstructing a name from separate fields. This keeps titles such as “King of England” searchable and visible on the timeline.
 - Tree ordering and line weight prioritize paternal descent while retaining maternal relationships as secondary dotted links.
 - Timeline labels keep the name and lifespan on one line. They do not display age.
+- Personal events are edited in the selected profile drawer. Global events are managed from the header's **Events** dialog and appear as bands behind the full timeline. Both kinds retain a user-selected colour in local storage and JSON backups.
 - Public-source imports use a small provider-adapter layer. Geni uses its documented `profile/immediate-family` API; WikiTree uses its public read-only `getRelatives` API. Geni now requires an OAuth access token even when the requested profiles are public.
 - Geni is the primary provider. A user-selected connection depth of 1–4 recursively follows permitted public immediate-family responses. Stable Geni profile IDs deduplicate overlaps, while parent, child, and partner arrays are unioned to stitch the responses into one graph. Imports stop at 160 profiles or 80 API requests.
 - The importer explicitly requests Geni profile `events` and returned detail strings in batches and recognizes the `Reign` label. A single year is drawn as a marker; a dated reign range is drawn as a monochrome band with boundary marks. Event enrichment is optional, so a restricted event request does not prevent the family graph from importing.

@@ -5,6 +5,8 @@ const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
+const DEFAULT_PERSONAL_EVENT_COLOR = '#5fa8d3';
+const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 
 function sessionValue(key, value) {
   try {
@@ -45,6 +47,7 @@ if (oauthCallback.accessToken || oauthCallback.status || oauthCallback.message) 
 const state = {
   title: 'Untitled family',
   people: {},
+  globalEvents: [],
   selectedId: '',
   rootId: '',
   zoom: 1,
@@ -54,16 +57,23 @@ const state = {
 };
 
 const els = Object.fromEntries([
-  'tree-title', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
+  'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'add-local-relative',
+  'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
+  'events-dialog', 'close-events-dialog', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
 
 function clean(value) { return value == null ? '' : String(value).trim(); }
+function normalizeColor(value, fallback) { return /^#[0-9a-f]{6}$/i.test(clean(value)) ? clean(value).toLowerCase() : fallback; }
+function uniqueId(prefix = 'id') {
+  const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}-${random}`;
+}
 function array(value) { return Array.isArray(value) ? value.filter(Boolean).map(String) : []; }
 function initials(person) {
   const parts = [person.firstName, person.lastName].filter(Boolean);
@@ -157,9 +167,32 @@ function normalizePersonalEvents(events) {
     const endDate = event?.end_date || date?.end || date?.to || {};
     const startYear = numericYear(event?.startYear ?? event?.start_year ?? startDate?.year ?? date?.start_year ?? date?.year ?? event?.year);
     const endYear = numericYear(event?.endYear ?? event?.end_year ?? endDate?.year ?? date?.end_year ?? date?.year ?? event?.year);
-    return { name, startYear, endYear: endYear ?? startYear, source: clean(event?.source || '') };
+    return {
+      name,
+      startYear,
+      endYear: endYear ?? startYear,
+      source: clean(event?.source || ''),
+      color: normalizeColor(event?.color, isReignLabel(name) ? '#d59a00' : DEFAULT_PERSONAL_EVENT_COLOR)
+    };
   }).filter(event => event.name && event.startYear != null);
   return [...new Map(normalized.map(event => [`${event.name.toLocaleLowerCase()}|${event.startYear}|${event.endYear}`, event])).values()];
+}
+
+function normalizeGlobalEvents(events) {
+  return (Array.isArray(events) ? events : []).map(event => {
+    const name = clean(event?.name || event?.title || event?.label);
+    const range = clean(event?.year || '').match(/(-?\d{1,4})(?:\s*(?:-|–|—|~|to)\s*(-?\d{1,4}))?/i);
+    const startYear = numericYear(event?.startYear ?? event?.start_year ?? range?.[1]);
+    const endYear = numericYear(event?.endYear ?? event?.end_year ?? range?.[2] ?? startYear);
+    if (!name || startYear == null) return null;
+    return {
+      id: clean(event?.id) || uniqueId('global'),
+      name,
+      startYear,
+      endYear: endYear ?? startYear,
+      color: normalizeColor(event?.color, DEFAULT_GLOBAL_EVENT_COLOR)
+    };
+  }).filter(Boolean);
 }
 
 function isReignLabel(value) {
@@ -225,7 +258,7 @@ function formatEventYearRange(startYear, endYear = startYear) {
 }
 
 function normalizePerson(source, fallbackId) {
-  const id = clean(source.id || fallbackId) || `local-${crypto.randomUUID()}`;
+  const id = clean(source.id || fallbackId) || uniqueId('local');
   const birth = source.birth || {};
   const death = source.death || {};
   const sourceUrl = validPublicUrl(source.sourceUrl || source.profile_url || source.profileUrl || '');
@@ -432,7 +465,7 @@ function createBritishRoyalSample() {
   };
   Object.entries(reigns).forEach(([slug, events]) => {
     if (!people[id(slug)]) return;
-    people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal' }));
+    people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal', color: '#d59a00' }));
   });
   return people;
 }
@@ -440,6 +473,7 @@ function createBritishRoyalSample() {
 function loadBritishRoyalExample({ persistResult = true } = {}) {
   const button = els['royal-example-button'];
   state.people = createBritishRoyalSample();
+  state.globalEvents = [];
   state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
   state.selectedId = '';
   state.ephemeral = false;
@@ -457,6 +491,7 @@ function restore() {
     const savedRootId = clean(saved.rootId);
     state.title = clean(saved.title) || state.title;
     state.rootId = savedRootId;
+    state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
     Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
   } catch { /* A malformed local cache should not prevent the app from opening. */ }
 }
@@ -466,7 +501,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -525,7 +560,7 @@ function refId(value) {
 function fetchGeniJsonp(path, params = {}) {
   if (!state.geniAccessToken) return Promise.reject(new Error('Geni OAuth authorization is required.'));
   return new Promise((resolve, reject) => {
-    const callbackName = `__lineageGeni${crypto.randomUUID().replace(/-/g, '')}`;
+    const callbackName = `__lineageGeni${uniqueId('callback').replace(/-/g, '')}`;
     const script = document.createElement('script');
     const timer = window.setTimeout(() => finish(new Error('Geni did not respond to the authorized request.')), 20000);
     function finish(error, payload) {
@@ -866,6 +901,7 @@ function importGedcom(text, fileName = 'GEDCOM tree') {
   });
   if (!Object.keys(people).length) throw new Error('No individual records were found in that GEDCOM file.');
   state.people = people;
+  state.globalEvents = normalizeGlobalEvents(payload.globalEvents || payload.timelineEvents || payload.db?.timelineEvents);
   state.rootId = Object.keys(people).find(id => !people[id].parents.length) || Object.keys(people)[0];
   state.selectedId = state.rootId;
   state.title = clean(fileName.replace(/\.(ged|gedcom)$/i, '')) || 'Imported family';
@@ -911,7 +947,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1249,6 +1285,25 @@ function renderTimeline() {
   ruler.append(rulerMarks);
   canvas.append(grid);
 
+  const globalEvents = svg('g', { class: 'global-events' });
+  state.globalEvents.forEach(event => {
+    const rawStartYear = numericYear(event.startYear);
+    const rawEndYear = numericYear(event.endYear) ?? rawStartYear;
+    if (rawStartYear == null || rawEndYear < minYear || rawStartYear > maxYear) return;
+    const startYear = Math.max(minYear, rawStartYear);
+    const endYear = Math.min(maxYear, rawEndYear);
+    const x = xForYear(startYear);
+    const eventWidth = Math.max(2, (Math.max(startYear, endYear) - startYear) * yearWidth);
+    const color = normalizeColor(event.color, DEFAULT_GLOBAL_EVENT_COLOR);
+    const band = svg('rect', { class: 'global-event-range', x, y: 43, width: eventWidth, height: height - 61, fill: color, 'fill-opacity': '.13' });
+    band.append(svg('title', {}, `${event.name} · ${formatEventYearRange(event.startYear, event.endYear)}`));
+    globalEvents.append(band);
+    globalEvents.append(svg('line', { class: 'global-event-edge', x1: x, y1: 43, x2: x, y2: height - 18, stroke: color }));
+    if (eventWidth > 2) globalEvents.append(svg('line', { class: 'global-event-edge', x1: x + eventWidth, y1: 43, x2: x + eventWidth, y2: height - 18, stroke: color }));
+    globalEvents.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, `${event.name} · ${formatEventYearRange(event.startYear, event.endYear)}`));
+  });
+  canvas.append(globalEvents);
+
   const connectors = svg('g', { class: 'timeline-connectors' });
   families.forEach(family => {
     const parentIds = family.parents.filter(id => positions.has(id));
@@ -1302,20 +1357,21 @@ function renderTimeline() {
       if (finish < start) return;
       const eventX = (start - birthYear(person)) * yearWidth;
       const eventWidth = Math.max(0, (finish - start) * yearWidth);
+      const eventColor = normalizeColor(event.color, isReignLabel(event.name) ? '#d59a00' : DEFAULT_PERSONAL_EVENT_COLOR);
       if (eventWidth > 0) {
-        const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 2, width: eventWidth, height: rowHeight - 4 });
+        const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 2, width: eventWidth, height: rowHeight - 4, fill: eventColor, 'fill-opacity': '.58' });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
         group.append(mark);
-        group.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1 }));
-        group.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 1, x2: eventX + eventWidth, y2: rowHeight - 1 }));
-        if (isReignLabel(event.name)) group.append(svg('text', { class: 'reign-event-label', x: eventX + 4, y: 8 }, yearLabel));
+        group.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1, stroke: eventColor }));
+        group.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 1, x2: eventX + eventWidth, y2: rowHeight - 1, stroke: eventColor }));
+        if (isReignLabel(event.name)) group.append(svg('text', { class: 'reign-event-label', x: eventX + 4, y: 8, style: `fill:${eventColor}` }, yearLabel));
       } else {
-        const mark = svg('line', { class: 'personal-event-point', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1 });
+        const mark = svg('line', { class: 'personal-event-point', x1: eventX, y1: 1, x2: eventX, y2: rowHeight - 1, stroke: eventColor });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
         group.append(mark);
-        if (isReignLabel(event.name)) group.append(svg('text', { class: 'reign-event-label', x: eventX + 4, y: 8 }, yearLabel));
+        if (isReignLabel(event.name)) group.append(svg('text', { class: 'reign-event-label', x: eventX + 4, y: 8, style: `fill:${eventColor}` }, yearLabel));
       }
     });
     const hasChildren = person.children.some(childId => state.people[childId]);
@@ -1364,6 +1420,70 @@ function renderPersonList() {
     return button;
   }));
 }
+
+function eventEditorRow(event, onColor, onDelete) {
+  const row = document.createElement('div');
+  row.className = 'event-editor-row';
+  const name = document.createElement('strong');
+  name.textContent = event.name;
+  const years = document.createElement('small');
+  years.textContent = formatEventYearRange(event.startYear, event.endYear);
+  const color = document.createElement('input');
+  color.type = 'color';
+  color.className = 'event-color-input';
+  color.value = normalizeColor(event.color, DEFAULT_PERSONAL_EVENT_COLOR);
+  color.setAttribute('aria-label', `Colour for ${event.name}`);
+  color.addEventListener('input', () => onColor(color.value));
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'event-delete';
+  remove.textContent = '×';
+  remove.setAttribute('aria-label', `Delete ${event.name}`);
+  remove.addEventListener('click', onDelete);
+  row.append(name, years, color, remove);
+  return row;
+}
+
+function renderPersonalEvents(person) {
+  const list = els['personal-events-list'];
+  if (!person?.personalEvents?.length) {
+    const empty = document.createElement('span');
+    empty.className = 'event-editor-empty';
+    empty.textContent = 'No personal events yet.';
+    list.replaceChildren(empty);
+    return;
+  }
+  list.replaceChildren(...person.personalEvents.map((event, index) => eventEditorRow(event, value => {
+    person.personalEvents[index].color = normalizeColor(value, DEFAULT_PERSONAL_EVENT_COLOR);
+    persist('Event colour saved');
+    render();
+  }, () => {
+    person.personalEvents.splice(index, 1);
+    persist('Personal event deleted');
+    render();
+  })));
+}
+
+function renderGlobalEventsEditor() {
+  const list = els['global-events-list'];
+  if (!state.globalEvents.length) {
+    const empty = document.createElement('span');
+    empty.className = 'event-editor-empty';
+    empty.textContent = 'No global events yet.';
+    list.replaceChildren(empty);
+    return;
+  }
+  list.replaceChildren(...state.globalEvents.map((event, index) => eventEditorRow(event, value => {
+    state.globalEvents[index].color = normalizeColor(value, DEFAULT_GLOBAL_EVENT_COLOR);
+    persist('Global event colour saved');
+    render();
+  }, () => {
+    state.globalEvents.splice(index, 1);
+    persist('Global event deleted');
+    render();
+  })));
+}
+
 function renderDetails() {
   const person = state.people[state.selectedId];
   const isOpen = !!person;
@@ -1387,6 +1507,7 @@ function renderDetails() {
   else sourceLink.removeAttribute('href');
   sourceLink.textContent = person.sourceUrl ? 'Open original profile ↗' : 'No profile linked';
   els['source-updated'].textContent = person.importedAt ? `Imported ${new Date(person.importedAt).toLocaleString()}.` : 'Add a source URL to preserve attribution.';
+  renderPersonalEvents(person);
   const isGeniProfile = person.sourceProvider === 'geni' && /^profile-/i.test(person.id);
   els['geni-family-actions'].hidden = !isGeniProfile;
   if (isGeniProfile) {
@@ -1411,7 +1532,7 @@ function render() {
   // SVG elements do not implement HTMLElement.hidden consistently; toggle the attribute explicitly.
   els['timeline-canvas'].toggleAttribute('hidden', !count);
   els['timeline-ruler'].toggleAttribute('hidden', !count);
-  renderPersonList(); renderTimeline(); renderDetails(); renderParentOptions();
+  renderPersonList(); renderTimeline(); renderDetails(); renderParentOptions(); renderGlobalEventsEditor();
 }
 
 els['source-form'].addEventListener('submit', async event => {
@@ -1439,6 +1560,30 @@ els['file-input'].addEventListener('change', async () => {
   els['file-input'].value = '';
 });
 els['export-button'].addEventListener('click', exportBackup);
+els['global-events-button'].addEventListener('click', () => {
+  renderGlobalEventsEditor();
+  els['events-dialog'].showModal();
+});
+els['close-events-dialog'].addEventListener('click', () => els['events-dialog'].close());
+els['add-global-event'].addEventListener('click', () => {
+  const name = clean(els['global-event-name'].value);
+  const startYear = numericYear(els['global-event-start'].value);
+  const endYear = numericYear(els['global-event-end'].value) ?? startYear;
+  if (!name || startYear == null) return toast('Enter a global event name and start year.', true);
+  state.globalEvents.push({
+    id: uniqueId('global'),
+    name,
+    startYear: Math.min(startYear, endYear),
+    endYear: Math.max(startYear, endYear),
+    color: normalizeColor(els['global-event-color'].value, DEFAULT_GLOBAL_EVENT_COLOR)
+  });
+  state.globalEvents.sort((a, b) => a.startYear - b.startYear || a.endYear - b.endYear);
+  els['global-event-name'].value = '';
+  els['global-event-start'].value = '';
+  els['global-event-end'].value = '';
+  persist('Global event added');
+  render();
+});
 function openAddPersonDialog(parentId = '') {
   const parent = state.people[parentId];
   if (parent?.sourceProvider === 'geni' && !parent.geniImmediateFamilyLoaded) {
@@ -1499,6 +1644,26 @@ els['load-immediate-family'].addEventListener('click', async () => {
   catch (error) { toast(error.message || 'Could not load this Geni family.', true); render(); }
 });
 els['add-local-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
+els['add-personal-event'].addEventListener('click', () => {
+  const person = state.people[state.selectedId];
+  if (!person) return;
+  const name = clean(els['personal-event-name'].value);
+  const startYear = numericYear(els['personal-event-start'].value);
+  const endYear = numericYear(els['personal-event-end'].value) ?? startYear;
+  if (!name || startYear == null) return toast('Enter a personal event name and start year.', true);
+  person.personalEvents = normalizePersonalEvents([...person.personalEvents, {
+    name,
+    startYear: Math.min(startYear, endYear),
+    endYear: Math.max(startYear, endYear),
+    color: normalizeColor(els['personal-event-color'].value, DEFAULT_PERSONAL_EVENT_COLOR),
+    source: 'local'
+  }]);
+  els['personal-event-name'].value = '';
+  els['personal-event-start'].value = '';
+  els['personal-event-end'].value = '';
+  persist('Personal event added');
+  render();
+});
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.selectedId && !els['add-dialog'].open) {
     state.selectedId = '';
@@ -1531,7 +1696,7 @@ els['add-person-button'].addEventListener('click', () => {
 });
 els['add-form'].addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
-  event.preventDefault(); const data = new FormData(event.currentTarget); const id = `local-${crypto.randomUUID()}`;
+  event.preventDefault(); const data = new FormData(event.currentTarget); const id = uniqueId('local');
   const person = normalizePerson({ id, ...Object.fromEntries(data.entries()) }, id);
   const parentId = clean(data.get('parentId'));
   if (parentId && state.people[parentId]) { person.parents = [parentId]; state.people[parentId].children = unique([...state.people[parentId].children, id]); }

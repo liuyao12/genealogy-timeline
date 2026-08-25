@@ -27,6 +27,7 @@
 
       <div class="header-actions">
         <span class="privacy-pill"><span class="status-dot"></span> Stored on this device</span>
+        <button class="button secondary" id="global-events-button" type="button">Events</button>
         <button class="button secondary" id="import-file-button" type="button">Import file</button>
         <button class="button primary" id="export-button" type="button">Export</button>
         <input id="file-input" type="file" accept="application/json,.json,.ged,.gedcom,text/plain" hidden>
@@ -136,6 +137,18 @@
             <label>Place<input name="place" autocomplete="off"></label>
             <label>Profile note<textarea name="note" rows="4"></textarea></label>
 
+            <div class="event-editor-section">
+              <span class="eyebrow">Personal events</span>
+              <div class="event-editor-list" id="personal-events-list"></div>
+              <div class="event-add-row personal-event-add-row">
+                <input id="personal-event-name" type="text" placeholder="Event name" aria-label="Personal event name">
+                <input id="personal-event-start" type="text" inputmode="numeric" placeholder="Start" aria-label="Personal event start year">
+                <input id="personal-event-end" type="text" inputmode="numeric" placeholder="End" aria-label="Personal event end year">
+                <input id="personal-event-color" class="event-color-input" type="color" value="#5fa8d3" aria-label="Personal event colour">
+                <button class="icon-button" id="add-personal-event" type="button" aria-label="Add personal event">+</button>
+              </div>
+            </div>
+
             <div class="provenance-box">
               <span class="eyebrow">Source provenance</span>
               <div class="provenance-row">
@@ -189,7 +202,25 @@
     </form>
   </dialog>
 
+  <dialog id="events-dialog">
+    <div class="dialog-card">
+      <div class="dialog-heading">
+        <div><span class="eyebrow">Across the timeline</span><h2>Global events</h2></div>
+        <button class="close-detail" id="close-events-dialog" type="button" aria-label="Close">×</button>
+      </div>
+      <p class="dialog-intro">Global events appear behind every profile. Choose any colour; the rest of the interface remains monochrome.</p>
+      <div class="event-editor-list global-event-list" id="global-events-list"></div>
+      <div class="event-add-row global-event-add-row">
+        <input id="global-event-name" type="text" placeholder="Event name" aria-label="Global event name">
+        <input id="global-event-start" type="text" inputmode="numeric" placeholder="Start" aria-label="Global event start year">
+        <input id="global-event-end" type="text" inputmode="numeric" placeholder="End" aria-label="Global event end year">
+        <input id="global-event-color" class="event-color-input" type="color" value="#c2892b" aria-label="Global event colour">
+        <button class="button primary" id="add-global-event" type="button">Add event</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=18"></script>
+  <script type="module" src="./app.js?v=20"></script>
 </body>
 </html>

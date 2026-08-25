@@ -13,6 +13,7 @@ const EVENT_COLOR_PALETTE = [
 const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
+const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
 
 function sessionValue(key, value) {
   try {
@@ -59,6 +60,7 @@ const state = {
   zoom: 1,
   ephemeral: false,
   reignColor: DEFAULT_REIGN_EVENT_COLOR,
+  timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
   geniAccessToken: initialGeniAccessToken,
   collapsedIds: new Set()
 };
@@ -71,7 +73,7 @@ const els = Object.fromEntries([
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'add-local-relative',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
-  'events-dialog', 'close-events-dialog', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
+  'events-dialog', 'close-events-dialog', 'timeline-scale', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
 
@@ -80,6 +82,10 @@ function normalizeColor(value, fallback) { return /^#[0-9a-f]{6}$/i.test(clean(v
 function paletteColor(value, fallback) {
   const normalized = normalizeColor(value, fallback);
   return EVENT_COLOR_PALETTE.some(([candidate]) => candidate === normalized) ? normalized : fallback;
+}
+function timelineYearWidth(value) {
+  const width = Number(value);
+  return [3, 4, 5, 6, 8].includes(width) ? width : DEFAULT_TIMELINE_YEAR_WIDTH;
 }
 function uniqueId(prefix = 'id') {
   const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -605,6 +611,7 @@ function restore() {
     state.title = clean(saved.title) || state.title;
     state.rootId = savedRootId;
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
+    state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
     Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
   } catch { /* A malformed local cache should not prevent the app from opening. */ }
@@ -615,7 +622,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1053,6 +1060,7 @@ function importBackup(payload) {
   const rawPeople = payload.people || payload.db?.people;
   if (!rawPeople || typeof rawPeople !== 'object') throw new Error('This file does not contain a supported people collection.');
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
+  state.timelineYearWidth = timelineYearWidth(payload.timelineYearWidth || payload.db?.timelineYearWidth);
   const people = {};
   Object.entries(rawPeople).forEach(([id, source]) => { people[id] = normalizePerson(source, id); });
   // The mini-program stores children/spouses on profiles. Reconstruct reverse parent links for the web layout.
@@ -1082,7 +1090,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1242,7 +1250,7 @@ function renderTimeline() {
   }
 
   const currentYear = new Date().getFullYear();
-  const yearWidth = 6;
+  const yearWidth = state.timelineYearWidth;
   const rowHeight = 36;
   const rowStep = 42;
   const top = 58;
@@ -1370,20 +1378,17 @@ function renderTimeline() {
   ruler.style.transform = `scaleX(${state.zoom})`;
   const positions = new Map(layoutNodes.map(node => [node.id, { x: node.x, y: top + node.y }]));
 
-  const grid = svg('g', { class: 'timeline-grid' });
   const rulerMarks = svg('g');
   rulerMarks.append(svg('rect', { x: 0, y: 0, width, height: 43, class: 'ruler-band' }));
   for (let year = minYear; year <= maxYear; year += 5) {
     const x = xForYear(year);
     const isMajor = year % 20 === 0;
     const isDecade = year % 10 === 0;
-    if (isMajor) grid.append(svg('line', { x1: x, y1: 43, x2: x, y2: height - 18, class: 'year-grid-line' }));
     rulerMarks.append(svg('line', { x1: x, y1: isMajor ? 29 : isDecade ? 33 : 36, x2: x, y2: 43, class: `year-tick ${isMajor ? 'major' : isDecade ? 'decade' : 'minor'}` }));
     if (isDecade) rulerMarks.append(svg('text', { x, y: 22, 'text-anchor': 'middle', class: isMajor ? 'major-label' : 'decade-label' }, String(year)));
   }
   rulerMarks.append(svg('line', { x1: left, y1: 43, x2: xForYear(maxYear), y2: 43, class: 'ruler-line' }));
   ruler.append(rulerMarks);
-  canvas.append(grid);
 
   const globalEvents = svg('g', { class: 'global-events' });
   state.globalEvents.forEach(event => {
@@ -1754,10 +1759,16 @@ els['file-input'].addEventListener('change', async () => {
 });
 els['export-button'].addEventListener('click', exportBackup);
 els['global-events-button'].addEventListener('click', () => {
+  els['timeline-scale'].value = String(state.timelineYearWidth);
   renderGlobalEventsEditor();
   els['events-dialog'].showModal();
 });
 els['close-events-dialog'].addEventListener('click', () => els['events-dialog'].close());
+els['timeline-scale'].addEventListener('change', () => {
+  state.timelineYearWidth = timelineYearWidth(els['timeline-scale'].value);
+  persist('Timeline scale updated');
+  render();
+});
 els['add-global-event'].addEventListener('click', () => {
   const name = clean(els['global-event-name'].value);
   const startYear = numericYear(els['global-event-start'].value);

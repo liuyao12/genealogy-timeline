@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light">
   <meta name="description" content="Lineage places family trees on a shared timeline, revealing genealogy against the backdrop of history.">
   <title>Lineage · Genealogy against the backdrop of history</title>
-  <link rel="stylesheet" href="./styles.css?v=23">
+  <link rel="stylesheet" href="./styles.css?v=25">
 </head>
 <body>
   <div class="app-shell">
@@ -27,7 +27,7 @@
 
       <div class="header-actions">
         <span class="privacy-pill"><span class="status-dot"></span> Stored on this device</span>
-        <button class="button secondary" id="global-events-button" type="button">Events</button>
+        <button class="button secondary" id="global-events-button" type="button">Timeline</button>
         <button class="button secondary" id="import-file-button" type="button">Import file</button>
         <button class="button primary" id="export-button" type="button">Export</button>
         <input id="file-input" type="file" accept="application/json,.json,.ged,.gedcom,text/plain" hidden>
@@ -205,10 +205,12 @@
   <dialog id="events-dialog">
     <div class="dialog-card">
       <div class="dialog-heading">
-        <div><span class="eyebrow">Across the timeline</span><h2>Global events</h2></div>
+        <div><span class="eyebrow">Across the timeline</span><h2>Timeline settings</h2></div>
         <button class="close-detail" id="close-events-dialog" type="button" aria-label="Close">×</button>
       </div>
-      <p class="dialog-intro">Global events appear behind every profile. Choose from the shared event palette; the rest of the interface remains monochrome.</p>
+      <label class="timeline-scale-setting"><span>Horizontal scale</span><select id="timeline-scale"><option value="3">Compact · 3 px/year</option><option value="4" selected>Default · 4 px/year</option><option value="5">Roomy · 5 px/year</option><option value="6">Wide · 6 px/year</option><option value="8">Extra wide · 8 px/year</option></select></label>
+      <p class="dialog-intro">The ruler always keeps five-year marks. Global events appear behind every profile.</p>
+      <span class="eyebrow">Global events</span>
       <div class="event-editor-list global-event-list" id="global-events-list"></div>
       <div class="event-add-row global-event-add-row">
         <input id="global-event-name" type="text" placeholder="Event name" aria-label="Global event name">
@@ -221,6 +223,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=24"></script>
+  <script type="module" src="./app.js?v=25"></script>
 </body>
 </html>

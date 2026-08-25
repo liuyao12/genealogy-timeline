@@ -14,6 +14,8 @@ Timeline rows use the mini-program's two-pass bottom-up compaction approach. Bra
 
 Within each branch, rows are ordered by parental union rather than collecting all spouses beside the principal profile. Each spouse appears immediately before that couple's children; a later spouse begins a new group with its own marriage-aligned vertical stem.
 
+A profile occupying a spouse position uses an italic label and the genealogical marriage symbol `⚭` in place of the branch expand/collapse square. When that same person appears in their own birth branch, the ordinary node styling and branch control are retained.
+
 Confirmed spouses and former spouses are always included in the timeline and in filtered connecting paths. Geni unions recorded only as partners, engagements, or other non-marital relationships are retained as parentage facts but their profiles and union lines are hidden.
 
 Selecting any bundled node opens its editable local copy. **Load complete immediate family** is the first action that requires Geni authorization; after OAuth returns, the app merges the selected profile's current public parents, spouses, children, union dates, and newly encountered profiles by Geni ID. A local relative can be attached to that Geni profile only after this immediate-family step has completed. The resulting working tree, including imported records and local edits, is saved in `localStorage`.

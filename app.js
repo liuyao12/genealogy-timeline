@@ -1499,7 +1499,8 @@ function renderTimeline() {
     const pos = positions.get(id);
     const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
     const hasReign = reignEvents(person).length > 0;
-    const group = svg('g', { class: `timeline-node ${person.gender} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${hasReign ? ', reigning monarch' : ''}` });
+    const isSpouseNode = spouseIds.has(id);
+    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
     group.append(svg('rect', { class: 'lifespan', x: 0, y: 0, width: lifespanWidth, height: rowHeight }));
     person.personalEvents.forEach(event => {
@@ -1525,15 +1526,20 @@ function renderTimeline() {
     });
     const hasChildren = person.children.some(childId => state.people[childId]);
     const isCollapsed = state.collapsedIds.has(id);
-    const icon = svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' });
-    icon.append(svg('rect', { class: 'expander-box', x: 15, y: 9, width: 18, height: 18, rx: 3 }));
-    if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 24, y: 18 }, isCollapsed ? '+' : '−'));
+    const icon = isSpouseNode
+      ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })
+      : svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' });
+    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 24, y: 19 }, '⚭'));
+    else {
+      icon.append(svg('rect', { class: 'expander-box', x: 15, y: 9, width: 18, height: 18, rx: 3 }));
+      if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 24, y: 18 }, isCollapsed ? '+' : '−'));
+    }
     const toggleBranch = event => {
       event.stopPropagation();
       if (isCollapsed) state.collapsedIds.delete(id); else state.collapsedIds.add(id);
       render();
     };
-    if (hasChildren) {
+    if (hasChildren && !isSpouseNode) {
       icon.addEventListener('click', toggleBranch);
       icon.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') toggleBranch(event); });
     }

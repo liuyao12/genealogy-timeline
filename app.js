@@ -1240,13 +1240,13 @@ function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
 // rather than assigning every node a permanently distinct row. This rotated
 // adaptation keeps time on x, preserves each depth-first household block, and
 // lifts that block into the earliest y-space where its occupied x-ranges fit.
-function compactTimelineTidyContours(nodes, displayParentById, rowHeight, rowStep) {
+function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowStep) {
   if (nodes.length < 2) return;
-  const indexById = new Map(nodes.map((node, index) => [node.id, index]));
+  const indexByKey = new Map(nodes.map((node, index) => [node.key, index]));
   const childrenByIndex = new Map(nodes.map((_, index) => [index, []]));
   const parentIndexByIndex = new Map();
   nodes.forEach((node, index) => {
-    const parentIndex = indexById.get(displayParentById.get(node.id));
+    const parentIndex = indexByKey.get(displayParentByKey.get(node.key));
     if (parentIndex == null || parentIndex >= index) return;
     parentIndexByIndex.set(index, parentIndex);
     childrenByIndex.get(parentIndex).push(index);
@@ -1345,6 +1345,19 @@ function renderTimeline() {
 
   // Row order follows the family. Time controls only horizontal position and width.
   const datedIds = new Set(people.map(person => person.id));
+  const descendantsOfRoot = new Set();
+  const descendantQueue = state.people[state.rootId] ? [state.rootId] : [];
+  while (descendantQueue.length) {
+    const id = descendantQueue.shift();
+    if (descendantsOfRoot.has(id)) continue;
+    descendantsOfRoot.add(id);
+    descendantQueue.push(...(state.people[id]?.children || []));
+  }
+  const familyKey = parentIds => [...parentIds].sort().join('|');
+  const transportedParent = parentIds => {
+    if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id))) return '';
+    return parentIds.find(id => state.people[id]?.gender === 'female') || parentIds[1];
+  };
   const childrenByParent = new Map();
   people.forEach(person => person.parents.forEach(parentId => {
     if (!datedIds.has(parentId)) return;
@@ -1359,11 +1372,11 @@ function renderTimeline() {
   const placed = new Set();
   const expanded = new Set();
   const spouseIds = new Set();
-  const displayParentById = new Map();
+  const displayParentByKey = new Map();
   function place(id, asSpouse = false, displayParentId = '') {
     if (!datedIds.has(id) || placed.has(id)) return;
     placed.add(id);
-    if (displayParentId) displayParentById.set(id, displayParentId);
+    if (displayParentId) displayParentByKey.set(id, displayParentId);
     if (asSpouse) spouseIds.add(id);
     order.push(id);
   }
@@ -1389,12 +1402,19 @@ function renderTimeline() {
     orderedGroups.forEach(group => {
       const pendingChildren = group.childIds.filter(childId => !expanded.has(childId));
       if (!pendingChildren.length) return;
+      const transportedId = group.partnerId ? transportedParent([id, group.partnerId]) : '';
+      // A cousin-marriage household is rendered on the non-transported side.
+      // The transported spouse retains their primary occurrence in the natal
+      // branch; an auxiliary spouse occurrence is inserted below.
+      if (transportedId === id) return;
       let householdParentId = id;
       if (group.partnerId) {
         groupedPartners.add(group.partnerId);
-        const partnerWasPlaced = placed.has(group.partnerId);
-        place(group.partnerId, true, id);
-        if (!partnerWasPlaced) householdParentId = group.partnerId;
+        if (!transportedId) {
+          const partnerWasPlaced = placed.has(group.partnerId);
+          place(group.partnerId, true, id);
+          if (!partnerWasPlaced) householdParentId = group.partnerId;
+        }
       }
       pendingChildren.forEach(childId => visit(childId, householdParentId));
     });
@@ -1402,12 +1422,15 @@ function renderTimeline() {
     state.people[id].spouses
       .filter(partnerId => datedIds.has(partnerId) && !groupedPartners.has(partnerId))
       .sort(byBirth)
-      .forEach(partnerId => place(partnerId, true, id));
+      .forEach(partnerId => {
+        const transportedId = transportedParent([id, partnerId]);
+        if (transportedId === id || transportedId === partnerId) return;
+        place(partnerId, true, id);
+      });
   }
   roots.forEach(visit);
   people.map(person => person.id).sort(byBirth).forEach(visit);
 
-  const familyKey = parentIds => [...parentIds].sort().join('|');
   const families = new Map();
   people.forEach(child => {
     const parentIds = child.parents.filter(id => datedIds.has(id));
@@ -1422,33 +1445,35 @@ function renderTimeline() {
     if (!families.has(key)) families.set(key, { parents: [person.id, partnerId], children: [] });
   }));
 
-  // A spouse who is also descended from the active root already has a natal
-  // position in the tree. Treat that second appearance as a transported branch,
-  // matching the mini-program's cousin-marriage convention.
-  const descendantsOfRoot = new Set();
-  const descendantQueue = state.people[state.rootId] ? [state.rootId] : [];
-  while (descendantQueue.length) {
-    const id = descendantQueue.shift();
-    if (descendantsOfRoot.has(id)) continue;
-    descendantsOfRoot.add(id);
-    descendantQueue.push(...(state.people[id]?.children || []));
-  }
-  const transportedParent = parentIds => {
-    if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id))) return '';
-    return parentIds.find(id => state.people[id]?.gender === 'female') || parentIds[1];
-  };
   const marriageIsDivorced = parentIds => parentIds.some(id =>
     parentIds.some(other => other !== id && state.people[id]?.divorcedSpouses?.includes(other))
   );
 
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
-  const layoutNodes = order.map((id, index) => {
-    const person = state.people[id];
+  const layoutEntries = order.map(id => ({ key: id, id, isSpouse: spouseIds.has(id), isTransportedCopy: false }));
+  const transportKeyByFamily = new Map();
+  [...families.entries()].forEach(([key, family]) => {
+    const parentIds = family.parents.filter(id => datedIds.has(id));
+    const transportedId = transportedParent(parentIds);
+    if (!transportedId) return;
+    const otherParentId = parentIds.find(id => id !== transportedId);
+    const copyKey = `transport:${key}:${transportedId}`;
+    const childIndexes = family.children.map(childId => layoutEntries.findIndex(entry => entry.key === childId)).filter(index => index >= 0);
+    const otherParentIndex = layoutEntries.findIndex(entry => entry.key === otherParentId);
+    const insertAt = childIndexes.length ? Math.min(...childIndexes) : Math.max(0, otherParentIndex + 1);
+    layoutEntries.splice(insertAt, 0, { key: copyKey, id: transportedId, isSpouse: true, isTransportedCopy: true, familyKey: key });
+    family.children.forEach(childId => displayParentByKey.set(childId, copyKey));
+    if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
+    transportKeyByFamily.set(key, copyKey);
+  });
+
+  const layoutNodes = layoutEntries.map((entry, index) => {
+    const person = state.people[entry.id];
     const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
     const labelWidth = 48 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
-    return { id, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth), isSpouse: spouseIds.has(id) };
+    return { ...entry, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth) };
   });
-  compactTimelineTidyContours(layoutNodes, displayParentById, rowHeight, rowStep);
+  compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep);
   stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep);
 
   const width = Math.max(900, xForYear(maxYear) + 42);
@@ -1457,7 +1482,7 @@ function renderTimeline() {
   ruler.toggleAttribute('hidden', false);
   ruler.setAttribute('width', width); ruler.setAttribute('height', 43); ruler.setAttribute('viewBox', `0 0 ${width} 43`);
   ruler.style.transform = `scaleX(${state.zoom})`;
-  const positions = new Map(layoutNodes.map(node => [node.id, { x: node.x, y: top + node.y }]));
+  const positions = new Map(layoutNodes.map(node => [node.key, { x: node.x, y: top + node.y }]));
 
   const rulerMarks = svg('g');
   rulerMarks.append(svg('rect', { x: 0, y: 0, width, height: 43, class: 'ruler-band' }));
@@ -1492,8 +1517,11 @@ function renderTimeline() {
 
   const connectors = svg('g', { class: 'timeline-connectors' });
   const marriageOverlaysByParent = new Map();
-  families.forEach(family => {
+  families.forEach((family, key) => {
     const parentIds = family.parents.filter(id => positions.has(id));
+    const transportedId = transportedParent(parentIds);
+    const transportedCopyKey = transportKeyByFamily.get(key) || '';
+    const parentKeys = parentIds.map(id => id === transportedId && transportedCopyKey ? transportedCopyKey : id);
     const childIds = family.children.filter(id => positions.has(id));
     if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
     const recordedMarriageYear = parentIds.map(id => parentIds.map(other => state.people[id]?.marriageYears?.[other])).flat().map(numericYear).find(year => year != null);
@@ -1502,30 +1530,29 @@ function renderTimeline() {
       : Math.max(...parentIds.map(id => birthYear(state.people[id]))) + 20;
     const junctionYear = recordedMarriageYear ?? fallbackYear;
     const trunkX = xForYear(junctionYear);
-    const parentYs = parentIds.map(id => positions.get(id).y + rowHeight / 2);
+    const parentYs = parentKeys.map(parentKey => positions.get(parentKey).y + rowHeight / 2);
     const childYs = childIds.map(id => positions.get(id).y + rowHeight / 2);
     const hasPaternalParent = parentIds.some(id => state.people[id]?.gender === 'male');
     const stemClass = hasPaternalParent ? 'paternal' : 'maternal';
-    const transportedId = transportedParent(parentIds);
     const isDivorced = marriageIsDivorced(parentIds);
-    const marriageClass = transportedId ? 'transport' : isDivorced ? 'divorced' : stemClass;
-    parentIds.forEach(id => {
-      const pos = positions.get(id);
+    const marriageClass = isDivorced ? 'divorced' : stemClass;
+    parentIds.forEach((id, parentIndex) => {
+      const pos = positions.get(parentKeys[parentIndex]);
       const lineage = state.people[id]?.gender === 'male' ? 'paternal' : 'maternal';
       connectors.append(svg('path', { d: `M ${pos.x + 24} ${pos.y + rowHeight / 2} H ${trunkX}`, class: `timeline-edge horizontal ${lineage}` }));
     });
     if (parentYs.length > 1 && Math.max(...parentYs) > Math.min(...parentYs)) {
       const marriageLine = svg('line', { x1: trunkX, y1: Math.min(...parentYs), x2: trunkX, y2: Math.max(...parentYs), class: `timeline-edge family-stem vertical ${marriageClass}`, 'data-marriage-year': recordedMarriageYear || '' });
-      if (transportedId) marriageLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from their birth branch to this marriage`));
-      else if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => fullName(state.people[id])).join(' and ')}`));
+      if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => fullName(state.people[id])).join(' and ')}`));
       connectors.append(marriageLine);
     }
     // The continuous stem stays behind the whole tree. Repaint only the two
     // short sections that cross the married profiles when the year is known.
     if (recordedMarriageYear != null && parentIds.length === 2) {
-      parentIds.forEach(parentId => {
-        if (!marriageOverlaysByParent.has(parentId)) marriageOverlaysByParent.set(parentId, []);
-        marriageOverlaysByParent.get(parentId).push({
+      parentIds.forEach((parentId, parentIndex) => {
+        const parentKey = parentKeys[parentIndex];
+        if (!marriageOverlaysByParent.has(parentKey)) marriageOverlaysByParent.set(parentKey, []);
+        marriageOverlaysByParent.get(parentKey).push({
           x: trunkX,
           year: recordedMarriageYear,
           className: marriageClass,
@@ -1549,19 +1576,35 @@ function renderTimeline() {
       connectors.append(svg('rect', { x: trunkX - 3, y: markerY - 3, width: 6, height: 6, transform: `rotate(45 ${trunkX} ${markerY})`, class: 'marriage-marker' }));
       connectors.append(svg('title', {}, `Married ${recordedMarriageYear}`));
     }
+
+    if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
+      const natal = positions.get(transportedId);
+      const transported = positions.get(transportedCopyKey);
+      const transportX = natal.x + 24;
+      const natalY = natal.y + rowHeight / 2;
+      const transportedY = transported.y + rowHeight / 2;
+      const transportLine = svg('line', {
+        x1: transportX, y1: Math.min(natalY, transportedY),
+        x2: transportX, y2: Math.max(natalY, transportedY),
+        class: 'timeline-edge transport vertical'
+      });
+      transportLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from the biological family branch to this marriage`));
+      connectors.append(transportLine);
+    }
   });
   canvas.append(connectors);
 
   const nodeDefs = svg('defs');
   canvas.append(nodeDefs);
 
-  order.forEach((id, nodeIndex) => {
+  layoutNodes.forEach((layoutNode, nodeIndex) => {
+    const { id, key: nodeKey } = layoutNode;
     const person = state.people[id];
-    const pos = positions.get(id);
+    const pos = positions.get(nodeKey);
     const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
     const hasReign = reignEvents(person).length > 0;
-    const isSpouseNode = spouseIds.has(id);
-    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    const isSpouseNode = layoutNode.isSpouse;
+    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
     group.append(svg('rect', { class: 'lifespan', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
     const eventClipId = `node-events-${nodeIndex}`;
@@ -1597,7 +1640,7 @@ function renderTimeline() {
     // Marriage stems cross above both spouse boxes, including their borders,
     // so each stem reads as one uninterrupted line down to its children. Text
     // and controls are painted afterward to remain legible and interactive.
-    (marriageOverlaysByParent.get(id) || []).forEach(marriage => {
+    (marriageOverlaysByParent.get(nodeKey) || []).forEach(marriage => {
       const localX = marriage.x - pos.x;
       if (localX < 0 || localX > lifespanWidth) return;
       const overlay = svg('line', {

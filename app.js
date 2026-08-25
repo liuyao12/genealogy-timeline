@@ -2,6 +2,7 @@ const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
 const GENI_TOKEN_SESSION_KEY = 'lineage-geni-access-token';
 const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
+const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
 
@@ -29,6 +30,10 @@ if (oauthCallback.accessToken) {
   sessionValue(GENI_TOKEN_SESSION_KEY, oauthCallback.accessToken);
   sessionValue(GENI_OAUTH_PENDING_KEY, null);
 }
+if (oauthCallback.status) {
+  sessionValue(GENI_OAUTH_PENDING_KEY, null);
+  sessionValue(GENI_IMPORT_INTENT_KEY, null);
+}
 const initialGeniAccessToken = oauthCallback.accessToken || sessionValue(GENI_TOKEN_SESSION_KEY);
 if (oauthCallback.accessToken || oauthCallback.status || oauthCallback.message) {
   const cleanUrl = new URL(location.href);
@@ -51,7 +56,7 @@ const state = {
 const els = Object.fromEntries([
   'tree-title', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
-  'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-geni-button', 'empty-file-button',
+  'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
@@ -399,7 +404,7 @@ function createBritishRoyalSample() {
 async function loadBritishRoyalExample() {
   const button = els['royal-example-button'];
   button.disabled = true;
-  button.textContent = '♔ Growing latest Geni tree…';
+  button.textContent = '♔ Importing Henry VII descendants…';
   state.people = {};
   state.rootId = '';
   state.selectedId = '';
@@ -414,13 +419,14 @@ async function loadBritishRoyalExample() {
     const appId = clean(document.querySelector('meta[name="geni-app-id"]')?.content);
     if (!appId) {
       button.disabled = false;
-      button.textContent = '♔ Reload latest Henry VII tree';
+      button.textContent = '♔ Import Henry VII descendants from Geni';
       throw new Error('Live Geni loading needs the public Geni application ID in the geni-app-id meta tag.');
     }
     const redirectUri = `${location.origin}${location.pathname}`;
     const pendingSince = Number(sessionValue(GENI_OAUTH_PENDING_KEY));
     if (pendingSince && Date.now() - pendingSince < 120000) {
       sessionValue(GENI_OAUTH_PENDING_KEY, null);
+      sessionValue(GENI_IMPORT_INTENT_KEY, null);
       throw new Error('Geni returned without an access token. Authorization was stopped to prevent a redirect loop.');
     }
     const authorize = new URL('https://www.geni.com/platform/oauth/authorize');
@@ -428,6 +434,7 @@ async function loadBritishRoyalExample() {
     authorize.searchParams.set('redirect_uri', redirectUri);
     authorize.searchParams.set('response_type', 'token');
     sessionValue(GENI_OAUTH_PENDING_KEY, String(Date.now()));
+    sessionValue(GENI_IMPORT_INTENT_KEY, 'henry-vii');
     location.assign(authorize.href);
     return;
   }
@@ -442,7 +449,7 @@ async function loadBritishRoyalExample() {
     throw error;
   } finally {
     button.disabled = false;
-    button.textContent = '♔ Reload latest Henry VII tree';
+    button.textContent = '♔ Import Henry VII descendants from Geni';
   }
 }
 
@@ -1368,7 +1375,8 @@ els['file-input'].addEventListener('change', async () => {
   els['file-input'].value = '';
 });
 els['export-button'].addEventListener('click', exportBackup);
-els['empty-geni-button'].addEventListener('click', () => { els['source-input'].focus(); els['source-input'].scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+function openAddPersonDialog() { els['add-dialog'].showModal(); }
+els['empty-add-person-button'].addEventListener('click', openAddPersonDialog);
 els['royal-example-button'].addEventListener('click', async () => {
   if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with the British royal example? Export first if you want to keep it.')) return;
   try { await loadBritishRoyalExample(); }
@@ -1440,7 +1448,7 @@ els['delete-person'].addEventListener('click', () => {
   state.rootId = state.rootId === id ? Object.keys(state.people)[0] || '' : state.rootId; state.selectedId = '';
   persist('Profile deleted'); render();
 });
-els['add-person-button'].addEventListener('click', () => els['add-dialog'].showModal());
+els['add-person-button'].addEventListener('click', openAddPersonDialog);
 els['add-form'].addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault(); const data = new FormData(event.currentTarget); const id = `local-${crypto.randomUUID()}`;
@@ -1452,8 +1460,11 @@ els['add-form'].addEventListener('submit', event => {
 });
 
 restore();
-if (Object.keys(state.people).length) render();
-else loadBritishRoyalExample().catch(error => {
-  toast(`${error.message} No cached royal data was used.`, true);
-  render();
-});
+render();
+if (initialGeniAccessToken && sessionValue(GENI_IMPORT_INTENT_KEY) === 'henry-vii') {
+  sessionValue(GENI_IMPORT_INTENT_KEY, null);
+  loadBritishRoyalExample().catch(error => {
+    toast(`${error.message} No cached royal data was used.`, true);
+    render();
+  });
+}

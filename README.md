@@ -8,6 +8,8 @@ The shared generational timeline is the interface. It remains a family tree: gen
 
 The timeline receives all space not used by the compact left search column. That column lists only profiles matching the current keyword filter and reports the number of matches. Profile details do not reserve a permanent column: selecting a node or search result slides a monochrome editor over the right edge, and closing it immediately restores the unobstructed canvas.
 
+A fresh visit starts locally and does not contact Geni or open authorization. The empty state invites the user to add the first profile, and subsequent profiles can be added one at a time with a selected parent. The explicit **Import Henry VII descendants from Geni** button in the left column records that import intent, starts OAuth, and resumes the live import only after Geni returns an access token.
+
 Timeline rows use the mini-program's two-pass bottom-up compaction approach. Branches move upward in half-row steps when their lifespan-plus-label ranges fit, retain a half-row of breathing room, and stay put whenever a node or external connector would be crossed. A final stable-order pass prevents compaction from moving unrelated profiles between a spouse and that union's children.
 
 Within each branch, rows are ordered by parental union rather than collecting all spouses beside the principal profile. Each spouse appears immediately before that couple's children; a later spouse begins a new group with its own marriage-aligned vertical stem.

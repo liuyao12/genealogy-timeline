@@ -1080,11 +1080,18 @@ function compactTimelineRows(nodes, rowStep) {
 function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
   const ranges = nodes.map(node => ({ left: node.x - 36, right: node.x + Math.max(node.occupancyWidth, 2) + 36 }));
   const overlapsHorizontally = (a, b) => a.left < b.right && b.left < a.right;
+  // Match the mini-program's row invariant: intersecting horizontal ranges must
+  // occupy distinct full rows. Using only rowHeight allowed adjacent strokes to
+  // touch after the fractional-row compaction passes; rowStep retains the
+  // intended six-pixel vertical gutter for the web's 36px boxes on 42px rows.
+  const requiredVerticalSeparation = Math.max(rowHeight, rowStep);
   nodes.forEach((node, index) => {
     let targetY = index ? Math.max(node.y, nodes[index - 1].y + rowStep / 2) : Math.max(0, node.y);
     for (let previous = 0; previous < index; previous += 1) {
       if (!overlapsHorizontally(ranges[index], ranges[previous])) continue;
-      if (targetY - nodes[previous].y < rowHeight) targetY = nodes[previous].y + rowHeight;
+      if (targetY - nodes[previous].y < requiredVerticalSeparation) {
+        targetY = nodes[previous].y + requiredVerticalSeparation;
+      }
     }
     node.y = Math.round(targetY * 1000) / 1000;
   });

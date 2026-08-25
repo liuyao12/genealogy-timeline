@@ -14,6 +14,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
+const BRITISH_ROYAL_STARTER_VERSION = 2;
 
 function sessionValue(key, value) {
   try {
@@ -61,6 +62,7 @@ const state = {
   ephemeral: false,
   reignColor: DEFAULT_REIGN_EVENT_COLOR,
   timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
+  starterDataVersion: 0,
   geniAccessToken: initialGeniAccessToken,
   collapsedIds: new Set()
 };
@@ -433,12 +435,38 @@ function createBritishRoyalSample() {
     ['anne-denmark', 'Anne', 'of Denmark', '1574', '1619', 'female', 'Queen consort; wife of James VI and I', historyUrl],
     ['sophia-dorothea-celle', 'Sophia Dorothea', 'of Celle', '1666', '1726', 'female', 'Wife of George I', historyUrl],
     ['guildford-dudley', 'Guildford', 'Dudley', '1535', '1554', 'male', 'Husband of Lady Jane Grey', historyUrl],
-    ['henry-methven', 'Henry Stewart', 'Lord Methven', '1495', '1552', 'male', 'Third husband of Margaret Tudor', historyUrl]
+    ['henry-methven', 'Henry Stewart', 'Lord Methven', '1495', '1552', 'male', 'Third husband of Margaret Tudor', historyUrl],
+    ['adrian-stokes', 'Adrian', 'Stokes, MP', '1519', '1585', 'male', 'Second husband of Frances Brandon', historyUrl],
+    ['jeanne-france', 'Jeanne', 'of France', '1464', '1505', 'female', 'First wife of Louis XII of France', historyUrl],
+    ['anne-brittany', 'Anne', 'of Brittany', '1477', '1514', 'female', 'Second wife of Louis XII of France', historyUrl],
+    ['anne-browne', 'Anne', 'Browne Brandon', '1489', '1511', 'female', 'Wife of Charles Brandon', historyUrl],
+    ['margaret-neville', 'Margaret', 'Neville', '1466', '1528', 'female', 'Wife of Charles Brandon', historyUrl],
+    ['katherine-willoughby', 'Katherine', 'Willoughby', '1519', '1580', 'female', 'Duchess of Suffolk; wife of Charles Brandon', historyUrl],
+    ['jean-gordon', 'Jean', 'Gordon', '1546', '1629', 'female', 'First wife of James Hepburn', historyUrl],
+    ['louis-longueville', 'Louis II', 'of Longueville', '1510', '1537', 'male', 'First husband of Mary of Guise', historyUrl],
+    ['edward-burgh', 'Edward', 'Burgh', '1508', '1533', 'male', 'First husband of Catherine Parr', historyUrl],
+    ['john-neville-latimer', 'John Neville', 'Baron Latimer', '1493', '1543', 'male', 'Second husband of Catherine Parr', historyUrl],
+    ['thomas-seymour', 'Thomas Seymour', 'Baron Sudeley', '1508', '1549', 'male', 'Fourth husband of Catherine Parr', historyUrl],
+    ['thomas-fitzherbert', 'Thomas', 'FitzHerbert', '1746', '1781', 'male', 'Second husband of Maria Fitzherbert', historyUrl],
+    ['edward-weld', 'Edward', 'Weld', '1741', '1775', 'male', 'First husband of Maria Fitzherbert', historyUrl],
+    ['emich-carl-leiningen', 'Emich Carl', 'Prince of Leiningen', '1763', '1814', 'male', 'First husband of Victoria of Saxe-Coburg-Saalfeld', historyUrl],
+    ['anna-austria-spain', 'Anna of Austria', 'Queen of Spain', '1549', '1580', 'female', 'Fourth wife of Philip II of Spain', historyUrl],
+    ['elisabeth-valois', 'Elisabeth', 'of Valois', '1545', '1568', 'female', 'Third wife of Philip II of Spain', historyUrl],
+    ['maria-manuela', 'Maria Manuela', 'Princess of Portugal', '1527', '1545', 'female', 'First wife of Philip II of Spain', historyUrl],
+    ['andrew-parker-bowles', 'Andrew', 'Parker Bowles', '1939', '', 'male', 'First husband of Camilla, Queen of the United Kingdom', historyUrl],
+    ['alexandrine-hutten', 'Alexandrine', 'von Hutten-Czapska', '1854', '1941', 'female', 'Second wife of Louis IV, Grand Duke of Hesse', historyUrl],
+    ['earl-winfield-spencer', 'Earl Winfield', 'Spencer Jr.', '1888', '1950', 'male', 'First husband of Wallis Simpson', historyUrl],
+    ['ernest-aldrich-simpson', 'Ernest Aldrich', 'Simpson', '1897', '1958', 'male', 'Second husband of Wallis Simpson', historyUrl],
+    ['margaret-hepburn', 'Margaret', 'Hepburn', '1491', '1513', 'female', 'First wife of Archibald Douglas; born after 1490', historyUrl],
+    ['jane-stewart-douglas', 'Jane Stewart', 'Douglas', '1496', '', 'female', 'Wife of Archibald Douglas', historyUrl],
+    ['margaret-maxwell', 'Margaret', 'Maxwell', '1520', '1593', 'female', 'Wife of Archibald Douglas', historyUrl],
+    ['janet-stewart-sutherland', 'Janet Stewart', 'Countess of Sutherland', '1505', '1580', 'female', 'Wife of Henry Stewart, Lord Methven', historyUrl],
+    ['lady-leslie', 'Lady', 'Leslie', '1495', '', 'female', 'Wife of Henry Stewart, Lord Methven; birth year estimated within Geni range', historyUrl]
   );
   // Geni IDs are bundled so the starter timeline works without authorization.
   // They are also the merge keys used when an authorized visitor refreshes a profile.
   const geniIds = {
-    'henry-vii': '6000000003760873898', 'elizabeth-york': '5111879481690102566',
+    'henry-vii': '6000000003760873898', 'elizabeth-york': '5111879481690102566', 'arthur-tudor': '6000000003409427757',
     'henry-viii': '6000000007442241030', 'margaret-tudor': '6000000003858820967',
     'mary-i': '5027356653020040914', 'elizabeth-i': '4476035', 'edward-vi': '6000000008813849008',
     'james-iv': '4229916861440069622', 'james-v': '6000000003233882803',
@@ -482,7 +510,20 @@ function createBritishRoyalSample() {
     'catherine-howard': '6000000001465827019', 'catherine-parr': '6000000001465762273',
     'anne-hyde': '4033453667340030515', 'mary-modena': '6000000001573653856',
     'anne-denmark': '4104662', 'sophia-dorothea-celle': '4555856',
-    'guildford-dudley': '6000000003409098325', 'henry-methven': '6000000005412245713'
+    'guildford-dudley': '6000000003409098325', 'henry-methven': '6000000005412245713',
+    'adrian-stokes': '6000000000307271644', 'jeanne-france': '6000000003122346868',
+    'anne-brittany': '6000000003219788977', 'anne-browne': '6000000006444128280',
+    'margaret-neville': '6000000005599087163', 'katherine-willoughby': '5466010055340136751',
+    'jean-gordon': '6000000007464078514', 'louis-longueville': '6000000007103452983',
+    'edward-burgh': '6000000015653621535', 'john-neville-latimer': '6000000000628783459',
+    'thomas-seymour': '6000000000173186819', 'thomas-fitzherbert': '6000000010030843512',
+    'edward-weld': '6000000021567940842', 'emich-carl-leiningen': '6000000005599033002',
+    'anna-austria-spain': '6000000001142154909', 'elisabeth-valois': '6000000001777536029',
+    'maria-manuela': '6000000001599879609', 'andrew-parker-bowles': '5032563093790088828',
+    'alexandrine-hutten': '6000000002343276289', 'earl-winfield-spencer': '6000000003419417080',
+    'ernest-aldrich-simpson': '6000000003419427107', 'margaret-hepburn': '6000000018986012932',
+    'jane-stewart-douglas': '6000000219298892824', 'margaret-maxwell': '6000000006806744528',
+    'janet-stewart-sutherland': '6000000005559708008', 'lady-leslie': '6000000042163396821'
   };
   const people = {};
   const displayNameOverrides = { 'henry-vii': 'Henry VII, King of England' };
@@ -537,12 +578,20 @@ function createBritishRoyalSample() {
   [
    ['henry-vii','elizabeth-york','1486'], ['james-iv','margaret-tudor','1503'],
    ['margaret-tudor','archibald-douglas','1514'], ['margaret-tudor','henry-methven','1528'],
+   ['henry-methven','janet-stewart-sutherland',''], ['henry-methven','lady-leslie',''],
    ['mary-tudor','louis-xii-france','1514'], ['mary-tudor','charles-brandon','1515'],
-   ['frances-brandon','henry-grey','1533'], ['jane-grey','guildford-dudley','1553'],
+   ['frances-brandon','henry-grey','1533'], ['frances-brandon','adrian-stokes','1555'], ['jane-grey','guildford-dudley','1553'],
+   ['louis-xii-france','jeanne-france','1476'], ['louis-xii-france','anne-brittany','1499'],
+   ['charles-brandon','margaret-neville','1507'], ['charles-brandon','anne-browne','1508'], ['charles-brandon','katherine-willoughby','1533'],
+   ['archibald-douglas','margaret-hepburn','1509'], ['archibald-douglas','jane-stewart-douglas',''], ['archibald-douglas','margaret-maxwell','1543'],
    ['henry-viii','catherine-aragon','1509'], ['henry-viii','anne-boleyn','1533'],
    ['henry-viii','jane-seymour','1536'], ['henry-viii','anne-cleves','1540'], ['henry-viii','catherine-howard','1540'], ['henry-viii','catherine-parr','1543'],
+   ['catherine-aragon','arthur-tudor','1501'],
+   ['catherine-parr','edward-burgh','1529'], ['catherine-parr','john-neville-latimer','1534'], ['catherine-parr','thomas-seymour','1547'],
    ['mary-i','philip-ii-spain','1554'], ['james-v','madeleine-valois','1537'], ['james-v','mary-lorraine','1538'],
-   ['mary-scots','francis-ii-france','1558'], ['darnley','mary-scots','1565'], ['mary-scots','james-hepburn','1567'],
+   ['mary-lorraine','louis-longueville','1534'],
+   ['mary-scots','francis-ii-france','1558'], ['darnley','mary-scots','1565'], ['james-hepburn','jean-gordon','1566','divorced'], ['mary-scots','james-hepburn','1567'],
+   ['philip-ii-spain','maria-manuela','1543'], ['philip-ii-spain','elisabeth-valois','1560'], ['philip-ii-spain','anna-austria-spain','1570'],
    ['james-vi-i','anne-denmark','1589'], ['frederick-v','elizabeth-stuart','1613'], ['ernest-augustus','sophia-hanover','1658'],
    ['george-i','sophia-dorothea-celle','1682'], ['charles-i','henrietta-maria','1625'],
    ['mary-princess-royal','william-ii-orange','1641'],
@@ -550,11 +599,14 @@ function createBritishRoyalSample() {
    ['william-iii','mary-ii','1677'], ['anne','george-cumberland','1683'], ['george-ii','caroline-ansbach','1705'],
    ['frederick-wales','augusta-saxe-gotha','1736'], ['george-iii','charlotte-mecklenburg','1761'],
    ['george-iv','maria-fitzherbert','1785'], ['george-iv','caroline-brunswick','1795'],
-   ['edward-kent','victoria-saxe-coburg','1818'], ['william-iv','adelaide-saxe-meiningen','1818'], ['adolphus-cambridge','augusta-hesse-kassel','1818'],
+   ['maria-fitzherbert','edward-weld','1775'], ['maria-fitzherbert','thomas-fitzherbert','1778'],
+   ['victoria-saxe-coburg','emich-carl-leiningen','1803'], ['edward-kent','victoria-saxe-coburg','1818'], ['william-iv','adelaide-saxe-meiningen','1818'], ['adolphus-cambridge','augusta-hesse-kassel','1818'],
    ['albert','victoria','1840'], ['alice-uk','louis-iv-hesse','1862'], ['edward-vii','alexandra-denmark','1863'],
+   ['louis-iv-hesse','alexandrine-hutten','1884'],
    ['mary-adelaide','francis-teck','1866'], ['victoria-hesse','louis-battenberg','1884'], ['george-v','mary-teck','1893'],
-   ['alice-battenberg','andrew-greece','1903'], ['george-vi','queen-mother','1923'], ['edward-viii','wallis-simpson','1937'],
-   ['philip','elizabeth-ii','1947'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005']
+   ['alice-battenberg','andrew-greece','1903'], ['wallis-simpson','earl-winfield-spencer','1916','divorced'],
+   ['george-vi','queen-mother','1923'], ['wallis-simpson','ernest-aldrich-simpson','1928','divorced'], ['edward-viii','wallis-simpson','1937'],
+   ['philip','elizabeth-ii','1947'], ['camilla','andrew-parker-bowles','1973','divorced'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005']
   ].forEach(([a, b, marriageYear, marriageStatus]) => {
     if (!people[id(a)] || !people[id(b)]) return;
     people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
@@ -596,11 +648,39 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
   state.selectedId = '';
   state.ephemeral = false;
+  state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
   state.title = 'The British royal line from Henry VII';
   els['tree-filter'].value = 'king queen';
   if (persistResult) persist('Bundled royal line restored');
   render();
   button.textContent = '♔ Restore the bundled British royal line';
+}
+
+function upgradeBundledBritishRoyalLine() {
+  if (state.starterDataVersion >= BRITISH_ROYAL_STARTER_VERSION) return false;
+  const starterRootId = profileIdFromInput(HENRY_VII_GENI_URL);
+  const isBundledLine = state.rootId === starterRootId && (
+    state.title === 'The British royal line from Henry VII' ||
+    Object.values(state.people).some(person => person.starterProfile)
+  );
+  if (!isBundledLine) return false;
+
+  const bundledPeople = createBritishRoyalSample();
+  Object.entries(bundledPeople).forEach(([id, bundled]) => {
+    const saved = state.people[id];
+    if (!saved) {
+      state.people[id] = bundled;
+      return;
+    }
+    // Preserve locally edited profile fields while adding relationships and
+    // profiles introduced by newer versions of the bundled starter tree.
+    const merged = mergePersonRecords(bundled, saved);
+    merged.marriageYears = { ...bundled.marriageYears, ...saved.marriageYears };
+    merged.personalEvents = normalizePersonalEvents([...bundled.personalEvents, ...saved.personalEvents]);
+    state.people[id] = merged;
+  });
+  state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
+  return true;
 }
 
 function restore() {
@@ -612,6 +692,7 @@ function restore() {
     state.rootId = savedRootId;
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
+    state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
     Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
   } catch { /* A malformed local cache should not prevent the app from opening. */ }
@@ -622,7 +703,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, starterDataVersion: state.starterDataVersion }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1938,6 +2019,7 @@ els['personal-event-name'].addEventListener('input', () => {
 
 restore();
 if (!Object.keys(state.people).length) loadBritishRoyalExample({ persistResult: true });
+else if (upgradeBundledBritishRoyalLine()) persist('Bundled royal spouses updated');
 render();
 const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);
 if (initialGeniAccessToken && pendingGeniIntent.startsWith('immediate-family:')) {

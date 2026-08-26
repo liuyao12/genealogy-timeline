@@ -16,6 +16,14 @@ const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
 const DEFAULT_TIMELINE_NODE_HEIGHT = 28;
+const TIMELINE_YEAR_WIDTH_OPTIONS = [
+  [3, 'Compact · 3 px/year'], [4, 'Default · 4 px/year'], [5, 'Roomy · 5 px/year'],
+  [6, 'Wide · 6 px/year'], [8, 'Extra wide · 8 px/year']
+];
+const TIMELINE_NODE_HEIGHT_OPTIONS = [
+  [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
+  [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
+];
 const BRITISH_ROYAL_STARTER_VERSION = 9;
 
 function sessionValue(key, value) {
@@ -88,7 +96,7 @@ const els = Object.fromEntries([
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'load-descendants-two', 'load-descendants-all', 'add-local-relative',
   'relationship-households',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
-  'events-dialog', 'close-events-dialog', 'timeline-scale', 'timeline-node-height', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
+  'events-dialog', 'close-events-dialog', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
 
@@ -105,11 +113,11 @@ function lightenHex(value, amount = 0.5) {
 }
 function timelineYearWidth(value) {
   const width = Number(value);
-  return [3, 4, 5, 6, 8].includes(width) ? width : DEFAULT_TIMELINE_YEAR_WIDTH;
+  return TIMELINE_YEAR_WIDTH_OPTIONS.some(([candidate]) => candidate === width) ? width : DEFAULT_TIMELINE_YEAR_WIDTH;
 }
 function timelineNodeHeight(value) {
   const height = Number(value);
-  return [24, 28, 32, 36, 42].includes(height) ? height : DEFAULT_TIMELINE_NODE_HEIGHT;
+  return TIMELINE_NODE_HEIGHT_OPTIONS.some(([candidate]) => candidate === height) ? height : DEFAULT_TIMELINE_NODE_HEIGHT;
 }
 function uniqueId(prefix = 'id') {
   const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -2389,6 +2397,7 @@ function centerTimelinePerson(id) {
 }
 
 function selectPerson(id, { center = false } = {}) {
+  if (els['events-dialog'].open) els['events-dialog'].close();
   state.selectedId = id;
   state.editingProfileId = '';
   render();
@@ -2739,23 +2748,43 @@ els['file-input'].addEventListener('change', async () => {
   els['file-input'].value = '';
 });
 els['export-button'].addEventListener('click', exportBackup);
+function syncTimelineSettingControls() {
+  const sync = (options, value, output, down, up) => {
+    const index = options.findIndex(([candidate]) => candidate === value);
+    output.textContent = options[index]?.[1] || String(value);
+    down.disabled = index <= 0;
+    up.disabled = index < 0 || index >= options.length - 1;
+  };
+  sync(TIMELINE_YEAR_WIDTH_OPTIONS, state.timelineYearWidth, els['timeline-scale-value'], els['timeline-scale-down'], els['timeline-scale-up']);
+  sync(TIMELINE_NODE_HEIGHT_OPTIONS, state.timelineNodeHeight, els['timeline-height-value'], els['timeline-height-down'], els['timeline-height-up']);
+}
+
+function stepTimelineSetting(stateKey, options, direction, message) {
+  const index = options.findIndex(([value]) => value === state[stateKey]);
+  const nextIndex = Math.max(0, Math.min(options.length - 1, index + direction));
+  if (nextIndex === index) return;
+  state[stateKey] = options[nextIndex][0];
+  syncTimelineSettingControls();
+  persist(message);
+  render();
+}
+
 els['global-events-button'].addEventListener('click', () => {
-  els['timeline-scale'].value = String(state.timelineYearWidth);
-  els['timeline-node-height'].value = String(state.timelineNodeHeight);
+  if (els['events-dialog'].open) return els['events-dialog'].close();
+  if (state.selectedId) {
+    state.selectedId = '';
+    state.editingProfileId = '';
+    render();
+  }
+  syncTimelineSettingControls();
   renderGlobalEventsEditor();
-  els['events-dialog'].showModal();
+  els['events-dialog'].show();
 });
 els['close-events-dialog'].addEventListener('click', () => els['events-dialog'].close());
-els['timeline-scale'].addEventListener('change', () => {
-  state.timelineYearWidth = timelineYearWidth(els['timeline-scale'].value);
-  persist('Timeline scale updated');
-  render();
-});
-els['timeline-node-height'].addEventListener('change', () => {
-  state.timelineNodeHeight = timelineNodeHeight(els['timeline-node-height'].value);
-  persist('Node height updated');
-  render();
-});
+els['timeline-scale-down'].addEventListener('click', () => stepTimelineSetting('timelineYearWidth', TIMELINE_YEAR_WIDTH_OPTIONS, -1, 'Timeline scale updated'));
+els['timeline-scale-up'].addEventListener('click', () => stepTimelineSetting('timelineYearWidth', TIMELINE_YEAR_WIDTH_OPTIONS, 1, 'Timeline scale updated'));
+els['timeline-height-down'].addEventListener('click', () => stepTimelineSetting('timelineNodeHeight', TIMELINE_NODE_HEIGHT_OPTIONS, -1, 'Node height updated'));
+els['timeline-height-up'].addEventListener('click', () => stepTimelineSetting('timelineNodeHeight', TIMELINE_NODE_HEIGHT_OPTIONS, 1, 'Node height updated'));
 els['add-global-event'].addEventListener('click', () => {
   const name = clean(els['global-event-name'].value);
   const startYear = numericYear(els['global-event-start'].value);

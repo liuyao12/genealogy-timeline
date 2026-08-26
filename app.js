@@ -1808,6 +1808,7 @@ function renderTimeline() {
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
   const layoutEntries = order.map(id => ({ key: id, id, isSpouse: spouseIds.has(id), isTransportedCopy: false }));
   const transportKeyByFamily = new Map();
+  const transportedChildrenByPrimaryId = new Map();
   [...families.entries()].forEach(([key, family]) => {
     const parentIds = family.parents.filter(id => datedIds.has(id));
     const transportedId = transportedParent(parentIds);
@@ -1821,6 +1822,8 @@ function renderTimeline() {
     family.children.forEach(childId => displayParentByKey.set(childId, copyKey));
     if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
     transportKeyByFamily.set(key, copyKey);
+    if (!transportedChildrenByPrimaryId.has(transportedId)) transportedChildrenByPrimaryId.set(transportedId, new Set());
+    family.children.forEach(childId => transportedChildrenByPrimaryId.get(transportedId).add(childId));
   });
 
   const layoutNodes = layoutEntries.map((entry, index) => {
@@ -2001,7 +2004,7 @@ function renderTimeline() {
       if (Math.abs(transportX - trunkX) >= 0.5) {
         connectors.append(svg('path', {
           d: `M ${transportX} ${transportedY} H ${trunkX}`,
-          class: 'timeline-edge transport-bridge horizontal',
+          class: 'timeline-edge transport transport-bridge horizontal',
           'data-family-key': key,
           'data-source-family-key': natalFamilyKey,
           'data-transported-id': transportedId
@@ -2100,7 +2103,10 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    const hasChildren = person.children.some(childId => expandableIds.has(childId) && childEdgeVisible(id, childId));
+    const transportedChildren = transportedChildrenByPrimaryId.get(id) || new Set();
+    const hasChildren = person.children.some(childId =>
+      !transportedChildren.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
+    );
     const isCollapsed = state.collapsedIds.has(id);
     const icon = isSpouseNode
       ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })

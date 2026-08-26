@@ -1697,6 +1697,13 @@ function renderTimeline() {
   canvas.append(connectors);
 
   const nodeDefs = svg('defs');
+  const maleGradient = svg('linearGradient', { id: 'geni-male-gradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+  maleGradient.append(svg('stop', { offset: '0%', 'stop-color': '#ffffff' }));
+  maleGradient.append(svg('stop', { offset: '100%', 'stop-color': '#a9cfe7' }));
+  const femaleGradient = svg('linearGradient', { id: 'geni-female-gradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+  femaleGradient.append(svg('stop', { offset: '0%', 'stop-color': '#ffffff' }));
+  femaleGradient.append(svg('stop', { offset: '100%', 'stop-color': '#f6b8db' }));
+  nodeDefs.append(maleGradient, femaleGradient);
   canvas.append(nodeDefs);
 
   layoutNodes.forEach((layoutNode, nodeIndex) => {

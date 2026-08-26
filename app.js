@@ -2760,7 +2760,7 @@ function renderRelationshipHouseholds(person) {
     return;
   }
 
-  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [] }) => {
+  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [], canToggle = true }) => {
     const row = document.createElement('div');
     row.className = `relationship-row ${kind}${visible ? '' : ' is-hidden'}`;
     const branch = document.createElement('span');
@@ -2773,20 +2773,23 @@ function renderRelationshipHouseholds(person) {
     const meta = document.createElement('small');
     meta.textContent = detail;
     copy.append(name, meta);
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'relationship-visibility';
-    toggle.textContent = visible ? '◉' : '○';
-    toggle.title = `${visible ? 'Hide' : 'Show'} ${label} in the timeline`;
-    toggle.setAttribute('aria-label', toggle.title);
-    toggle.addEventListener('click', () => {
-      const keys = relationKeys.length ? relationKeys
-        : [kind === 'spouse' ? partnerRelationKey(person.id, targetId) : childRelationKey(person.id, targetId)];
-      keys.forEach(key => { state.relationVisibility[key] = !visible; });
-      persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
-      render();
-    });
-    row.append(branch, copy, toggle);
+    row.append(branch, copy);
+    if (canToggle) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'relationship-visibility';
+      toggle.textContent = visible ? '◉' : '○';
+      toggle.title = `${visible ? 'Hide' : 'Show'} ${label} in the timeline`;
+      toggle.setAttribute('aria-label', toggle.title);
+      toggle.addEventListener('click', () => {
+        const keys = relationKeys.length ? relationKeys
+          : [kind === 'spouse' ? partnerRelationKey(person.id, targetId) : childRelationKey(person.id, targetId)];
+        keys.forEach(key => { state.relationVisibility[key] = !visible; });
+        persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
+        render();
+      });
+      row.append(toggle);
+    }
     return row;
   };
 
@@ -2803,7 +2806,7 @@ function renderRelationshipHouseholds(person) {
       const role = parent.gender === 'male' ? 'Father' : parent.gender === 'female' ? 'Mother' : 'Parent';
       const key = childRelationKey(parentId, person.id);
       const visible = visibility.visibleIds.has(parentId) && visibility.childEdgeVisible(parentId, person.id);
-      origin.append(makeRow({ targetId: parentId, kind: 'parent', visible, label: role.toLowerCase(), detail: `${role} · ${life(parent)}`, relationKeys: [key] }));
+      origin.append(makeRow({ targetId: parentId, kind: 'parent', visible, label: role.toLowerCase(), detail: `${role} · ${life(parent)}`, relationKeys: [key], canToggle: false }));
     });
     siblingIds.forEach(siblingId => {
       const sibling = state.people[siblingId];

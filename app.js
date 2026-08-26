@@ -1342,18 +1342,37 @@ function buildTimelineVisibility() {
   const query = clean(els['tree-filter']?.value).toLocaleLowerCase();
   const keywords = query.split(/\s+/).filter(Boolean);
   const matches = allIds.filter(id => keywords.some(keyword => matchesKeyword(state.people[id], keyword)));
-  const lineMatches = matches.filter(id => descendantsOfRoot.has(id));
-  const seeds = lineMatches.length ? lineMatches : matches;
-  const visible = new Set(query ? seeds : (connectedByBlood.size ? connectedByBlood : allIds));
+  const hasRoot = !!state.people[state.rootId];
+  const visible = new Set(query ? (hasRoot ? [state.rootId] : matches) : (connectedByBlood.size ? connectedByBlood : allIds));
+  const matchedPartnerPairs = new Set();
 
   if (query) {
-    const queue = [...seeds];
+    const pathSeeds = new Set();
+    matches.forEach(id => {
+      if (descendantsOfRoot.has(id)) {
+        visible.add(id);
+        pathSeeds.add(id);
+        return;
+      }
+      // A matching spouse is not a blood descendant, but their marriage is
+      // still part of the path from the tree root to the matched household.
+      allPartnerIds(state.people[id]).forEach(partnerId => {
+        if (!descendantsOfRoot.has(partnerId)) return;
+        const isFormalSpouse = state.people[id].spouses.includes(partnerId) || state.people[partnerId]?.spouses.includes(id);
+        if (!isFormalSpouse) return;
+        visible.add(id);
+        visible.add(partnerId);
+        pathSeeds.add(partnerId);
+        matchedPartnerPairs.add(partnerRelationKey(id, partnerId));
+      });
+    });
+    const queue = [...pathSeeds];
     while (queue.length) {
       const childId = queue.shift();
       const child = state.people[childId];
       if (!child) continue;
       child.parents.forEach(parentId => {
-        if (!state.people[parentId] || !childEdgeVisible(parentId, childId) || visible.has(parentId)) return;
+        if (!descendantsOfRoot.has(parentId) || !childEdgeVisible(parentId, childId) || visible.has(parentId)) return;
         visible.add(parentId);
         queue.push(parentId);
       });
@@ -1391,7 +1410,7 @@ function buildTimelineVisibility() {
     const isFormalSpouse = person.spouses.includes(partnerId) || state.people[partnerId]?.spouses.includes(person.id);
     const carriesVisibleChild = householdChildren(person.id, partnerId).some(childId => visible.has(childId));
     const defaultVisible = isFormalSpouse && (!query || carriesVisibleChild);
-    if (override === true || defaultVisible) renderedPartnerPairs.add(key);
+    if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);
   }));
 
   // Add only the spouse or partner occurrences that support a visible

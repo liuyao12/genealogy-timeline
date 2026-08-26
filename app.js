@@ -62,6 +62,7 @@ const state = {
   ephemeral: false,
   reignColor: DEFAULT_REIGN_EVENT_COLOR,
   timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
+  treeFilter: '',
   relationVisibility: {},
   starterDataVersion: 0,
   geniAccessToken: initialGeniAccessToken,
@@ -651,9 +652,10 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   state.selectedId = '';
   state.ephemeral = false;
   state.relationVisibility = {};
+  state.treeFilter = 'king queen';
   state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
   state.title = 'The British royal line from Henry VII';
-  els['tree-filter'].value = 'king queen';
+  els['tree-filter'].value = state.treeFilter;
   if (persistResult) persist('Bundled royal line restored');
   render();
   button.textContent = '♔ Restore the bundled British royal line';
@@ -695,6 +697,8 @@ function restore() {
     state.rootId = savedRootId;
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
+    state.treeFilter = clean(saved.treeFilter);
+    if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
     state.relationVisibility = Object.fromEntries(Object.entries(saved.relationVisibility || {}).filter(([, value]) => typeof value === 'boolean'));
     state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
@@ -707,7 +711,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1146,6 +1150,7 @@ function importBackup(payload) {
   if (!rawPeople || typeof rawPeople !== 'object') throw new Error('This file does not contain a supported people collection.');
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
   state.timelineYearWidth = timelineYearWidth(payload.timelineYearWidth || payload.db?.timelineYearWidth);
+  state.treeFilter = clean(payload.treeFilter || payload.db?.treeFilter);
   state.relationVisibility = Object.fromEntries(Object.entries(payload.relationVisibility || payload.db?.relationVisibility || {}).filter(([, value]) => typeof value === 'boolean'));
   const people = {};
   Object.entries(rawPeople).forEach(([id, source]) => { people[id] = normalizePerson(source, id); });
@@ -1168,6 +1173,7 @@ function importBackup(payload) {
   state.rootId = clean(payload.activeRootId || payload.db?.activeRootId) || Object.keys(people)[0] || '';
   state.title = clean(payload.title || payload.familyName) || `${fullName(people[state.rootId] || {})} family`;
   state.selectedId = state.rootId;
+  els['tree-filter'].value = state.treeFilter;
   persist('Backup imported');
   render();
   toast(`Imported ${Object.keys(people).length} profiles.`);
@@ -1176,7 +1182,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, relationVisibility: state.relationVisibility,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2111,7 +2117,11 @@ els['royal-example-button'].addEventListener('click', () => {
   if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with the British royal example? Export first if you want to keep it.')) return;
   loadBritishRoyalExample();
 });
-els['tree-filter'].addEventListener('input', render);
+els['tree-filter'].addEventListener('input', () => {
+  state.treeFilter = els['tree-filter'].value;
+  persist('Filter saved');
+  render();
+});
 els['tree-title'].addEventListener('click', () => {
   const title = window.prompt('Tree title', state.title);
   if (clean(title)) { state.title = clean(title); persist('Title updated'); render(); }
@@ -2248,6 +2258,7 @@ els['personal-event-name'].addEventListener('input', () => {
 restore();
 if (!Object.keys(state.people).length) loadBritishRoyalExample({ persistResult: true });
 else if (upgradeBundledBritishRoyalLine()) persist('Bundled royal spouses updated');
+els['tree-filter'].value = state.treeFilter;
 render();
 const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);
 if (initialGeniAccessToken && pendingGeniIntent.startsWith('immediate-family:')) {

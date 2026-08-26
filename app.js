@@ -1668,7 +1668,7 @@ function renderTimeline() {
       connectors.append(svg('path', { d: `M ${pos.x + 24} ${pos.y + rowHeight / 2} H ${trunkX}`, class: `timeline-edge horizontal ${lineage}` }));
     });
     if (parentYs.length > 1 && Math.max(...parentYs) > Math.min(...parentYs)) {
-      const marriageLine = svg('line', { x1: trunkX, y1: Math.min(...parentYs), x2: trunkX, y2: Math.max(...parentYs), class: `timeline-edge family-stem vertical ${marriageClass}`, 'data-marriage-year': recordedMarriageYear || '' });
+      const marriageLine = svg('line', { x1: trunkX, y1: Math.min(...parentYs), x2: trunkX, y2: Math.max(...parentYs), class: `timeline-edge family-stem vertical ${marriageClass}`, 'data-family-key': key, 'data-marriage-year': recordedMarriageYear || '' });
       if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => fullName(state.people[id])).join(' and ')}`));
       connectors.append(marriageLine);
     }
@@ -1700,13 +1700,14 @@ function renderTimeline() {
     if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
       const natal = positions.get(transportedId);
       const transported = positions.get(transportedCopyKey);
-      const transportX = natal.x + 24;
+      const transportX = trunkX;
       const natalY = natal.y + rowHeight / 2;
       const transportedY = transported.y + rowHeight / 2;
       const transportLine = svg('line', {
         x1: transportX, y1: Math.min(natalY, transportedY),
         x2: transportX, y2: Math.max(natalY, transportedY),
-        class: 'timeline-edge transport vertical'
+        class: 'timeline-edge transport vertical',
+        'data-family-key': key
       });
       transportLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from the biological family branch to this marriage`));
       connectors.append(transportLine);

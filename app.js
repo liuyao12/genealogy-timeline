@@ -5,7 +5,7 @@ const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
-const CAMILLA_GENI_PROFILE_ID = 'profile-6000000003081589893';
+const CAMILLA_GENI_PROFILE_ID = 'profile-g6000000003081589893';
 const EVENT_COLOR_PALETTE = [
   ['#c62828', 'Red'], ['#e65100', 'Orange'], ['#c2892b', 'Amber'], ['#6b7d2a', 'Olive'],
   ['#2e7d32', 'Green'], ['#00796b', 'Teal'], ['#00838f', 'Cyan'], ['#1565c0', 'Blue'],
@@ -15,7 +15,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 7;
+const BRITISH_ROYAL_STARTER_VERSION = 8;
 
 function sessionValue(key, value) {
   try {
@@ -155,18 +155,33 @@ function validWikiTreeUrl(value) {
   if (!href) return '';
   return /(^|\.)wikitree\.com$/i.test(new URL(href).hostname) ? href : '';
 }
+function canonicalGeniProfileId(value) {
+  const raw = clean(value);
+  const explicit = raw.match(/^profile-(g?)(\d+)$/i);
+  if (explicit) {
+    const [, guidPrefix, digits] = explicit;
+    return `profile-${guidPrefix || digits.length >= 15 ? 'g' : ''}${digits}`;
+  }
+  const compact = raw.match(/^(g?)(\d+)$/i);
+  if (!compact) return raw;
+  const [, guidPrefix, digits] = compact;
+  return `profile-${guidPrefix || digits.length >= 15 ? 'g' : ''}${digits}`;
+}
+function geniProfileUrlId(value) {
+  return canonicalGeniProfileId(value).replace(/^profile-g?/i, '');
+}
 function profileIdFromInput(input) {
   const raw = clean(input);
   if (!raw) return '';
-  const direct = raw.match(/profile-[a-z0-9-]+/i);
-  if (direct) return direct[0];
+  const direct = raw.match(/profile-g?\d+/i);
+  if (direct) return canonicalGeniProfileId(direct[0]);
   try {
     const url = new URL(/^https?:/i.test(raw) ? raw : `https://${raw}`);
     if (!/(^|\.)geni\.com$/i.test(url.hostname)) return '';
     const segment = url.pathname.split('/').filter(Boolean).pop();
-    return segment ? `profile-${segment}` : '';
+    return segment ? canonicalGeniProfileId(segment) : '';
   } catch {
-    return /^[a-z0-9-]+$/i.test(raw) ? `profile-${raw}` : '';
+    return /^g?\d+$/i.test(raw) ? canonicalGeniProfileId(raw) : '';
   }
 }
 function wikiTreeIdFromInput(input) {
@@ -571,7 +586,7 @@ function createBritishRoyalSample() {
   const titlePrefix = /^(?:the\s+Queen\s+Mother|(?:Grand\s+)?(?:Duke|Duchess)|Prince(?:ss)?|Earl|Count(?:ess)?|Lord|Lady|Baron(?:ess)?|Marquess|Marchioness|King|Queen|Emperor|Empress)\b/i;
   rows.filter(([slug]) => geniIds[slug]).forEach(([slug, firstName, lastName, birthYear, deathYear, gender, note]) => {
     const geniId = geniIds[slug];
-    const id = `profile-${geniId}`;
+    const id = canonicalGeniProfileId(geniId);
     const baseName = lastName && titlePrefix.test(lastName) ? `${firstName}, ${lastName}` : [firstName, lastName].filter(Boolean).join(' ');
     const titleClause = clean(note).split(/[;,]/)[0];
     const royalTitle = titleClause.match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+.+$/i)?.[0] || '';
@@ -583,7 +598,7 @@ function createBritishRoyalSample() {
       starterProfile: true
     }, id);
   });
-  const id = slug => geniIds[slug] ? `profile-${geniIds[slug]}` : '';
+  const id = slug => geniIds[slug] ? canonicalGeniProfileId(geniIds[slug]) : '';
   const parentLinks = {
     'arthur-tudor': ['henry-vii', 'elizabeth-york'], 'henry-viii': ['henry-vii', 'elizabeth-york'],
     'margaret-tudor': ['henry-vii', 'elizabeth-york'], 'mary-tudor': ['henry-vii', 'elizabeth-york'],
@@ -760,22 +775,61 @@ function upgradeBundledBritishRoyalLine() {
   return true;
 }
 
+function migrateGeniPeople(rawPeople) {
+  const people = {};
+  let migrated = false;
+  const remap = value => {
+    const id = clean(value);
+    const canonical = /^profile-/i.test(id) ? canonicalGeniProfileId(id) : id;
+    if (canonical !== id) migrated = true;
+    return canonical;
+  };
+  const remapMap = value => Object.fromEntries(Object.entries(value || {}).map(([id, detail]) => [remap(id), detail]));
+  Object.entries(rawPeople || {}).forEach(([key, source]) => {
+    const normalized = normalizePerson(source, key);
+    const oldId = normalized.id;
+    normalized.id = remap(oldId);
+    normalized.sourceId = remap(normalized.sourceId);
+    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses'].forEach(field => {
+      normalized[field] = unique(normalized[field].map(remap));
+    });
+    normalized.marriageYears = remapMap(normalized.marriageYears);
+    normalized.relationshipEndYears = remapMap(normalized.relationshipEndYears);
+    normalized.relationshipEndStatuses = remapMap(normalized.relationshipEndStatuses);
+    people[normalized.id] = people[normalized.id] ? mergePersonRecords(people[normalized.id], normalized) : normalized;
+  });
+  return { people, migrated };
+}
+
+function migrateRelationVisibility(rawVisibility) {
+  let migrated = false;
+  const relationVisibility = Object.fromEntries(Object.entries(rawVisibility || {}).filter(([, value]) => typeof value === 'boolean').map(([key, value]) => {
+    const canonicalKey = key.replace(/profile-(\d{15,})/gi, 'profile-g$1');
+    if (canonicalKey !== key) migrated = true;
+    return [canonicalKey, value];
+  }));
+  return { relationVisibility, migrated };
+}
+
 function restore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY));
-    if (!saved || typeof saved !== 'object') return;
-    const savedRootId = clean(saved.rootId);
+    if (!saved || typeof saved !== 'object') return false;
+    const savedRootId = /^profile-/i.test(clean(saved.rootId)) ? canonicalGeniProfileId(saved.rootId) : clean(saved.rootId);
+    const migratedPeople = migrateGeniPeople(saved.people);
+    const migratedVisibility = migrateRelationVisibility(saved.relationVisibility);
     state.title = clean(saved.title) || state.title;
     state.rootId = savedRootId;
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
     state.treeFilter = clean(saved.treeFilter);
     if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
-    state.relationVisibility = Object.fromEntries(Object.entries(saved.relationVisibility || {}).filter(([, value]) => typeof value === 'boolean'));
+    state.relationVisibility = migratedVisibility.relationVisibility;
     state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
-    Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
-  } catch { /* A malformed local cache should not prevent the app from opening. */ }
+    state.people = migratedPeople.people;
+    return migratedPeople.migrated || migratedVisibility.migrated || savedRootId !== clean(saved.rootId);
+  } catch { return false; /* A malformed local cache should not prevent the app from opening. */ }
 }
 function persist(message = 'All changes saved locally') {
   if (state.ephemeral) {
@@ -812,12 +866,26 @@ function toast(message, long = false) {
   toast.timer = setTimeout(() => els.toast.classList.remove('show'), long ? 6500 : 2800);
 }
 
-function inferRelationsFromUnions(nodes) {
+function geniProfileIdForApiProfile(profile, fallbackId = '') {
+  const guid = clean(profile?.guid);
+  if (/^\d{15,}$/.test(guid)) return canonicalGeniProfileId(guid);
+  const publicProfileId = profileIdFromInput(profile?.profile_url);
+  return publicProfileId || canonicalGeniProfileId(fallbackId || refId(profile?.id || profile?.url));
+}
+
+function inferRelationsFromUnions(nodes, preferredIds = {}) {
   const profiles = Object.values(nodes).filter(node => node && clean(node.id).startsWith('profile-'));
-  const profileMap = Object.fromEntries(profiles.map(profile => [clean(profile.id), profile]));
+  const aliases = {};
+  const profileMap = {};
+  profiles.forEach(profile => {
+    const rawId = clean(profile.id);
+    const id = preferredIds[rawId] || geniProfileIdForApiProfile(profile, rawId);
+    aliases[rawId] = id;
+    profileMap[id] = { ...profile, id };
+  });
   Object.values(nodes).filter(node => node && clean(node.id).startsWith('union-')).forEach(union => {
-    const partners = uniqueRefs(union.partners || union.partner_ids || union.profiles).filter(id => profileMap[id]);
-    const children = uniqueRefs(union.children || union.child_ids).filter(id => profileMap[id]);
+    const partners = uniqueRefs(union.partners || union.partner_ids || union.profiles).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
+    const children = uniqueRefs(union.children || union.child_ids).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
   const marriageYear = clean(
       union.marriage?.date?.year ?? union.marriage?.year ?? union.marriage?.date
       ?? union.marriage_date?.year ?? union.marriage_date
@@ -887,12 +955,17 @@ async function fetchGeniNeighborhood(id) {
   if (payload.error) throw new Error(payload.error.message || 'Geni did not return a public profile.');
   if (payload.message && !payload.nodes && !payload.focus?.nodes) throw new Error(payload.message);
   const nodes = payload.nodes || payload.focus?.nodes || {};
-  const mapped = inferRelationsFromUnions(nodes);
   const focusRaw = payload.focus?.id ? payload.focus : (nodes[payload.focus] || payload);
   if (!focusRaw?.id) throw new Error('Geni did not return the selected profile’s immediate family.');
-  if (focusRaw?.id && !mapped[focusRaw.id]) mapped[focusRaw.id] = focusRaw;
+  const rawFocusId = refId(focusRaw.id);
+  const preferredFocusId = /^profile-g/i.test(id) ? canonicalGeniProfileId(id) : '';
+  const preferredIds = preferredFocusId && rawFocusId ? { [rawFocusId]: preferredFocusId } : {};
+  const mapped = inferRelationsFromUnions(nodes, preferredIds);
+  const focusId = preferredFocusId || geniProfileIdForApiProfile(focusRaw, rawFocusId);
+  const canonicalFocus = { ...focusRaw, id: focusId };
+  if (!mapped[focusId]) mapped[focusId] = canonicalFocus;
   if (!Object.keys(mapped).length) throw new Error('Geni returned no verifiable immediate-family profiles.');
-  return { mapped, focusRaw };
+  return { mapped, focusRaw: canonicalFocus };
 }
 
 async function loadGeniImmediateFamily(profileId) {
@@ -912,7 +985,7 @@ async function loadGeniImmediateFamily(profileId) {
       ...raw,
       id,
       sourceId: id,
-      sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${id.replace(/^profile-/i, '')}`,
+      sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${geniProfileUrlId(id)}`,
       sourceProvider: 'geni',
       importedAt
     }, id);
@@ -956,7 +1029,7 @@ async function fetchGeniReignEvents(profileIds) {
     candidates.forEach(raw => {
       const rawId = refId(raw.id || raw.url);
       if (!rawId) return;
-      const id = /^profile-/i.test(rawId) ? rawId : `profile-${rawId}`;
+      const id = geniProfileIdForApiProfile(raw, rawId);
       eventsByProfile[id] = extractGeniReignFacts(raw);
     });
   }
@@ -1289,9 +1362,8 @@ function importBackup(payload) {
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
   state.timelineYearWidth = timelineYearWidth(payload.timelineYearWidth || payload.db?.timelineYearWidth);
   state.treeFilter = clean(payload.treeFilter || payload.db?.treeFilter);
-  state.relationVisibility = Object.fromEntries(Object.entries(payload.relationVisibility || payload.db?.relationVisibility || {}).filter(([, value]) => typeof value === 'boolean'));
-  const people = {};
-  Object.entries(rawPeople).forEach(([id, source]) => { people[id] = normalizePerson(source, id); });
+  state.relationVisibility = migrateRelationVisibility(payload.relationVisibility || payload.db?.relationVisibility).relationVisibility;
+  const people = migrateGeniPeople(rawPeople).people;
   // The mini-program stores children/spouses on profiles. Reconstruct reverse parent links for the web layout.
   Object.values(people).forEach(person => {
     person.children.forEach(childId => {
@@ -1308,7 +1380,8 @@ function importBackup(payload) {
     });
   });
   state.people = people;
-  state.rootId = clean(payload.activeRootId || payload.db?.activeRootId) || Object.keys(people)[0] || '';
+  const importedRootId = clean(payload.activeRootId || payload.db?.activeRootId);
+  state.rootId = (/^profile-/i.test(importedRootId) ? canonicalGeniProfileId(importedRootId) : importedRootId) || Object.keys(people)[0] || '';
   state.title = clean(payload.title || payload.familyName) || `${fullName(people[state.rootId] || {})} family`;
   state.selectedId = state.rootId;
   els['tree-filter'].value = state.treeFilter;
@@ -2852,9 +2925,12 @@ els['personal-event-name'].addEventListener('input', () => {
   updateEventColorPalette(els['personal-event-color'], nextIsReign ? state.reignColor : DEFAULT_PERSONAL_EVENT_COLOR);
 });
 
-restore();
+const migratedStoredGeniIds = restore();
 if (!Object.keys(state.people).length) loadBritishRoyalExample({ persistResult: true });
-else if (upgradeBundledBritishRoyalLine()) persist('Bundled royal example updated');
+else {
+  const upgradedBundledLine = upgradeBundledBritishRoyalLine();
+  if (upgradedBundledLine || migratedStoredGeniIds) persist(upgradedBundledLine ? 'Bundled royal example updated' : 'Geni profile IDs updated');
+}
 els['tree-filter'].value = state.treeFilter;
 render();
 const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);

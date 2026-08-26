@@ -15,7 +15,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 8;
+const BRITISH_ROYAL_STARTER_VERSION = 9;
 
 function sessionValue(key, value) {
   try {
@@ -312,8 +312,9 @@ function formatEventYearRange(startYear, endYear = startYear) {
 
 function normalizePerson(source, fallbackId) {
   const id = clean(source.id || fallbackId) || uniqueId('local');
-  const birth = source.birth || {};
-  const death = source.death || {};
+  const birth = source.birth || source.birth_date_parts || {};
+  const death = source.death || source.death_date_parts || {};
+  const dateYear = value => clean(value).match(/-?\d{3,4}/)?.[0] || '';
   const sourceUrl = validPublicUrl(source.sourceUrl || source.profile_url || source.profileUrl || '');
   const marriageYears = Object.fromEntries(Object.entries(source.marriageYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
   const relationshipEndYears = Object.fromEntries(Object.entries(source.relationshipEndYears || source.divorceYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
@@ -327,8 +328,8 @@ function normalizePerson(source, fallbackId) {
     title: clean(source.title || source.display_title || source.occupation),
     nameOrder: 'western',
     gender: ['male', 'female'].includes(source.gender) ? source.gender : 'unknown',
-    birthYear: clean(source.birthYear || source.bYear || birth.year || birth.date?.year),
-    deathYear: clean(source.deathYear || source.dYear || death.year || death.date?.year),
+    birthYear: clean(source.birthYear || source.bYear || birth.year || birth.date?.year || dateYear(source.birth_date)),
+    deathYear: clean(source.deathYear || source.dYear || death.year || death.date?.year || dateYear(source.death_date)),
     isLiving: source.isLiving === true || source.is_alive === true,
     place: clean(source.place || source.hometown || source.jiguan || birth.location?.place_name || birth.location?.city),
     note: clean(source.note || source.addendum || source.about_me),
@@ -749,12 +750,14 @@ function upgradeBundledBritishRoyalLine() {
     }
     // Preserve locally edited profile fields while adding relationships and
     // profiles introduced by newer versions of the bundled starter tree.
-    const merged = mergePersonRecords(bundled, saved);
+    const merged = mergePersonRecords(saved, bundled);
     const oldBaseName = [saved.firstName, saved.lastName].filter(Boolean).join(' ');
     const oldTitleClause = clean(saved.note).split(/[;,]/)[0];
     const oldRoyalTitle = oldTitleClause.match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+.+$/i)?.[0] || '';
     const oldGeneratedName = oldRoyalTitle && !/\b(?:king|queen)\b/i.test(oldBaseName) ? `${oldBaseName}, ${oldRoyalTitle}` : oldBaseName;
-    if (saved.starterProfile && saved.displayName === oldGeneratedName && bundled.displayName !== oldGeneratedName) {
+    const apiPlainName = [saved.firstName, saved.lastName].filter(Boolean).join(' ');
+    const wasReducedBySparseGeniRefresh = saved.starterProfile && saved.importedAt && saved.displayName === apiPlainName;
+    if (saved.starterProfile && (saved.displayName === oldGeneratedName || wasReducedBySparseGeniRefresh) && bundled.displayName !== saved.displayName) {
       merged.displayName = bundled.displayName;
     }
     if (id === CAMILLA_GENI_PROFILE_ID) {
@@ -1038,7 +1041,13 @@ async function fetchGeniReignEvents(profileIds) {
 
 function mergePersonRecords(existing, incoming) {
   if (!existing) return incoming;
-  const merged = normalizePerson({ ...existing, ...incoming, id: incoming.id || existing.id }, incoming.id || existing.id);
+  const preferred = { ...incoming, ...existing, id: existing.id || incoming.id };
+  ['firstName', 'lastName', 'displayName', 'title', 'birthYear', 'deathYear', 'place', 'note'].forEach(field => {
+    if (!clean(existing[field]) && clean(incoming[field])) preferred[field] = incoming[field];
+  });
+  if (!['male', 'female'].includes(existing.gender) && ['male', 'female'].includes(incoming.gender)) preferred.gender = incoming.gender;
+  preferred.isLiving = existing.isLiving === true || (!clean(existing.deathYear) && incoming.isLiving === true);
+  const merged = normalizePerson(preferred, existing.id || incoming.id);
   merged.parents = unique([...incoming.parents, ...existing.parents]);
   merged.children = unique([...incoming.children, ...existing.children]);
   merged.partners = unique([...incoming.partners, ...existing.partners]);

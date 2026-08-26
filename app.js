@@ -1643,6 +1643,11 @@ function renderTimeline() {
 
   const connectors = svg('g', { class: 'timeline-connectors' });
   const marriageOverlaysByParent = new Map();
+  const horizontalOverlaysByNode = new Map();
+  const addHorizontalOverlay = (nodeKey, overlay) => {
+    if (!horizontalOverlaysByNode.has(nodeKey)) horizontalOverlaysByNode.set(nodeKey, []);
+    horizontalOverlaysByNode.get(nodeKey).push(overlay);
+  };
   families.forEach((family, key) => {
     const parentIds = family.parents.filter(id => positions.has(id));
     const transportedId = transportedParent(parentIds);
@@ -1696,6 +1701,7 @@ function renderTimeline() {
     childIds.forEach(id => {
       const pos = positions.get(id);
       connectors.append(svg('path', { d: `M ${trunkX} ${pos.y + rowHeight / 2} H ${pos.x + 1}`, class: `timeline-edge horizontal ${stemClass}` }));
+      addHorizontalOverlay(id, { x1: trunkX, x2: pos.x + 18, className: stemClass });
     });
     if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
       const natal = positions.get(transportedId);
@@ -1779,6 +1785,17 @@ function renderTimeline() {
     // over the base outline so no gender-color trace crosses an event segment.
     group.append(nodeShape({ class: 'lifespan-outline' }));
     group.append(personalEventLayer);
+    // Repaint the part of each horizontal connector that intersects this node.
+    // The control is drawn later, so the line visually terminates beneath it.
+    (horizontalOverlaysByNode.get(nodeKey) || []).forEach(connection => {
+      const localX1 = Math.max(0, Math.min(lifespanWidth, connection.x1 - pos.x));
+      const localX2 = Math.max(0, Math.min(lifespanWidth, connection.x2 - pos.x));
+      if (Math.abs(localX2 - localX1) < 0.5) return;
+      group.append(svg('line', {
+        class: `timeline-edge node-horizontal-overlay horizontal ${connection.className}`,
+        x1: localX1, y1: rowHeight / 2, x2: localX2, y2: rowHeight / 2
+      }));
+    });
     // Marriage stems cross above both spouse boxes, including their borders,
     // so each stem reads as one uninterrupted line down to its children. Text
     // and controls are painted afterward to remain legible and interactive.

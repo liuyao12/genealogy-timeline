@@ -66,6 +66,7 @@ const state = {
   relationVisibility: {},
   starterDataVersion: 0,
   geniAccessToken: initialGeniAccessToken,
+  geniImport: null,
   collapsedIds: new Set(),
   editingProfileId: ''
 };
@@ -78,7 +79,7 @@ const els = Object.fromEntries([
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
-  'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'add-local-relative',
+  'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'load-descendants-two', 'load-descendants-all', 'add-local-relative',
   'relationship-households',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
   'events-dialog', 'close-events-dialog', 'timeline-scale', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
@@ -839,48 +840,44 @@ async function fetchGeniNeighborhood(id) {
 
 async function loadGeniImmediateFamily(profileId) {
   const person = state.people[profileId];
-  if (!person || person.sourceProvider !== 'geni' || !/^profile-/i.test(profileId)) {
+  if (!person || !/^profile-/i.test(profileId)) {
     throw new Error('This local profile is not linked to a Geni profile ID.');
   }
   if (!state.geniAccessToken) {
-    beginGeniAuthorization(`immediate-family:${profileId}`);
+    beginGeniAuthorization(`family-import:immediate:${profileId}`);
     return;
   }
-  const button = els['load-immediate-family'];
-  button.disabled = true;
-  button.textContent = 'Loading public family…';
-  try {
-    const importedAt = new Date().toISOString();
-    const { mapped } = await fetchGeniNeighborhood(profileId);
-    Object.entries(mapped).forEach(([id, raw]) => {
-      if (raw.public === false) return;
-      const incoming = normalizePerson({
-        ...raw,
-        id,
-        sourceId: id,
-        sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${id.replace(/^profile-/i, '')}`,
-        sourceProvider: 'geni',
-        importedAt
-      }, id);
-      state.people[id] = mergePersonRecords(state.people[id], incoming);
-    });
-    if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
-    state.people[profileId].geniImmediateFamilyLoaded = true;
-    try {
-      const eventsByProfile = await fetchGeniReignEvents(Object.keys(mapped));
-      Object.entries(eventsByProfile).forEach(([id, events]) => {
-        if (state.people[id] && events.length) {
-          state.people[id].personalEvents = normalizePersonalEvents([...state.people[id].personalEvents, ...events]);
-        }
-      });
-    } catch { /* Optional event enrichment must not block family import. */ }
-    persist('Immediate family imported from Geni');
-    render();
-    toast(`Loaded ${Object.keys(mapped).length} public profiles from this immediate family.`, true);
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Refresh complete immediate family';
+  const importedAt = new Date().toISOString();
+  const { mapped } = await fetchGeniNeighborhood(profileId);
+  Object.entries(mapped).forEach(([id, raw]) => {
+    if (raw.public === false) return;
+    const incoming = normalizePerson({
+      ...raw,
+      id,
+      sourceId: id,
+      sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${id.replace(/^profile-/i, '')}`,
+      sourceProvider: 'geni',
+      importedAt
+    }, id);
+    state.people[id] = mergePersonRecords(state.people[id], incoming);
+  });
+  if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
+  state.people[profileId].geniImmediateFamilyLoaded = true;
+  if (state.geniImport?.profileId === profileId) {
+    state.geniImport.loaded = Object.keys(mapped).length;
+    state.geniImport.requests = 1;
   }
+  try {
+    const eventsByProfile = await fetchGeniReignEvents(Object.keys(mapped));
+    Object.entries(eventsByProfile).forEach(([id, events]) => {
+      if (state.people[id] && events.length) {
+        state.people[id].personalEvents = normalizePersonalEvents([...state.people[id].personalEvents, ...events]);
+      }
+    });
+  } catch { /* Optional event enrichment must not block family import. */ }
+  persist('Immediate family imported from Geni');
+  render();
+  toast(`Loaded ${Object.keys(mapped).length} public profiles from this immediate family.`, true);
 }
 
 async function fetchGeniReignEvents(profileIds) {
@@ -933,8 +930,9 @@ async function importFromGeni(input, requestedDepth = 2, options = {}) {
   if (!id) throw new Error('Enter a valid geni.com public profile URL or profile ID.');
   const mode = options.mode === 'descendants' ? 'descendants' : 'connections';
   const persistResult = options.persistResult !== false;
-  const depthLimit = mode === 'descendants' ? 16 : 4;
-  const depth = Math.min(depthLimit, Math.max(1, Number.parseInt(requestedDepth, 10) || 2));
+  const allDescendants = mode === 'descendants' && options.allDescendants === true;
+  const depthLimit = mode === 'descendants' ? 32 : 4;
+  const depth = allDescendants ? Number.POSITIVE_INFINITY : Math.min(depthLimit, Math.max(1, Number.parseInt(requestedDepth, 10) || 2));
   const maxProfiles = 160;
   const maxRequests = 80;
   const importedAt = new Date().toISOString();
@@ -961,7 +959,9 @@ async function importFromGeni(input, requestedDepth = 2, options = {}) {
       skipped += 1;
       continue;
     }
-    if (current.id === id) focusId = clean(neighborhood.focusRaw?.id) || id;
+    const rawFocusRef = refId(neighborhood.focusRaw?.id);
+    const neighborhoodFocusId = /^profile-/i.test(rawFocusRef) ? rawFocusRef : (rawFocusRef ? `profile-${rawFocusRef}` : '');
+    if (current.id === id) focusId = neighborhoodFocusId || id;
     Object.entries(neighborhood.mapped).forEach(([profileId, raw]) => {
       if (raw.public === false) return;
       if (Object.keys(discovered).length >= maxProfiles && !discovered[profileId]) return;
@@ -972,10 +972,16 @@ async function importFromGeni(input, requestedDepth = 2, options = {}) {
       incoming.importedAt = importedAt;
       discovered[profileId] = mergePersonRecords(discovered[profileId], incoming);
     });
+    const loadedFocusId = discovered[current.id] ? current.id : neighborhoodFocusId;
+    if (discovered[loadedFocusId]) discovered[loadedFocusId].geniImmediateFamilyLoaded = true;
 
     Object.entries(discovered).forEach(([profileId, person]) => {
       state.people[profileId] = mergePersonRecords(state.people[profileId], person);
     });
+    if (state.geniImport?.profileId === id) {
+      state.geniImport.loaded = Object.keys(discovered).length;
+      state.geniImport.requests = requests;
+    }
     state.rootId = state.rootId || focusId;
     state.selectedId = state.selectedId || focusId;
     if (options.title) state.title = options.title;
@@ -985,8 +991,6 @@ async function importFromGeni(input, requestedDepth = 2, options = {}) {
     await new Promise(resolve => requestAnimationFrame(resolve));
 
     if (current.distance + 1 < depth) {
-      const rawFocusRef = refId(neighborhood.focusRaw?.id);
-      const neighborhoodFocusId = /^profile-/i.test(rawFocusRef) ? rawFocusRef : (rawFocusRef ? `profile-${rawFocusRef}` : '');
       const currentProfile = discovered[current.id] || discovered[neighborhoodFocusId];
       const nextIds = mode === 'descendants'
         ? (currentProfile?.children || [])
@@ -1018,7 +1022,43 @@ async function importFromGeni(input, requestedDepth = 2, options = {}) {
   render();
   const limitNote = Object.keys(discovered).length >= maxProfiles || requests >= maxRequests ? ' Safety limit reached.' : '';
   const skipNote = skipped ? ` ${skipped} restricted connection${skipped === 1 ? '' : 's'} skipped.` : '';
-  toast(`Grew ${Object.keys(discovered).length} live Geni profiles across depth ${depth}.${skipNote}${limitNote}`, true);
+  const scopeNote = allDescendants ? ' through all reachable descendant generations' : ` across depth ${depth}`;
+  toast(`Grew ${Object.keys(discovered).length} live Geni profiles${scopeNote}.${skipNote}${limitNote}`, true);
+}
+
+const GENI_FAMILY_IMPORT_SCOPES = {
+  immediate: { label: 'Immediate family', depth: 1 },
+  'descendants-2': { label: 'Descendants · 2 generations', depth: 2 },
+  'descendants-all': { label: 'All descendants', depth: 2, allDescendants: true }
+};
+
+function geniFamilyImportIntent(intent) {
+  const legacyPrefix = 'immediate-family:';
+  if (intent.startsWith(legacyPrefix)) return { scope: 'immediate', profileId: intent.slice(legacyPrefix.length) };
+  const match = intent.match(/^family-import:(immediate|descendants-2|descendants-all):(profile-.+)$/i);
+  return match ? { scope: match[1].toLowerCase(), profileId: match[2] } : null;
+}
+
+async function runGeniFamilyImport(profileId, scope) {
+  const config = GENI_FAMILY_IMPORT_SCOPES[scope];
+  const person = state.people[profileId];
+  if (!config || !person || !/^profile-/i.test(profileId)) {
+    throw new Error('This local profile is not linked to a Geni profile ID.');
+  }
+  if (state.geniImport) return toast('Another Geni import is already running.', true);
+  if (!state.geniAccessToken) {
+    beginGeniAuthorization(`family-import:${scope}:${profileId}`);
+    return;
+  }
+  state.geniImport = { profileId, scope, loaded: 0, requests: 0 };
+  render();
+  try {
+    if (scope === 'immediate') await loadGeniImmediateFamily(profileId);
+    else await importFromGeni(profileId, config.depth, { mode: 'descendants', allDescendants: config.allDescendants === true });
+  } finally {
+    state.geniImport = null;
+    render();
+  }
 }
 
 function wikiTreePerson(raw, importedAt) {
@@ -2301,15 +2341,35 @@ function renderDetails() {
     : person.sourceUrl ? 'Public source linked to this local profile.' : 'No public source is linked.';
   renderRelationshipHouseholds(person);
   renderPersonalEvents(person);
-  const isGeniProfile = person.sourceProvider === 'geni' && /^profile-/i.test(person.id);
+  // Bundled and older saved records retain their Geni ID even when their
+  // displayed provenance link points to another historical source.
+  const isGeniProfile = /^profile-/i.test(person.id);
   els['geni-family-actions'].hidden = !isGeniProfile;
   if (isGeniProfile) {
     const complete = person.geniImmediateFamilyLoaded === true;
-    els['geni-family-status'].textContent = complete
-      ? 'The complete public immediate family has been imported. You can now add a local relative to this profile.'
-      : 'Load this profile’s complete public immediate family before adding local relatives.';
-    els['load-immediate-family'].textContent = complete ? 'Refresh complete immediate family' : 'Load complete immediate family';
-    els['add-local-relative'].disabled = !complete;
+    const importButtons = [
+      [els['load-immediate-family'], 'immediate'],
+      [els['load-descendants-two'], 'descendants-2'],
+      [els['load-descendants-all'], 'descendants-all']
+    ];
+    const activeImport = state.geniImport;
+    importButtons.forEach(([button, scope]) => {
+      const active = activeImport?.profileId === person.id && activeImport.scope === scope;
+      button.disabled = !!activeImport;
+      button.classList.toggle('is-loading', active);
+      button.textContent = active ? `Loading ${GENI_FAMILY_IMPORT_SCOPES[scope].label.toLowerCase()}…` : GENI_FAMILY_IMPORT_SCOPES[scope].label;
+    });
+    if (activeImport?.profileId === person.id) {
+      const progress = activeImport.loaded ? ` ${activeImport.loaded} profiles received in ${activeImport.requests} request${activeImport.requests === 1 ? '' : 's'}.` : '';
+      els['geni-family-status'].textContent = `Importing from Geni.${progress} The timeline grows after each response.`;
+    } else if (activeImport) {
+      els['geni-family-status'].textContent = 'Another Geni branch is currently being imported.';
+    } else {
+      els['geni-family-status'].textContent = complete
+        ? 'The complete public immediate family has been imported. You can refresh it, continue down two generations, or follow every public descendant.'
+        : 'Import this profile’s public immediate family before adding local relatives, or continue directly down its descendants.';
+    }
+    els['add-local-relative'].disabled = !complete || !!activeImport;
   }
 }
 function renderParentOptions() {
@@ -2385,7 +2445,7 @@ els['add-global-event'].addEventListener('click', () => {
 });
 function openAddPersonDialog(parentId = '') {
   const parent = state.people[parentId];
-  if (parent?.sourceProvider === 'geni' && !parent.geniImmediateFamilyLoaded) {
+  if (/^profile-/i.test(parent?.id) && !parent.geniImmediateFamilyLoaded) {
     toast('Load this Geni profile’s complete immediate family before adding a local relative.', true);
     return;
   }
@@ -2450,10 +2510,14 @@ els['edit-person'].addEventListener('click', () => {
   els['person-form'].elements.displayName.select();
 });
 els['cancel-person-edit'].addEventListener('click', () => { state.editingProfileId = ''; render(); });
-els['load-immediate-family'].addEventListener('click', async () => {
-  try { await loadGeniImmediateFamily(state.selectedId); }
+[
+  [els['load-immediate-family'], 'immediate'],
+  [els['load-descendants-two'], 'descendants-2'],
+  [els['load-descendants-all'], 'descendants-all']
+].forEach(([button, scope]) => button.addEventListener('click', async () => {
+  try { await runGeniFamilyImport(state.selectedId, scope); }
   catch (error) { toast(error.message || 'Could not load this Geni family.', true); render(); }
-});
+}));
 els['add-local-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
 els['add-personal-event'].addEventListener('click', () => {
   const person = state.people[state.selectedId];
@@ -2556,12 +2620,13 @@ else if (upgradeBundledBritishRoyalLine()) persist('Bundled royal example update
 els['tree-filter'].value = state.treeFilter;
 render();
 const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);
-if (initialGeniAccessToken && pendingGeniIntent.startsWith('immediate-family:')) {
+const pendingFamilyImport = geniFamilyImportIntent(pendingGeniIntent);
+if (initialGeniAccessToken && pendingFamilyImport) {
   sessionValue(GENI_IMPORT_INTENT_KEY, null);
-  const profileId = pendingGeniIntent.slice('immediate-family:'.length);
+  const { profileId, scope } = pendingFamilyImport;
   state.selectedId = state.people[profileId] ? profileId : '';
   render();
-  loadGeniImmediateFamily(profileId).catch(error => {
+  runGeniFamilyImport(profileId, scope).catch(error => {
     toast(error.message || 'Could not load this Geni family.', true);
     render();
   });

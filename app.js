@@ -1106,6 +1106,11 @@ async function loadGeniImmediateFamily(profileId) {
     const relative = state.people[id];
     return numericYear(relative?.birthYear) == null || (!relative?.isLiving && numericYear(relative?.deathYear) == null);
   });
+  const dateStateBefore = new Map(sparseIds.map(id => [id, {
+    birth: numericYear(state.people[id]?.birthYear),
+    death: numericYear(state.people[id]?.deathYear)
+  }]));
+  let completedExistingProfiles = 0;
   if (sparseIds.length) {
     try {
       const detailsById = await fetchGeniProfileDetails(sparseIds);
@@ -1125,6 +1130,12 @@ async function loadGeniImmediateFamily(profileId) {
       if (error?.code === 'GENI_INVALID_ACCESS_TOKEN') throw error;
       // Keep the family graph when detailed fields are restricted.
     }
+    completedExistingProfiles = sparseIds.filter(id => {
+      if (!existingIds.has(id)) return false;
+      const before = dateStateBefore.get(id);
+      return (before.birth == null && numericYear(state.people[id]?.birthYear) != null)
+        || (before.death == null && numericYear(state.people[id]?.deathYear) != null);
+    }).length;
   }
   if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
   const refreshedFamilyIds = new Set([
@@ -1162,7 +1173,10 @@ async function loadGeniImmediateFamily(profileId) {
   const dateSummary = undatedCount
     ? `${undatedCount} still ${undatedCount === 1 ? 'has' : 'have'} no public birth year.`
     : 'All returned profiles now have birth years.';
-  toast(`Geni returned ${receivedIds.length} immediate-family profiles; ${countSummary}. ${dateSummary} All are listed in this profile’s family panel.`, true);
+  const updateSummary = completedExistingProfiles
+    ? ` ${completedExistingProfiles} existing profile${completedExistingProfiles === 1 ? '' : 's'} received missing date data.`
+    : '';
+  toast(`Geni returned ${receivedIds.length} immediate-family profiles; ${countSummary}.${updateSummary} ${dateSummary} All are listed in this profile’s family panel.`, true);
 }
 
 async function fetchGeniReignEvents(profileIds) {
@@ -1192,6 +1206,10 @@ function mergePersonRecords(existing, incoming) {
   ['firstName', 'lastName', 'displayName', 'title', 'birthYear', 'deathYear', 'place', 'note'].forEach(field => {
     if (!clean(existing[field]) && clean(incoming[field])) preferred[field] = incoming[field];
   });
+  // A placeholder such as "?" is missing data, not a local edit that should
+  // prevent Geni from filling a real year on an existing profile.
+  if (numericYear(existing.birthYear) == null && numericYear(incoming.birthYear) != null) preferred.birthYear = incoming.birthYear;
+  if (numericYear(existing.deathYear) == null && numericYear(incoming.deathYear) != null) preferred.deathYear = incoming.deathYear;
   if (!['male', 'female'].includes(existing.gender) && ['male', 'female'].includes(incoming.gender)) preferred.gender = incoming.gender;
   preferred.isLiving = existing.isLiving === true || (!clean(existing.deathYear) && incoming.isLiving === true);
   const merged = normalizePerson(preferred, existing.id || incoming.id);

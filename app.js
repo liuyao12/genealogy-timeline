@@ -5,6 +5,7 @@ const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
+const CAMILLA_GENI_PROFILE_ID = 'profile-6000000003081589893';
 const EVENT_COLOR_PALETTE = [
   ['#c62828', 'Red'], ['#e65100', 'Orange'], ['#c2892b', 'Amber'], ['#6b7d2a', 'Olive'],
   ['#2e7d32', 'Green'], ['#00796b', 'Teal'], ['#00838f', 'Cyan'], ['#1565c0', 'Blue'],
@@ -14,7 +15,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 5;
+const BRITISH_ROYAL_STARTER_VERSION = 6;
 
 function sessionValue(key, value) {
   try {
@@ -726,6 +727,10 @@ function upgradeBundledBritishRoyalLine() {
     const oldGeneratedName = oldRoyalTitle && !/\b(?:king|queen)\b/i.test(oldBaseName) ? `${oldBaseName}, ${oldRoyalTitle}` : oldBaseName;
     if (saved.starterProfile && saved.displayName === oldGeneratedName && bundled.displayName !== oldGeneratedName) {
       merged.displayName = bundled.displayName;
+    }
+    if (id === CAMILLA_GENI_PROFILE_ID) {
+      merged.isLiving = true;
+      merged.deathYear = '';
     }
     merged.marriageYears = { ...bundled.marriageYears, ...saved.marriageYears };
     merged.personalEvents = normalizePersonalEvents([...bundled.personalEvents, ...saved.personalEvents]);
@@ -1639,7 +1644,13 @@ function renderTimeline() {
   const top = 58;
   const left = 36;
   const birthYear = person => numericYear(person.birthYear);
-  const endYear = person => numericYear(person.deathYear) ?? (person.isLiving ? currentYear : birthYear(person) + 80);
+  // Living profiles always terminate exactly at the current-year line. A
+  // stale or future death value must never push their lifespan beyond it.
+  const endYear = person => person.isLiving ? currentYear : (numericYear(person.deathYear) ?? birthYear(person) + 80);
+  const lifespanWidthFor = person => {
+    const rawWidth = Math.max(0, (endYear(person) - birthYear(person)) * yearWidth);
+    return person.isLiving ? rawWidth : Math.max(2, rawWidth);
+  };
   const minYear = Math.floor((Math.min(...people.map(birthYear)) - 40) / 20) * 20;
   const latestLifeYear = Math.max(...people.map(endYear), ...(people.some(person => person.isLiving) ? [currentYear] : []));
   const maxYear = Math.ceil((latestLifeYear + 20) / 20) * 20;
@@ -1792,7 +1803,7 @@ function renderTimeline() {
 
   const layoutNodes = layoutEntries.map((entry, index) => {
     const person = state.people[entry.id];
-    const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
+    const lifespanWidth = lifespanWidthFor(person);
     const labelWidth = 38 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
     return { ...entry, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth) };
   });
@@ -1996,7 +2007,7 @@ function renderTimeline() {
     const { id, key: nodeKey } = layoutNode;
     const person = state.people[id];
     const pos = positions.get(nodeKey);
-    const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
+    const lifespanWidth = lifespanWidthFor(person);
     const hasReign = reignEvents(person).length > 0;
     const isSpouseNode = layoutNode.isSpouse;
     const nodeShape = attrs => person.isLiving

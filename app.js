@@ -82,8 +82,6 @@ const state = {
   collapsedIds: new Set(),
   editingProfileId: ''
 };
-let pendingTimelineRelayout = null;
-let activeTimelineAnimationFrame = 0;
 let timelineViewportInitialized = false;
 
 const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
@@ -154,7 +152,15 @@ function numericYear(value) {
 }
 function unique(values) { return [...new Set(array(values))]; }
 function uniqueRefs(values) {
-  return [...new Set((Array.isArray(values) ? values : []).map(refId).filter(Boolean))];
+  const candidates = Array.isArray(values) ? values
+    : typeof values === 'string' ? [values]
+      : values && typeof values === 'object' && (values.id || values.url) ? [values]
+        : values && typeof values === 'object'
+          ? Object.entries(values).map(([key, value]) => (
+            typeof value === 'string' || (value && typeof value === 'object' && (value.id || value.url)) ? value : key
+          ))
+          : [];
+  return [...new Set(candidates.map(refId).filter(Boolean))];
 }
 function validPublicUrl(value) {
   try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ''; }
@@ -976,7 +982,13 @@ function fetchGeniJsonp(path, params = {}) {
       if (error) reject(error); else resolve(payload);
     }
     window[callbackName] = payload => {
-      const apiMessage = clean(payload?.error?.message || payload?.message);
+      const apiMessage = clean([
+        payload?.error?.message,
+        typeof payload?.error === 'string' ? payload.error : '',
+        payload?.error?.type,
+        payload?.error?.code,
+        payload?.message
+      ].filter(Boolean).join(' ')).replace(/[_-]+/g, ' ');
       if (/invalid.*access.*token|access.*token.*invalid|expired.*access.*token/i.test(apiMessage)) {
         const error = new Error('Geni authorization has expired.');
         error.code = 'GENI_INVALID_ACCESS_TOKEN';
@@ -1652,80 +1664,6 @@ function timelineNodeRange(node) {
   return { left: node.x - gutter, right: node.x + Math.max(node.occupancyWidth, 2) + gutter };
 }
 
-function renderedTimelinePositions() {
-  return new Map([...els['timeline-canvas'].querySelectorAll('.timeline-node[data-node-key]')].map(node => {
-    const coordinates = (node.getAttribute('transform')?.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
-    return [node.dataset.nodeKey, { x: coordinates[0] || 0, y: coordinates[1] || 0 }];
-  }));
-}
-
-function prepareTimelineRelayout(anchorKey) {
-  if (activeTimelineAnimationFrame) cancelAnimationFrame(activeTimelineAnimationFrame);
-  activeTimelineAnimationFrame = 0;
-  const positions = renderedTimelinePositions();
-  if (!positions.has(anchorKey)) return;
-  pendingTimelineRelayout = {
-    anchorKey,
-    positions,
-    scrollTop: els['canvas-viewport'].scrollTop
-  };
-}
-
-function animateTimelineRelayout(newPositions) {
-  const transition = pendingTimelineRelayout;
-  pendingTimelineRelayout = null;
-  if (!transition) return;
-  const oldAnchor = transition.positions.get(transition.anchorKey);
-  const newAnchor = newPositions.get(transition.anchorKey);
-  if (!oldAnchor || !newAnchor) return;
-
-  const viewport = els['canvas-viewport'];
-  const requestedScrollTop = transition.scrollTop + (newAnchor.y - oldAnchor.y) * state.zoom;
-  viewport.scrollTop = Math.max(0, requestedScrollTop);
-  const appliedScrollShift = (viewport.scrollTop - transition.scrollTop) / state.zoom;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const duration = 280;
-  const movements = [];
-  els['timeline-canvas'].querySelectorAll('.timeline-node[data-node-key]').forEach(node => {
-    const key = node.dataset.nodeKey;
-    const finish = newPositions.get(key);
-    const previous = transition.positions.get(key);
-    const start = previous
-      ? { x: previous.x, y: previous.y + appliedScrollShift }
-      : { x: oldAnchor.x, y: oldAnchor.y + appliedScrollShift };
-    if (Math.abs(start.x - finish.x) < 0.5 && Math.abs(start.y - finish.y) < 0.5 && previous) return;
-    node.setAttribute('transform', `translate(${start.x} ${start.y})`);
-    if (!previous) node.style.opacity = '0';
-    movements.push({ node, start, finish, fadeIn: !previous });
-  });
-  const connectors = els['timeline-canvas'].querySelector('.timeline-connectors');
-  if (connectors) connectors.style.opacity = '0.12';
-  if (!movements.length && !connectors) return;
-  const startedAt = performance.now();
-  const drawFrame = now => {
-    const progress = Math.min(1, (now - startedAt) / duration);
-    const eased = 1 - ((1 - progress) ** 3);
-    movements.forEach(({ node, start, finish, fadeIn }) => {
-      const x = start.x + (finish.x - start.x) * eased;
-      const y = start.y + (finish.y - start.y) * eased;
-      node.setAttribute('transform', `translate(${x} ${y})`);
-      if (fadeIn) node.style.opacity = String(eased);
-    });
-    if (connectors) connectors.style.opacity = String(0.12 + 0.88 * eased);
-    if (progress < 1) {
-      activeTimelineAnimationFrame = requestAnimationFrame(drawFrame);
-      return;
-    }
-    movements.forEach(({ node, finish }) => {
-      node.setAttribute('transform', `translate(${finish.x} ${finish.y})`);
-      node.style.removeProperty('opacity');
-    });
-    connectors?.style.removeProperty('opacity');
-    activeTimelineAnimationFrame = 0;
-  };
-  activeTimelineAnimationFrame = requestAnimationFrame(drawFrame);
-}
-
 function timelineRowsConflict(firstIndex, secondIndex, nodeRanges, horizontalRangesByKey, nodes) {
   const overlaps = (a, b) => a.left < b.right && b.left < a.right;
   const firstNodeRange = nodeRanges[firstIndex];
@@ -1927,8 +1865,6 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
 }
 
 function renderTimeline() {
-  if (activeTimelineAnimationFrame) cancelAnimationFrame(activeTimelineAnimationFrame);
-  activeTimelineAnimationFrame = 0;
   const canvas = els['timeline-canvas'];
   const ruler = els['timeline-ruler'];
   canvas.replaceChildren();
@@ -2156,6 +2092,7 @@ function renderTimeline() {
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
   const layoutEntries = order.map(id => ({ key: id, id, isSpouse: spouseIds.has(id), isTransportedCopy: false }));
   const transportKeyByFamily = new Map();
+  const transportedChildrenByNatalId = new Map();
   [...families.entries()].forEach(([key, family]) => {
     const parentIds = family.parents.filter(id => datedIds.has(id));
     const transportedId = transportedParent(parentIds);
@@ -2169,6 +2106,8 @@ function renderTimeline() {
     family.children.forEach(childId => displayParentByKey.set(childId, copyKey));
     if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
     transportKeyByFamily.set(key, copyKey);
+    if (!transportedChildrenByNatalId.has(transportedId)) transportedChildrenByNatalId.set(transportedId, new Set());
+    family.children.forEach(childId => transportedChildrenByNatalId.get(transportedId).add(childId));
   });
 
   const layoutNodes = layoutEntries.map((entry, index) => {
@@ -2483,14 +2422,15 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
+    const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
     const hasChildren = person.children.some(childId =>
-      expandableIds.has(childId) && childEdgeVisible(id, childId)
+      !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
     );
     const isCollapsed = state.collapsedIds.has(id);
-    // A cousin-marriage collapse can move this profile from its natal
-    // occurrence into the surviving household as a spouse. In that state it
-    // must keep the expansion control; otherwise the marriage symbol would
-    // strand the branch in its collapsed state.
+    // A cousin-marriage collapse can move this profile into the surviving
+    // household as the occurrence immediately above its descendants. That
+    // occurrence keeps the control; a natal occurrence whose children are
+    // rendered elsewhere does not receive one.
     const showBranchControl = !isSpouseNode || (isCollapsed && hasChildren);
     const icon = showBranchControl
       ? svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' })
@@ -2502,7 +2442,6 @@ function renderTimeline() {
     } else icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: nodeCenterY }, '⚭'));
     const toggleBranch = event => {
       event.stopPropagation();
-      prepareTimelineRelayout(nodeKey);
       if (isCollapsed) state.collapsedIds.delete(id); else state.collapsedIds.add(id);
       render();
     };
@@ -2533,7 +2472,6 @@ function renderTimeline() {
     canvas.append(group);
   });
   canvas.style.transform = `scale(${state.zoom})`;
-  animateTimelineRelayout(positions);
   if (!timelineViewportInitialized) {
     timelineViewportInitialized = true;
     requestAnimationFrame(() => {

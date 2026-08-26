@@ -1691,19 +1691,6 @@ function timelineRowsConflict(firstIndex, secondIndex, nodeRanges, horizontalRan
     || secondLines.some(line => overlaps(line, firstNodeRange));
 }
 
-function timelinePreviousSiblingIndexes(nodes, displayParentByKey) {
-  const previousSiblingByIndex = new Map();
-  const lastChildByParentKey = new Map();
-  nodes.forEach((node, index) => {
-    const parentKey = displayParentByKey.get(node.key);
-    if (!parentKey) return;
-    const previousIndex = lastChildByParentKey.get(parentKey);
-    if (previousIndex != null) previousSiblingByIndex.set(index, previousIndex);
-    lastChildByParentKey.set(parentKey, index);
-  });
-  return previousSiblingByIndex;
-}
-
 function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey) {
   const ranges = nodes.map(timelineNodeRange);
   // Match the mini-program's row invariant: intersecting horizontal ranges must
@@ -1713,21 +1700,44 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
   const requiredVerticalSeparation = Math.max(rowHeight, rowStep);
   const indexByKey = new Map(nodes.map((node, index) => [node.key, index]));
   const preferredY = nodes.map(node => Math.max(0, node.y));
-  const previousSiblingByIndex = timelinePreviousSiblingIndexes(nodes, displayParentByKey);
-  // Compaction may use gaps inside an earlier sibling's descendant block, but
-  // the sibling roots themselves must retain their original (birth) order.
-  // Reassign the already-compacted sibling slots instead of pushing a younger
-  // sibling beneath the entire preceding subtree.
-  const siblingsByParentKey = new Map();
+  const childrenByIndex = new Map(nodes.map((_, index) => [index, []]));
+  const parentIndexByIndex = new Map();
   nodes.forEach((node, index) => {
-    const parentKey = displayParentByKey.get(node.key);
-    if (!parentKey) return;
-    if (!siblingsByParentKey.has(parentKey)) siblingsByParentKey.set(parentKey, []);
-    siblingsByParentKey.get(parentKey).push(index);
+    const parentIndex = indexByKey.get(displayParentByKey.get(node.key));
+    if (parentIndex == null || parentIndex === index) return;
+    parentIndexByIndex.set(index, parentIndex);
+    childrenByIndex.get(parentIndex).push(index);
   });
-  siblingsByParentKey.forEach(indexes => {
-    const compactedSlots = indexes.map(index => preferredY[index]).sort((a, b) => a - b);
-    indexes.forEach((index, position) => { preferredY[index] = compactedSlots[position]; });
+  const subtreeCache = new Map();
+  const subtreeIndexes = rootIndex => {
+    if (subtreeCache.has(rootIndex)) return subtreeCache.get(rootIndex);
+    const indexes = [rootIndex];
+    childrenByIndex.get(rootIndex).forEach(childIndex => indexes.push(...subtreeIndexes(childIndex)));
+    subtreeCache.set(rootIndex, indexes);
+    return indexes;
+  };
+  const depthOf = index => {
+    let depth = 0;
+    for (let parent = parentIndexByIndex.get(index); parent != null; parent = parentIndexByIndex.get(parent)) depth += 1;
+    return depth;
+  };
+  // A sibling is not just one box: it owns a whole descendant branch. Reassign
+  // the compacted branch slots in birth order, translating every node in each
+  // block together. This keeps the compact layout without leaving one sibling
+  // sitting on top of another sibling's descendants.
+  [...childrenByIndex.entries()]
+    .filter(([, childIndexes]) => childIndexes.length > 1)
+    .sort(([firstParent], [secondParent]) => depthOf(secondParent) - depthOf(firstParent))
+    .forEach(([, childIndexes]) => {
+      const branches = childIndexes.map(rootIndex => ({ rootIndex, indexes: subtreeIndexes(rootIndex) }));
+      const compactedSlots = branches
+        .map(branch => Math.min(...branch.indexes.map(index => preferredY[index])))
+        .sort((first, second) => first - second);
+      branches.forEach((branch, branchIndex) => {
+        const top = Math.min(...branch.indexes.map(index => preferredY[index]));
+        const shift = compactedSlots[branchIndex] - top;
+        branch.indexes.forEach(index => { preferredY[index] += shift; });
+      });
   });
   const spatialOrder = nodes.map((_, index) => index).sort((first, second) =>
     preferredY[first] - preferredY[second] || first - second
@@ -1740,11 +1750,7 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
     const parentFloor = parentIndex != null && placed.includes(parentIndex)
       ? nodes[parentIndex].y + rowStep
       : 0;
-    const previousSibling = previousSiblingByIndex.get(index);
-    const siblingFloor = previousSibling != null && placed.includes(previousSibling)
-      ? nodes[previousSibling].y + rowStep
-      : 0;
-    let targetY = Math.max(preferredY[index], parentFloor, siblingFloor);
+    let targetY = Math.max(preferredY[index], parentFloor);
 
     // Search final destinations rather than replaying the original row order.
     // A node may therefore settle safely above a previously indexed obstacle;

@@ -2120,9 +2120,13 @@ function renderTimeline() {
   // vertical stems deliberately do not. This lets otherwise unrelated rows
   // cross marriage/transport stems without letting a label obscure a branch.
   const layoutNodeByKey = new Map(layoutNodes.map(node => [node.key, node]));
-  const incomingConnectorEndOffset = id => state.people[id]?.children.some(childId =>
-    expandableIds.has(childId) && childEdgeVisible(id, childId)
-  ) ? 18 : 12;
+  const incomingConnectorEndOffset = id => {
+    const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
+    const hasControlHere = state.people[id]?.children.some(childId =>
+      !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
+    );
+    return hasControlHere ? 18 : 12;
+  };
   const horizontalRangesByKey = new Map();
   const addHorizontalRange = (nodeKey, x1, x2) => {
     if (!layoutNodeByKey.has(nodeKey)) return;

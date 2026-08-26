@@ -1578,7 +1578,7 @@ function renderTimeline() {
   const layoutNodes = layoutEntries.map((entry, index) => {
     const person = state.people[entry.id];
     const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
-    const labelWidth = 48 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
+    const labelWidth = 38 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
     return { ...entry, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth) };
   });
   compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep);
@@ -1786,7 +1786,7 @@ function renderTimeline() {
     textMask.append(svg('rect', { x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5, fill: '#000' }));
     nodeDefs.append(textMask);
     const makeLabel = className => {
-      const text = svg('text', { class: className, x: 48, y: 19 });
+      const text = svg('text', { class: className, x: 38, y: 19 });
       text.append(svg('tspan', { class: 'timeline-name' }, fullName(person)));
       text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, life(person)));
       return text;

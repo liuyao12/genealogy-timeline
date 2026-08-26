@@ -331,6 +331,7 @@ function normalizePerson(source, fallbackId) {
     sourceProvider: clean(source.sourceProvider || source.provenance?.provider || sourceProviderFromUrl(sourceUrl)),
     importedAt: clean(source.importedAt || source.provenance?.importedAt),
     geniImmediateFamilyLoaded: source.geniImmediateFamilyLoaded === true,
+    geniImmediateFamilyVerifiedAt: clean(source.geniImmediateFamilyVerifiedAt),
     starterProfile: source.starterProfile === true
   };
 }
@@ -857,10 +858,13 @@ function fetchGeniJsonp(path, params = {}) {
 async function fetchGeniNeighborhood(id) {
   const payload = await fetchGeniJsonp(`${encodeURIComponent(id)}/immediate-family`);
   if (payload.error) throw new Error(payload.error.message || 'Geni did not return a public profile.');
+  if (payload.message && !payload.nodes && !payload.focus?.nodes) throw new Error(payload.message);
   const nodes = payload.nodes || payload.focus?.nodes || {};
   const mapped = inferRelationsFromUnions(nodes);
   const focusRaw = payload.focus?.id ? payload.focus : (nodes[payload.focus] || payload);
+  if (!focusRaw?.id) throw new Error('Geni did not return the selected profile’s immediate family.');
   if (focusRaw?.id && !mapped[focusRaw.id]) mapped[focusRaw.id] = focusRaw;
+  if (!Object.keys(mapped).length) throw new Error('Geni returned no verifiable immediate-family profiles.');
   return { mapped, focusRaw };
 }
 
@@ -889,6 +893,7 @@ async function loadGeniImmediateFamily(profileId) {
   });
   if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
   state.people[profileId].geniImmediateFamilyLoaded = true;
+  state.people[profileId].geniImmediateFamilyVerifiedAt = importedAt;
   if (state.geniImport?.profileId === profileId) {
     state.geniImport.loaded = Object.keys(mapped).length;
     state.geniImport.requests = 1;
@@ -947,6 +952,7 @@ function mergePersonRecords(existing, incoming) {
   merged.sourceProvider = incoming.sourceProvider || existing.sourceProvider;
   merged.importedAt = incoming.importedAt || existing.importedAt;
   merged.geniImmediateFamilyLoaded = incoming.geniImmediateFamilyLoaded || existing.geniImmediateFamilyLoaded;
+  merged.geniImmediateFamilyVerifiedAt = incoming.geniImmediateFamilyVerifiedAt || existing.geniImmediateFamilyVerifiedAt;
   merged.starterProfile = incoming.starterProfile || existing.starterProfile;
   return merged;
 }
@@ -999,7 +1005,10 @@ async function importFromGeni(input, requestedDepth = 2, options = {}) {
       discovered[profileId] = mergePersonRecords(discovered[profileId], incoming);
     });
     const loadedFocusId = discovered[current.id] ? current.id : neighborhoodFocusId;
-    if (discovered[loadedFocusId]) discovered[loadedFocusId].geniImmediateFamilyLoaded = true;
+    if (discovered[loadedFocusId]) {
+      discovered[loadedFocusId].geniImmediateFamilyLoaded = true;
+      discovered[loadedFocusId].geniImmediateFamilyVerifiedAt = importedAt;
+    }
 
     Object.entries(discovered).forEach(([profileId, person]) => {
       state.people[profileId] = mergePersonRecords(state.people[profileId], person);
@@ -2449,7 +2458,7 @@ function renderDetails() {
   const isGeniProfile = /^profile-/i.test(person.id);
   els['geni-family-actions'].hidden = !isGeniProfile;
   if (isGeniProfile) {
-    const complete = person.geniImmediateFamilyLoaded === true;
+    const complete = Boolean(person.geniImmediateFamilyVerifiedAt);
     const importButtons = [
       [els['load-immediate-family'], 'immediate'],
       [els['load-descendants-two'], 'descendants-2'],
@@ -2469,7 +2478,7 @@ function renderDetails() {
       els['geni-family-status'].textContent = 'Another Geni branch is currently being imported.';
     } else {
       els['geni-family-status'].textContent = complete
-        ? 'The complete public immediate family has been imported. You can refresh it, continue down two generations, or follow every public descendant.'
+        ? `The complete public immediate family was verified with Geni ${new Date(person.geniImmediateFamilyVerifiedAt).toLocaleString()}. You can refresh it or continue down the descendants.`
         : 'Import this profile’s public immediate family before adding local relatives, or continue directly down its descendants.';
     }
     els['add-local-relative'].disabled = !complete || !!activeImport;
@@ -2548,8 +2557,8 @@ els['add-global-event'].addEventListener('click', () => {
 });
 function openAddPersonDialog(parentId = '') {
   const parent = state.people[parentId];
-  if (/^profile-/i.test(parent?.id) && !parent.geniImmediateFamilyLoaded) {
-    toast('Load this Geni profile’s complete immediate family before adding a local relative.', true);
+  if (/^profile-/i.test(parent?.id) && !parent.geniImmediateFamilyVerifiedAt) {
+    toast('Verify this Geni profile’s complete immediate family before adding a local relative.', true);
     return;
   }
   els['add-dialog'].showModal();

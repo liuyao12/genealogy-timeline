@@ -14,7 +14,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 3;
+const BRITISH_ROYAL_STARTER_VERSION = 4;
 
 function sessionValue(key, value) {
   try {
@@ -657,10 +657,18 @@ function createBritishRoyalSample() {
   return people;
 }
 
+function createBritishHistoryEvents() {
+  return normalizeGlobalEvents([
+    { id: 'british-commonwealth', name: 'Commonwealth', startYear: 1649, endYear: 1660, color: '#616161' },
+    { id: 'british-wwi', name: 'WW1', startYear: 1914, endYear: 1918, color: '#6b7d2a' },
+    { id: 'british-wwii', name: 'WW2', startYear: 1939, endYear: 1945, color: '#3949ab' }
+  ]);
+}
+
 function loadBritishRoyalExample({ persistResult = true } = {}) {
   const button = els['royal-example-button'];
   state.people = createBritishRoyalSample();
-  state.globalEvents = [];
+  state.globalEvents = createBritishHistoryEvents();
   state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
   state.selectedId = '';
   state.ephemeral = false;
@@ -703,6 +711,12 @@ function upgradeBundledBritishRoyalLine() {
     merged.marriageYears = { ...bundled.marriageYears, ...saved.marriageYears };
     merged.personalEvents = normalizePersonalEvents([...bundled.personalEvents, ...saved.personalEvents]);
     state.people[id] = merged;
+  });
+  createBritishHistoryEvents().forEach(event => {
+    const alreadyPresent = state.globalEvents.some(existing => existing.id === event.id || (
+      numericYear(existing.startYear) === event.startYear && numericYear(existing.endYear) === event.endYear
+    ));
+    if (!alreadyPresent) state.globalEvents.push(event);
   });
   state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
   return true;

@@ -2450,6 +2450,11 @@ function renderPersonList() {
 
 function updateEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {
   picker.value = paletteColor(value, fallback);
+  const current = picker.querySelector('.event-color-current');
+  if (current) {
+    current.style.setProperty('--swatch-color', picker.value);
+    current.title = `Current colour: ${EVENT_COLOR_PALETTE.find(([candidate]) => candidate === picker.value)?.[1] || picker.value}`;
+  }
   picker.querySelectorAll('.event-color-swatch').forEach(swatch => {
     const selected = swatch.dataset.color === picker.value;
     swatch.setAttribute('aria-selected', String(selected));
@@ -2459,6 +2464,40 @@ function updateEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_EVEN
 
 function initializeEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {
   picker.replaceChildren();
+  picker.classList.add('event-color-picker');
+  const popupId = uniqueId('event-colours');
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'event-color-current';
+  trigger.setAttribute('aria-label', `Choose ${picker.getAttribute('aria-label') || 'event colour'}`);
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.setAttribute('aria-controls', popupId);
+  const options = document.createElement('div');
+  options.id = popupId;
+  options.className = 'event-color-options';
+  options.setAttribute('role', 'listbox');
+  options.setAttribute('aria-label', picker.getAttribute('aria-label') || 'Event colour');
+  options.setAttribute('popover', 'auto');
+  const positionPopup = () => {
+    const rect = trigger.getBoundingClientRect();
+    const width = options.offsetWidth || 86;
+    const height = options.offsetHeight || 50;
+    options.style.left = `${Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8))}px`;
+    options.style.top = `${rect.bottom + height + 8 <= window.innerHeight ? rect.bottom + 5 : Math.max(8, rect.top - height - 5)}px`;
+  };
+  trigger.addEventListener('click', () => {
+    if (options.matches(':popover-open')) options.hidePopover();
+    else {
+      options.showPopover();
+      positionPopup();
+    }
+  });
+  options.addEventListener('toggle', event => {
+    const open = event.newState === 'open';
+    trigger.setAttribute('aria-expanded', String(open));
+    if (open) positionPopup();
+  });
   EVENT_COLOR_PALETTE.forEach(([optionValue, optionLabel]) => {
     const swatch = document.createElement('button');
     swatch.type = 'button';
@@ -2471,16 +2510,17 @@ function initializeEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_
     swatch.addEventListener('click', () => {
       updateEventColorPalette(picker, optionValue, fallback);
       picker.dispatchEvent(new Event('change', { bubbles: true }));
+      options.hidePopover();
     });
-    picker.append(swatch);
+    options.append(swatch);
   });
+  picker.append(trigger, options);
   updateEventColorPalette(picker, value, fallback);
 }
 
 function eventColorPalette(value, label, onColor, fallback) {
   const picker = document.createElement('div');
-  picker.className = 'event-color-palette';
-  picker.setAttribute('role', 'listbox');
+  picker.className = 'event-color-picker';
   picker.setAttribute('aria-label', label);
   initializeEventColorPalette(picker, value, fallback);
   picker.addEventListener('change', () => onColor(picker.value));
@@ -2517,11 +2557,9 @@ function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EV
 function personalEventAgePrefix(person, event) {
   const birthYear = numericYear(person?.birthYear);
   const startYear = numericYear(event?.startYear);
-  const endYear = numericYear(event?.endYear) ?? startYear;
   if (birthYear == null || startYear == null || startYear < birthYear) return '';
   const startAge = startYear - birthYear + 1;
-  const endAge = endYear == null ? startAge : endYear - birthYear + 1;
-  return `Age ${startAge}${endAge > startAge ? `–${endAge}` : ''}`;
+  return `Age ${startAge}`;
 }
 
 function renderPersonalEvents(person) {

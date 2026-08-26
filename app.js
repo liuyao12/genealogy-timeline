@@ -1796,18 +1796,33 @@ function renderTimeline() {
   // are removed from `visibleIds` below, but its control must remain expandable.
   const expandableIds = new Set(visibleIds);
   const renderedPartnerIds = id => allPartnerIds(state.people[id]).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
-  state.collapsedIds.forEach(id => {
-    if (!visibleIds.has(id)) return;
-    const queue = [...(state.people[id]?.children || [])];
-    const hiddenDescendants = new Set();
-    while (queue.length) {
-      const childId = queue.shift();
-      if (hiddenDescendants.has(childId)) continue;
-      hiddenDescendants.add(childId);
-      queue.push(...(state.people[childId]?.children || []), ...renderedPartnerIds(childId));
-    }
-    hiddenDescendants.forEach(childId => visibleIds.delete(childId));
-  });
+  // Collapse paths, not people. A cousin-marriage profile can occur once in
+  // its natal branch and again beside a spouse. If one route from the root is
+  // collapsed, the other route must keep the shared household alive.
+  const activeLineageIds = new Set();
+  const lineageQueue = state.people[state.rootId] && visibleIds.has(state.rootId) ? [state.rootId] : [];
+  while (lineageQueue.length) {
+    const id = lineageQueue.shift();
+    if (activeLineageIds.has(id) || !visibleIds.has(id) || !state.people[id]) continue;
+    activeLineageIds.add(id);
+    if (state.collapsedIds.has(id)) continue;
+    state.people[id].children.forEach(childId => {
+      if (visibleIds.has(childId) && childEdgeVisible(id, childId)) lineageQueue.push(childId);
+    });
+  }
+  if (!state.people[state.rootId]) {
+    visibleIds.forEach(id => activeLineageIds.add(id));
+  }
+  if (state.collapsedIds.size && state.people[state.rootId]) {
+    const activeVisibleIds = new Set(activeLineageIds);
+    // Spouses are occurrences attached to an active lineage household. They
+    // remain visible without opening their unrelated branches.
+    activeLineageIds.forEach(id => renderedPartnerIds(id).forEach(partnerId => {
+      if (visibleIds.has(partnerId)) activeVisibleIds.add(partnerId);
+    }));
+    visibleIds.clear();
+    activeVisibleIds.forEach(id => visibleIds.add(id));
+  }
   const people = Object.values(state.people).filter(person => visibleIds.has(person.id) && numericYear(person.birthYear) != null);
   if (!people.length) {
     ruler.toggleAttribute('hidden', true);
@@ -1842,7 +1857,10 @@ function renderTimeline() {
   const datedIds = new Set(people.map(person => person.id));
   const familyKey = parentIds => [...parentIds].sort().join('|');
   const transportedParent = parentIds => {
-    if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id))) return '';
+    // Duplicate an in-line spouse only while both natal occurrences survive.
+    // When one ancestral route is collapsed, the one remaining occurrence
+    // becomes the household owner and the descendants move there.
+    if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id) && activeLineageIds.has(id))) return '';
     return parentIds.find(id => state.people[id]?.gender === 'female') || parentIds[1];
   };
   const childrenByParent = new Map();

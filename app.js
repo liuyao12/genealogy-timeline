@@ -2071,6 +2071,11 @@ function renderTimeline() {
   const families = new Map();
   const familyKeyByChild = new Map();
   people.forEach(child => {
+    // A profile retained only as a spouse belongs to the surviving marriage
+    // household, not to a natal branch hidden by an ancestor's collapse.
+    // Omitting that inactive natal family also removes its obsolete vertical
+    // stem and dotted transport line.
+    if (state.collapsedIds.size && state.people[state.rootId] && !activeLineageIds.has(child.id)) return;
     let parentIds = child.parents.filter(id => datedIds.has(id) && childEdgeVisible(id, child.id));
     if (!parentIds.length) return;
     if (parentIds.length === 2 && !renderedPartnerPairs.has(partnerRelationKey(parentIds[0], parentIds[1]))) {

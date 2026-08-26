@@ -909,12 +909,16 @@ function geniProfileIdForApiProfile(profile, fallbackId = '') {
   return publicProfileId || canonicalGeniProfileId(fallbackId || refId(profile?.id || profile?.url));
 }
 
+function geniGraphNodeRecords(nodes) {
+  return Object.entries(nodes || {}).map(([key, node]) => (
+    node && typeof node === 'object' ? { ...node, id: refId(node.id || node.url || key) } : null
+  )).filter(Boolean);
+}
+
 function inferRelationsFromUnions(nodes, preferredIds = {}) {
   // Geni's immediate-family graph is a hash. Depending on the API response,
   // a node's ID may exist only as its hash key rather than inside the node.
-  const nodeRecords = Object.entries(nodes || {}).map(([key, node]) => (
-    node && typeof node === 'object' ? { ...node, id: refId(node.id || node.url || key) } : null
-  )).filter(Boolean);
+  const nodeRecords = geniGraphNodeRecords(nodes);
   const profiles = nodeRecords.filter(node => clean(node.id).startsWith('profile-'));
   const aliases = {};
   const profileMap = {};
@@ -938,10 +942,10 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
       ?? union.annulment_date?.year ?? union.annulment_date
     ).match(/-?\d{3,4}/)?.[0] || '';
     const status = clean(union.status || union.relationship_status || union.type).toLowerCase().replace(/[\s-]+/g, '_');
-    const isSpouseUnion = ['spouse', 'ex_spouse', 'married', 'divorced', 'annulled'].includes(status) || Boolean(marriageYear);
+    const isSpouseUnion = ['spouse', 'ex_spouse', 'current', 'ex', 'married', 'divorced', 'annulled'].includes(status) || Boolean(marriageYear);
     const relationshipEndStatus = status === 'annulled' ? 'annulled'
       : divorceEvent || status === 'divorced' ? 'divorced'
-        : status === 'ex_spouse' ? 'ended' : '';
+        : ['ex_spouse', 'ex'].includes(status) ? 'ended' : '';
     const isEndedUnion = Boolean(relationshipEndStatus);
     partners.forEach(id => {
       profileMap[id].partners = unique([...(profileMap[id].partners || []), ...partners.filter(other => other !== id)]);
@@ -1023,6 +1027,36 @@ function fetchGeniJsonp(path, params = {}) {
   });
 }
 
+function geniUnionPayloadRecords(payload) {
+  const collection = payload?.results ?? payload?.unions ?? payload;
+  const records = Array.isArray(collection)
+    ? collection
+    : collection && typeof collection === 'object'
+      ? Object.entries(collection).map(([key, value]) => (
+        value && typeof value === 'object' ? { ...value, id: value.id || refId(key) } : null
+      ))
+      : [];
+  return records.filter(value => value && refId(value.id || value.url).startsWith('union-'));
+}
+
+async function fetchGeniUnionDetails(unionIds) {
+  const detailsById = {};
+  const ids = unique(unionIds).filter(id => /^union-/i.test(id));
+  for (let index = 0; index < ids.length; index += 25) {
+    const chunk = ids.slice(index, index + 25);
+    const payload = await fetchGeniJsonp('union', {
+      ids: chunk.map(id => id.replace(/^union-/i, '')).join(','),
+      fields: 'id,url,partners,children,status,marriage,divorce,marriage_date,divorce_date'
+    });
+    if (payload.error) throw new Error(payload.error.message || 'Geni did not return union details.');
+    geniUnionPayloadRecords(payload).forEach(raw => {
+      const id = refId(raw.id || raw.url);
+      if (id) detailsById[id] = { ...raw, id };
+    });
+  }
+  return detailsById;
+}
+
 async function fetchGeniNeighborhood(id) {
   const payload = await fetchGeniJsonp(`${encodeURIComponent(id)}/immediate-family`);
   if (payload.error) throw new Error(payload.error.message || 'Geni did not return a public profile.');
@@ -1039,7 +1073,20 @@ async function fetchGeniNeighborhood(id) {
   const relationNodes = Array.isArray(nodes)
     ? [...nodes, focusRaw]
     : { ...nodes, [rawFocusId || clean(focusRaw.id)]: focusRaw };
-  const mapped = inferRelationsFromUnions(relationNodes, preferredIds);
+  const relationRecords = geniGraphNodeRecords(relationNodes);
+  const unionIds = unique([
+    ...relationRecords.filter(node => /^union-/i.test(node.id)).map(node => node.id),
+    ...relationRecords.flatMap(node => uniqueRefs(node.unions))
+  ]);
+  // The graph endpoint may return only union references or sparse union
+  // objects. Fetch each union authoritatively so children can be assigned to
+  // the correct pair of spouses instead of becoming unclassified relatives.
+  const unionDetails = unionIds.length ? await fetchGeniUnionDetails(unionIds) : {};
+  const completeRecordsById = new Map(relationRecords.map(node => [node.id, node]));
+  Object.entries(unionDetails).forEach(([unionId, detail]) => {
+    completeRecordsById.set(unionId, { ...(completeRecordsById.get(unionId) || {}), ...detail, id: unionId });
+  });
+  const mapped = inferRelationsFromUnions([...completeRecordsById.values()], preferredIds);
   const focusId = preferredFocusId || geniProfileIdForApiProfile(focusRaw, rawFocusId);
   const canonicalFocus = { ...focusRaw, id: focusId };
   if (!mapped[focusId]) mapped[focusId] = canonicalFocus;
@@ -2848,17 +2895,8 @@ function renderRelationshipHouseholds(person) {
     siblingParentsById.get(childId).push(parentId);
   }));
   const siblingIds = [...siblingParentsById.keys()].sort(byBirth);
-  const classifiedFamilyIds = new Set([
-    ...parentIds,
-    ...siblingIds,
-    ...partnerIds,
-    ...groups.flatMap(group => group.children)
-  ]);
-  const otherImmediateIds = person.geniImmediateFamilyIds
-    .filter(id => id !== person.id && state.people[id] && !classifiedFamilyIds.has(id))
-    .sort(byBirth);
 
-  if (!groups.length && !parentIds.length && !siblingIds.length && !otherImmediateIds.length) {
+  if (!groups.length && !parentIds.length && !siblingIds.length) {
     const empty = document.createElement('p');
     empty.className = 'relationship-empty';
     empty.textContent = 'No family members in the local tree.';
@@ -2962,25 +3000,6 @@ function renderRelationshipHouseholds(person) {
     });
     return household;
   }));
-  if (otherImmediateIds.length) {
-    const returned = document.createElement('div');
-    returned.className = 'relationship-household family-origin';
-    const heading = document.createElement('p');
-    heading.className = 'relationship-group-label';
-    heading.textContent = 'Other immediate family returned by Geni';
-    returned.append(heading);
-    otherImmediateIds.forEach(relativeId => {
-      returned.append(makeRow({
-        targetId: relativeId,
-        kind: 'relative',
-        visible: visibility.visibleIds.has(relativeId),
-        label: 'relative',
-        detail: `Immediate family · ${life(state.people[relativeId])}`,
-        relationKeys: [profileVisibilityKey(relativeId)]
-      }));
-    });
-    sections.push(returned);
-  }
   container.replaceChildren(...sections);
 }
 

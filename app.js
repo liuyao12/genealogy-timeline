@@ -348,6 +348,7 @@ function normalizePerson(source, fallbackId) {
   const relationshipEndYears = Object.fromEntries(Object.entries(source.relationshipEndYears || source.divorceYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
   const relationshipEndStatuses = Object.fromEntries(Object.entries(source.relationshipEndStatuses || {}).map(([partnerId, status]) => [refId(partnerId), clean(status).toLowerCase()]).filter(([partnerId, status]) => partnerId && ['annulled', 'divorced', 'ended'].includes(status)));
   const partners = uniqueRefs(source.partners || source.spouses);
+  const rawGender = clean(source.gender).toLowerCase();
   return {
     id,
     firstName: clean(source.firstName || source.firstname || source.first_name),
@@ -355,7 +356,7 @@ function normalizePerson(source, fallbackId) {
     displayName: clean(source.displayName || source.display_name || (typeof source.name === 'string' ? source.name : '')),
     title: clean(source.title || source.display_title || source.occupation),
     nameOrder: 'western',
-    gender: ['male', 'female'].includes(source.gender) ? source.gender : 'unknown',
+    gender: rawGender === 'm' ? 'male' : rawGender === 'f' ? 'female' : ['male', 'female'].includes(rawGender) ? rawGender : 'unknown',
     birthYear: clean(source.birthYear || source.bYear || birth.year || birth.date?.year || dateYear(source.birth_date)),
     deathYear: clean(source.deathYear || source.dYear || death.year || death.date?.year || dateYear(source.death_date)),
     isLiving: source.isLiving === true || source.is_alive === true,
@@ -1046,6 +1047,34 @@ async function fetchGeniNeighborhood(id) {
   return { mapped, focusRaw: canonicalFocus };
 }
 
+function geniProfilePayloadRecords(payload) {
+  const collection = payload?.results ?? payload?.profiles ?? payload;
+  if (Array.isArray(collection)) return collection.filter(value => value && typeof value === 'object');
+  if (!collection || typeof collection !== 'object') return [];
+  return Object.entries(collection).map(([key, value]) => (
+    value && typeof value === 'object' ? { ...value, id: value.id || refId(key) } : null
+  )).filter(value => value && refId(value.id || value.url).startsWith('profile-'));
+}
+
+async function fetchGeniProfileDetails(profileIds) {
+  const detailsById = {};
+  const ids = unique(profileIds).filter(id => /^profile-/i.test(id));
+  for (let index = 0; index < ids.length; index += 25) {
+    const chunk = ids.slice(index, index + 25);
+    const payload = await fetchGeniJsonp('profile', {
+      ids: chunk.map(id => id.replace(/^profile-/i, '')).join(','),
+      fields: 'id,guid,url,profile_url,public,display_name,first_name,middle_name,last_name,maiden_name,title,gender,is_alive,birth,death,birth_date,birth_date_parts,death_date,death_date_parts'
+    });
+    if (payload.error) throw new Error(payload.error.message || 'Geni did not return profile details.');
+    geniProfilePayloadRecords(payload).forEach(raw => {
+      const rawId = refId(raw.id || raw.url);
+      if (!rawId) return;
+      detailsById[geniProfileIdForApiProfile(raw, rawId)] = raw;
+    });
+  }
+  return detailsById;
+}
+
 async function loadGeniImmediateFamily(profileId) {
   const person = state.people[profileId];
   if (!person || !/^profile-/i.test(profileId)) {
@@ -1073,6 +1102,30 @@ async function loadGeniImmediateFamily(profileId) {
   });
   const receivedIds = Object.keys(mapped).filter(id => state.people[id]);
   const newIds = receivedIds.filter(id => !existingIds.has(id));
+  const sparseIds = receivedIds.filter(id => {
+    const relative = state.people[id];
+    return numericYear(relative?.birthYear) == null || (!relative?.isLiving && numericYear(relative?.deathYear) == null);
+  });
+  if (sparseIds.length) {
+    try {
+      const detailsById = await fetchGeniProfileDetails(sparseIds);
+      Object.entries(detailsById).forEach(([id, raw]) => {
+        if (!state.people[id]) return;
+        const incoming = normalizePerson({
+          ...raw,
+          id,
+          sourceId: id,
+          sourceUrl: validGeniUrl(raw.profile_url || raw.url) || state.people[id].sourceUrl,
+          sourceProvider: 'geni',
+          importedAt
+        }, id);
+        state.people[id] = mergePersonRecords(state.people[id], incoming);
+      });
+    } catch (error) {
+      if (error?.code === 'GENI_INVALID_ACCESS_TOKEN') throw error;
+      // Keep the family graph when detailed fields are restricted.
+    }
+  }
   if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
   const refreshedFamilyIds = new Set([
     ...state.people[profileId].parents,
@@ -1105,7 +1158,11 @@ async function loadGeniImmediateFamily(profileId) {
     : restoredRelations
       ? `no new profiles, but ${restoredRelations} missing family link${restoredRelations === 1 ? '' : 's'} restored`
       : 'no new public profiles or family links';
-  toast(`Geni returned ${receivedIds.length} immediate-family profiles; ${countSummary}. All are listed in this profile’s family panel.`, true);
+  const undatedCount = receivedIds.filter(id => numericYear(state.people[id]?.birthYear) == null).length;
+  const dateSummary = undatedCount
+    ? `${undatedCount} still ${undatedCount === 1 ? 'has' : 'have'} no public birth year.`
+    : 'All returned profiles now have birth years.';
+  toast(`Geni returned ${receivedIds.length} immediate-family profiles; ${countSummary}. ${dateSummary} All are listed in this profile’s family panel.`, true);
 }
 
 async function fetchGeniReignEvents(profileIds) {
@@ -1119,11 +1176,7 @@ async function fetchGeniReignEvents(profileIds) {
     });
     const payload = await fetchGeniJsonp('profile', Object.fromEntries(params));
     if (payload.error) throw new Error(payload.error.message || 'Geni did not return profile events.');
-    const candidates = Array.isArray(payload) ? payload
-      : Array.isArray(payload.results) ? payload.results
-        : Array.isArray(payload.profiles) ? payload.profiles
-          : Object.values(payload).filter(value => value && typeof value === 'object' && value.id);
-    candidates.forEach(raw => {
+    geniProfilePayloadRecords(payload).forEach(raw => {
       const rawId = refId(raw.id || raw.url);
       if (!rawId) return;
       const id = geniProfileIdForApiProfile(raw, rawId);

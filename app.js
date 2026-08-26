@@ -975,7 +975,16 @@ function fetchGeniJsonp(path, params = {}) {
       delete window[callbackName];
       if (error) reject(error); else resolve(payload);
     }
-    window[callbackName] = payload => finish(null, payload);
+    window[callbackName] = payload => {
+      const apiMessage = clean(payload?.error?.message || payload?.message);
+      if (/invalid.*access.*token|access.*token.*invalid|expired.*access.*token/i.test(apiMessage)) {
+        const error = new Error('Geni authorization has expired.');
+        error.code = 'GENI_INVALID_ACCESS_TOKEN';
+        finish(error);
+        return;
+      }
+      finish(null, payload);
+    };
     script.onerror = () => finish(new Error('The authorized Geni request could not be loaded.'));
     const query = new URLSearchParams({ ...params, access_token: state.geniAccessToken, callback: callbackName });
     script.src = `https://www.geni.com/api/${path}?${query}`;
@@ -1252,6 +1261,17 @@ async function runGeniFamilyImport(profileId, scope) {
   try {
     if (scope === 'immediate') await loadGeniImmediateFamily(profileId);
     else await importFromGeni(profileId, config.depth, { mode: 'descendants', allDescendants: config.allDescendants === true });
+  } catch (error) {
+    if (error?.code === 'GENI_INVALID_ACCESS_TOKEN') {
+      // Resume this exact operation after Geni returns a fresh token. Clear
+      // both the stale token and any prior redirect guard before authorizing.
+      state.geniAccessToken = '';
+      sessionValue(GENI_TOKEN_SESSION_KEY, null);
+      sessionValue(GENI_OAUTH_PENDING_KEY, null);
+      beginGeniAuthorization(`family-import:${scope}:${profileId}`);
+      return;
+    }
+    throw error;
   } finally {
     state.geniImport = null;
     render();

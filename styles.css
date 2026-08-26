@@ -160,6 +160,10 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node.spouse .timeline-life-label { font-style: italic; }
 .timeline-node .current-year-edge { stroke: #e65100; stroke-width: 2; vector-effect: non-scaling-stroke; }
 
+.detail-backdrop {
+  position: fixed; z-index: 29; inset: 0; background: transparent; cursor: default;
+}
+.detail-backdrop[hidden] { display: none; }
 .detail-sidebar {
   position: fixed; z-index: 30; top: 76px; right: 0; bottom: 0; width: 380px; max-width: calc(100vw - 300px);
   border-left: 1px solid #000; overflow-y: auto; box-shadow: -16px 0 40px rgba(0,0,0,.16);

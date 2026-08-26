@@ -73,12 +73,15 @@ const state = {
 };
 let pendingTimelineRelayout = null;
 let activeTimelineAnimationFrame = 0;
+let timelineViewportInitialized = false;
+
+const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
 
 const els = Object.fromEntries([
   'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
-  'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
+  'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'load-descendants-two', 'load-descendants-all', 'add-local-relative',
   'relationship-households',
@@ -1870,11 +1873,18 @@ function renderTimeline() {
   compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
   stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep, horizontalRangesByKey);
 
-  const width = Math.max(900, xForYear(maxYear) + 42);
-  const height = Math.max(560, top + Math.max(...layoutNodes.map(node => node.y)) + rowHeight + 38);
-  canvas.setAttribute('width', width); canvas.setAttribute('height', height); canvas.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  const contentWidth = Math.max(
+    900,
+    xForYear(maxYear) + 42,
+    ...layoutNodes.map(node => node.x + node.occupancyWidth + 48)
+  );
+  const contentHeight = Math.max(560, top + Math.max(...layoutNodes.map(node => node.y)) + rowHeight + 38);
+  const width = contentWidth + TIMELINE_PAN_MARGIN.left + TIMELINE_PAN_MARGIN.right;
+  const height = contentHeight + TIMELINE_PAN_MARGIN.top + TIMELINE_PAN_MARGIN.bottom;
+  canvas.setAttribute('width', width); canvas.setAttribute('height', height);
+  canvas.setAttribute('viewBox', `${-TIMELINE_PAN_MARGIN.left} ${-TIMELINE_PAN_MARGIN.top} ${width} ${height}`);
   ruler.toggleAttribute('hidden', false);
-  ruler.setAttribute('width', width); ruler.setAttribute('height', 43); ruler.setAttribute('viewBox', `0 0 ${width} 43`);
+  ruler.setAttribute('width', width); ruler.setAttribute('height', 43); ruler.setAttribute('viewBox', `${-TIMELINE_PAN_MARGIN.left} 0 ${width} 43`);
   ruler.style.transform = `scaleX(${state.zoom})`;
   const positions = new Map(layoutNodes.map(node => [node.key, { x: node.x, y: top + node.y }]));
 
@@ -1903,15 +1913,15 @@ function renderTimeline() {
     const x = xForYear(startYear);
     const eventWidth = Math.max(2, (Math.max(startYear, endYear) - startYear) * yearWidth);
     const color = paletteColor(event.color, DEFAULT_GLOBAL_EVENT_COLOR);
-    const band = svg('rect', { class: 'global-event-range', x, y: 43, width: eventWidth, height: height - 61, fill: color, 'fill-opacity': '.13' });
+    const band = svg('rect', { class: 'global-event-range', x, y: 43, width: eventWidth, height: contentHeight - 61, fill: color, 'fill-opacity': '.13' });
     band.append(svg('title', {}, `${event.name} · ${formatEventYearRange(event.startYear, event.endYear)}`));
     globalEvents.append(band);
-    globalEvents.append(svg('line', { class: 'global-event-edge', x1: x, y1: 43, x2: x, y2: height - 18, stroke: color }));
-    if (eventWidth > 2) globalEvents.append(svg('line', { class: 'global-event-edge', x1: x + eventWidth, y1: 43, x2: x + eventWidth, y2: height - 18, stroke: color }));
+    globalEvents.append(svg('line', { class: 'global-event-edge', x1: x, y1: 43, x2: x, y2: contentHeight - 18, stroke: color }));
+    if (eventWidth > 2) globalEvents.append(svg('line', { class: 'global-event-edge', x1: x + eventWidth, y1: 43, x2: x + eventWidth, y2: contentHeight - 18, stroke: color }));
     globalEvents.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, event.name));
   });
   canvas.append(globalEvents);
-  canvas.append(svg('line', { class: 'timeline-current-year-line', x1: currentYearX, y1: 43, x2: currentYearX, y2: height - 18, 'aria-label': `Current year ${currentYear}` }));
+  canvas.append(svg('line', { class: 'timeline-current-year-line', x1: currentYearX, y1: 43, x2: currentYearX, y2: contentHeight - 18, 'aria-label': `Current year ${currentYear}` }));
 
   const connectors = svg('g', { class: 'timeline-connectors' });
   const marriageOverlaysByParent = new Map();
@@ -2134,6 +2144,13 @@ function renderTimeline() {
   });
   canvas.style.transform = `scale(${state.zoom})`;
   animateTimelineRelayout(positions);
+  if (!timelineViewportInitialized) {
+    timelineViewportInitialized = true;
+    requestAnimationFrame(() => {
+      els['canvas-viewport'].scrollLeft = TIMELINE_PAN_MARGIN.left * state.zoom;
+      els['canvas-viewport'].scrollTop = TIMELINE_PAN_MARGIN.top * state.zoom;
+    });
+  }
 }
 function escapeHtml(value) {
   const node = document.createElement('span'); node.textContent = value; return node.innerHTML;
@@ -2158,11 +2175,32 @@ function appendHighlightedName(container, value, keywords) {
   if (cursor < text.length) container.append(document.createTextNode(text.slice(cursor)));
 }
 
-function selectPerson(id) {
+function centerTimelinePerson(id) {
+  requestAnimationFrame(() => {
+    const primaryNode = els['timeline-canvas'].querySelector(`.timeline-node[data-node-key="${CSS.escape(id)}"]`);
+    if (!primaryNode) return;
+    const viewport = els['canvas-viewport'];
+    const viewportRect = viewport.getBoundingClientRect();
+    const visibleRight = els['detail-sidebar'].classList.contains('open')
+      ? Math.max(viewportRect.left, viewportRect.right - els['detail-sidebar'].offsetWidth)
+      : viewportRect.right;
+    const targetX = viewportRect.left + (visibleRight - viewportRect.left) / 2;
+    const targetY = viewportRect.top + viewportRect.height / 2;
+    const nodeRect = primaryNode.getBoundingClientRect();
+    viewport.scrollBy({
+      left: nodeRect.left + nodeRect.width / 2 - targetX,
+      top: nodeRect.top + nodeRect.height / 2 - targetY,
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    });
+  });
+}
+
+function selectPerson(id, { center = false } = {}) {
   state.selectedId = id;
   state.editingProfileId = '';
   render();
   els['detail-sidebar'].scrollTop = 0;
+  if (center) centerTimelinePerson(id);
 }
 function renderPersonList() {
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
@@ -2185,7 +2223,7 @@ function renderPersonList() {
     lifespan.textContent = life(person);
     summary.append(name, lifespan);
     button.append(gender, summary);
-    button.addEventListener('click', () => selectPerson(person.id));
+    button.addEventListener('click', () => selectPerson(person.id, { center: true }));
     return button;
   }));
 }
@@ -2369,6 +2407,7 @@ function renderRelationshipHouseholds(person) {
 function renderDetails() {
   const person = state.people[state.selectedId];
   const isOpen = !!person;
+  els['detail-backdrop'].hidden = !isOpen;
   els['detail-sidebar'].classList.toggle('open', isOpen);
   els['detail-sidebar'].setAttribute('aria-hidden', String(!isOpen));
   els['detail-sidebar'].inert = !isOpen;
@@ -2559,7 +2598,13 @@ els['canvas-viewport'].addEventListener('pointerup', endCanvasDrag);
 els['canvas-viewport'].addEventListener('pointercancel', endCanvasDrag);
 els['canvas-viewport'].addEventListener('dragstart', event => event.preventDefault());
 
-els['close-detail'].addEventListener('click', () => { state.selectedId = ''; state.editingProfileId = ''; render(); });
+function closeDetails() {
+  state.selectedId = '';
+  state.editingProfileId = '';
+  render();
+}
+els['close-detail'].addEventListener('click', closeDetails);
+els['detail-backdrop'].addEventListener('click', closeDetails);
 els['edit-person'].addEventListener('click', () => {
   if (!state.selectedId) return;
   state.editingProfileId = state.selectedId;

@@ -1528,6 +1528,7 @@ function partnerRelationKey(firstId, secondId) {
   return `partner:${[firstId, secondId].sort().join('|')}`;
 }
 function childRelationKey(parentId, childId) { return `child:${parentId}>${childId}`; }
+function profileVisibilityKey(profileId) { return `profile:${profileId}`; }
 function relationOverride(key) { return Object.hasOwn(state.relationVisibility, key) ? state.relationVisibility[key] : null; }
 function marriageYearFor(firstId, secondId) {
   return numericYear(state.people[firstId]?.marriageYears?.[secondId] || state.people[secondId]?.marriageYears?.[firstId]);
@@ -1631,6 +1632,14 @@ function buildTimelineVisibility() {
     const parentId = relation.slice(0, split);
     const childId = relation.slice(split + 1);
     if (visible.has(parentId) && state.people[childId]) visible.add(childId);
+  });
+  // Unclassified profiles returned by an immediate-family request can still
+  // be explicitly shown and inspected. A birth year is checked later when
+  // deciding whether the profile can be placed on the timeline itself.
+  Object.entries(state.relationVisibility).forEach(([key, shown]) => {
+    if (!shown || !key.startsWith('profile:')) return;
+    const profileId = key.slice('profile:'.length);
+    if (state.people[profileId]) visible.add(profileId);
   });
 
   const renderedPartnerPairs = new Set();
@@ -2810,9 +2819,12 @@ function renderRelationshipHouseholds(person) {
       toggle.addEventListener('click', () => {
         const keys = relationKeys.length ? relationKeys
           : [kind === 'spouse' ? partnerRelationKey(person.id, targetId) : childRelationKey(person.id, targetId)];
-        keys.forEach(key => { state.relationVisibility[key] = !visible; });
-        persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
-        render();
+      keys.forEach(key => { state.relationVisibility[key] = !visible; });
+      persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
+      render();
+      if (!visible && numericYear(state.people[targetId]?.birthYear) == null) {
+        toast(`${fullName(state.people[targetId])} has no birth year, so it cannot be positioned on the timeline yet.`, true);
+      }
       });
       row.append(toggle);
     }
@@ -2893,7 +2905,7 @@ function renderRelationshipHouseholds(person) {
         visible: visibility.visibleIds.has(relativeId),
         label: 'relative',
         detail: `Immediate family · ${life(state.people[relativeId])}`,
-        canToggle: false
+        relationKeys: [profileVisibilityKey(relativeId)]
       }));
     });
     sections.push(returned);

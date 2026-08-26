@@ -88,6 +88,11 @@ function paletteColor(value, fallback) {
   const normalized = normalizeColor(value, fallback);
   return EVENT_COLOR_PALETTE.some(([candidate]) => candidate === normalized) ? normalized : fallback;
 }
+function lightenHex(value, amount = 0.5) {
+  const color = normalizeColor(value, '#000000');
+  const channels = [1, 3, 5].map(index => Number.parseInt(color.slice(index, index + 2), 16));
+  return `#${channels.map(channel => Math.round(channel + (255 - channel) * amount).toString(16).padStart(2, '0')).join('')}`;
+}
 function timelineYearWidth(value) {
   const width = Number(value);
   return [3, 4, 5, 6, 8].includes(width) ? width : DEFAULT_TIMELINE_YEAR_WIDTH;
@@ -1698,12 +1703,23 @@ function renderTimeline() {
 
   const nodeDefs = svg('defs');
   const maleGradient = svg('linearGradient', { id: 'geni-male-gradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
-  maleGradient.append(svg('stop', { offset: '0%', 'stop-color': '#ffffff' }));
+  maleGradient.append(svg('stop', { offset: '0%', 'stop-color': '#d3e7f3' }));
   maleGradient.append(svg('stop', { offset: '100%', 'stop-color': '#a9cfe7' }));
   const femaleGradient = svg('linearGradient', { id: 'geni-female-gradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
-  femaleGradient.append(svg('stop', { offset: '0%', 'stop-color': '#ffffff' }));
+  femaleGradient.append(svg('stop', { offset: '0%', 'stop-color': '#fbdaec' }));
   femaleGradient.append(svg('stop', { offset: '100%', 'stop-color': '#f6b8db' }));
   nodeDefs.append(maleGradient, femaleGradient);
+  const personalEventGradients = new Map();
+  const personalEventFill = color => {
+    if (personalEventGradients.has(color)) return `url(#${personalEventGradients.get(color)})`;
+    const gradientId = `personal-event-gradient-${color.slice(1)}`;
+    const gradient = svg('linearGradient', { id: gradientId, x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+    gradient.append(svg('stop', { offset: '0%', 'stop-color': lightenHex(color) }));
+    gradient.append(svg('stop', { offset: '100%', 'stop-color': color }));
+    nodeDefs.append(gradient);
+    personalEventGradients.set(color, gradientId);
+    return `url(#${gradientId})`;
+  };
   canvas.append(nodeDefs);
 
   layoutNodes.forEach((layoutNode, nodeIndex) => {
@@ -1729,7 +1745,7 @@ function renderTimeline() {
       const eventWidth = Math.max(0, (finish - start) * yearWidth);
       const eventColor = isReignLabel(event.name) ? state.reignColor : paletteColor(event.color, DEFAULT_PERSONAL_EVENT_COLOR);
       if (eventWidth > 0) {
-        const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 0, width: eventWidth, height: rowHeight, fill: eventColor });
+        const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 0, width: eventWidth, height: rowHeight, fill: personalEventFill(eventColor) });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
         personalEventLayer.append(mark);

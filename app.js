@@ -1331,6 +1331,11 @@ function svg(tag, attrs = {}, text = '') {
   return node;
 }
 
+function leftRoundedRectPath(width, height, radius = 5) {
+  const r = Math.min(radius, width / 2, height / 2);
+  return `M ${r} 0 H ${width} V ${height} H ${r} A ${r} ${r} 0 0 1 0 ${height - r} V ${r} A ${r} ${r} 0 0 1 ${r} 0 Z`;
+}
+
 function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
   const ranges = nodes.map(node => ({ left: node.x - 36, right: node.x + Math.max(node.occupancyWidth, 2) + 36 }));
   const overlapsHorizontally = (a, b) => a.left < b.right && b.left < a.right;
@@ -1461,7 +1466,8 @@ function renderTimeline() {
   const minYear = Math.floor((Math.min(...people.map(birthYear)) - 40) / 20) * 20;
   const latestLifeYear = Math.max(...people.map(endYear), ...(people.some(person => person.isLiving) ? [currentYear] : []));
   const maxYear = Math.ceil((latestLifeYear + 20) / 20) * 20;
-  const xForYear = year => left + (year - minYear) * yearWidth;
+  // A year without a month/day is represented at the midpoint of that year.
+  const xForYear = year => left + (year - minYear + 0.5) * yearWidth;
 
   // Row order follows the family. Time controls only horizontal position and width.
   const datedIds = new Set(people.map(person => person.id));
@@ -1607,8 +1613,11 @@ function renderTimeline() {
     const isMajor = year % 20 === 0;
     const isDecade = year % 10 === 0;
     rulerMarks.append(svg('line', { x1: x, y1: isMajor ? 29 : isDecade ? 33 : 36, x2: x, y2: 43, class: `year-tick ${isMajor ? 'major' : isDecade ? 'decade' : 'minor'}` }));
-    if (isDecade) rulerMarks.append(svg('text', { x, y: 22, 'text-anchor': 'middle', class: isMajor ? 'major-label' : 'decade-label' }, String(year)));
+    if (isDecade && Math.abs(year - currentYear) >= 8) rulerMarks.append(svg('text', { x, y: 22, 'text-anchor': 'middle', class: isMajor ? 'major-label' : 'decade-label' }, String(year)));
   }
+  const currentYearX = xForYear(currentYear);
+  rulerMarks.append(svg('line', { x1: currentYearX, y1: 25, x2: currentYearX, y2: 43, class: 'year-tick current-year' }));
+  rulerMarks.append(svg('text', { x: currentYearX, y: 22, 'text-anchor': 'middle', class: 'current-year-label' }, String(currentYear)));
   rulerMarks.append(svg('line', { x1: left, y1: 43, x2: xForYear(maxYear), y2: 43, class: 'ruler-line' }));
   ruler.append(rulerMarks);
 
@@ -1630,6 +1639,7 @@ function renderTimeline() {
     globalEvents.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, event.name));
   });
   canvas.append(globalEvents);
+  canvas.append(svg('line', { class: 'timeline-current-year-line', x1: currentYearX, y1: 43, x2: currentYearX, y2: height - 18, 'aria-label': `Current year ${currentYear}` }));
 
   const connectors = svg('g', { class: 'timeline-connectors' });
   const marriageOverlaysByParent = new Map();
@@ -1732,12 +1742,15 @@ function renderTimeline() {
     const lifespanWidth = Math.max(2, (endYear(person) - birthYear(person)) * yearWidth);
     const hasReign = reignEvents(person).length > 0;
     const isSpouseNode = layoutNode.isSpouse;
+    const nodeShape = attrs => person.isLiving
+      ? svg('path', { ...attrs, d: leftRoundedRectPath(lifespanWidth, rowHeight) })
+      : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 });
     const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
-    group.append(svg('rect', { class: 'lifespan', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
     const eventClip = svg('clipPath', { id: eventClipId, clipPathUnits: 'userSpaceOnUse' });
-    eventClip.append(svg('rect', { x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    eventClip.append(nodeShape({}));
     nodeDefs.append(eventClip);
     const personalEventLayer = svg('g', { class: 'personal-event-layer', 'clip-path': `url(#${eventClipId})` });
     person.personalEvents.forEach(event => {
@@ -1763,7 +1776,7 @@ function renderTimeline() {
     });
     // The opaque event layer is clipped to the rounded lifespan, then painted
     // over the base outline so no gender-color trace crosses an event segment.
-    group.append(svg('rect', { class: 'lifespan-outline', x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 }));
+    group.append(nodeShape({ class: 'lifespan-outline' }));
     group.append(personalEventLayer);
     // Marriage stems cross above both spouse boxes, including their borders,
     // so each stem reads as one uninterrupted line down to its children. Text
@@ -1802,7 +1815,7 @@ function renderTimeline() {
     const textMaskId = `node-text-outside-${nodeIndex}`;
     const textMask = svg('mask', { id: textMaskId, maskUnits: 'userSpaceOnUse', x: -80, y: -12, width: Math.max(lifespanWidth, layoutNodes[nodeIndex].occupancyWidth) + 180, height: rowHeight + 24 });
     textMask.append(svg('rect', { x: -80, y: -12, width: Math.max(lifespanWidth, layoutNodes[nodeIndex].occupancyWidth) + 180, height: rowHeight + 24, fill: '#fff' }));
-    textMask.append(svg('rect', { x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5, fill: '#000' }));
+    textMask.append(nodeShape({ fill: '#000' }));
     nodeDefs.append(textMask);
     const makeLabel = className => {
       const text = svg('text', { class: className, x: 38, y: 19 });

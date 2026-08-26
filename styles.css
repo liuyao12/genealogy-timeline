@@ -116,6 +116,9 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-grid text { fill: #555; font: 9px Inter, sans-serif; letter-spacing: .03em; }
 .timeline-grid .major-label { fill: #000; font-weight: 700; }
 .timeline-grid .decade-label { fill: #777; }
+.timeline-grid .year-tick.current-year { stroke: #e65100; stroke-width: 2; }
+.timeline-grid .current-year-label { fill: #e65100; font-weight: 700; }
+.timeline-current-year-line { fill: none; stroke: #e65100; stroke-width: 1.5; opacity: .9; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-edge { fill: none; stroke: #000; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .timeline-edge.paternal { stroke-width: 2; }
 .timeline-edge.maternal { stroke: #555; stroke-width: 1.25; }
@@ -151,7 +154,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node.spouse .timeline-label { font-style: italic; }
 .timeline-life-label { fill: #444; font: 400 11px "Open Sans", Arial, sans-serif; }
 .timeline-node.spouse .timeline-life-label { font-style: italic; }
-.timeline-node .current-year-edge { stroke: #000; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.timeline-node .current-year-edge { stroke: #e65100; stroke-width: 2; vector-effect: non-scaling-stroke; }
 
 .detail-sidebar {
   position: fixed; z-index: 30; top: 76px; right: 0; bottom: 0; width: 380px; max-width: calc(100vw - 300px);

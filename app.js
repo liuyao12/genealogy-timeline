@@ -1995,10 +1995,15 @@ function renderTimeline() {
 
   const connectors = svg('g', { class: 'timeline-connectors' });
   const marriageOverlaysByParent = new Map();
+  const descendantOverlaysByChild = new Map();
   const horizontalOverlaysByNode = new Map();
   const addHorizontalOverlay = (nodeKey, overlay) => {
     if (!horizontalOverlaysByNode.has(nodeKey)) horizontalOverlaysByNode.set(nodeKey, []);
     horizontalOverlaysByNode.get(nodeKey).push(overlay);
+  };
+  const addDescendantOverlay = (nodeKey, overlay) => {
+    if (!descendantOverlaysByChild.has(nodeKey)) descendantOverlaysByChild.set(nodeKey, []);
+    descendantOverlaysByChild.get(nodeKey).push(overlay);
   };
   families.forEach((family, key) => {
     const parentIds = family.parents.filter(id => positions.has(id));
@@ -2041,8 +2046,17 @@ function renderTimeline() {
     const familyBaseY = parentYs.length > 1 ? Math.max(...parentYs) : parentYs[0];
     if (childYs.length) {
       const descendantYs = [familyBaseY, ...childYs];
-      if (Math.max(...descendantYs) > Math.min(...descendantYs)) {
-        connectors.append(svg('line', { x1: trunkX, y1: Math.min(...descendantYs), x2: trunkX, y2: Math.max(...descendantYs), class: `timeline-edge family-stem vertical ${stemClass}` }));
+      const stemStartY = Math.min(...descendantYs);
+      const stemEndY = Math.max(...descendantYs);
+      if (stemEndY > stemStartY) {
+        connectors.append(svg('line', { x1: trunkX, y1: stemStartY, x2: trunkX, y2: stemEndY, class: `timeline-edge family-stem vertical ${stemClass}` }));
+        childIds.forEach(childId => addDescendantOverlay(childId, {
+          x: trunkX,
+          y1: stemStartY,
+          y2: stemEndY,
+          className: stemClass,
+          familyKey: key
+        }));
       }
     }
     childIds.forEach(id => {
@@ -2154,6 +2168,20 @@ function renderTimeline() {
       group.append(svg('line', {
         class: `timeline-edge node-horizontal-overlay horizontal ${connection.className}`,
         x1: localX1, y1: rowHeight / 2, x2: localX2, y2: rowHeight / 2
+      }));
+    });
+    // A birth can precede, or fall in the same year as, the parents' marriage.
+    // Repaint the exact portion of that family's descendant stem which crosses
+    // the child's box; the text and controls remain above the line.
+    (descendantOverlaysByChild.get(nodeKey) || []).forEach(connection => {
+      const localX = connection.x - pos.x;
+      const localY1 = Math.max(0, Math.min(rowHeight, connection.y1 - pos.y));
+      const localY2 = Math.max(0, Math.min(rowHeight, connection.y2 - pos.y));
+      if (localX < 0 || localX > lifespanWidth || localY2 - localY1 < 0.5) return;
+      group.append(svg('line', {
+        class: `timeline-edge descendant-node-overlay vertical ${connection.className}`,
+        x1: localX, y1: localY1, x2: localX, y2: localY2,
+        'data-family-key': connection.familyKey
       }));
     });
     // Marriage stems cross above both spouse boxes, including their borders,

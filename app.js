@@ -1727,6 +1727,9 @@ function renderTimeline() {
   // vertical stems deliberately do not. This lets otherwise unrelated rows
   // cross marriage/transport stems without letting a label obscure a branch.
   const layoutNodeByKey = new Map(layoutNodes.map(node => [node.key, node]));
+  const incomingConnectorEndOffset = id => state.people[id]?.children.some(childId =>
+    expandableIds.has(childId) && childEdgeVisible(id, childId)
+  ) ? 18 : 12;
   const horizontalRangesByKey = new Map();
   const addHorizontalRange = (nodeKey, x1, x2) => {
     if (!layoutNodeByKey.has(nodeKey)) return;
@@ -1753,7 +1756,7 @@ function renderTimeline() {
     });
     childIds.forEach(childId => {
       const node = layoutNodeByKey.get(childId);
-      if (node) addHorizontalRange(childId, trunkX, node.x + 18);
+      if (node) addHorizontalRange(childId, trunkX, node.x + incomingConnectorEndOffset(childId));
     });
     if (transportedId && transportedCopyKey) {
       const natalFamilyKey = familyKeyByChild.get(transportedId);
@@ -1862,7 +1865,7 @@ function renderTimeline() {
     childIds.forEach(id => {
       const pos = positions.get(id);
       connectors.append(svg('path', { d: `M ${trunkX} ${pos.y + rowHeight / 2} H ${pos.x + 1}`, class: `timeline-edge horizontal ${stemClass}` }));
-      addHorizontalOverlay(id, { x1: trunkX, x2: pos.x + 18, className: stemClass });
+      addHorizontalOverlay(id, { x1: trunkX, x2: pos.x + incomingConnectorEndOffset(id), className: stemClass });
     });
     if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
       const natal = positions.get(transportedId);

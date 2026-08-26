@@ -2013,7 +2013,7 @@ function renderTimeline() {
     const hasPaternalParent = parentIds.some(id => state.people[id]?.gender === 'male');
     const stemClass = hasPaternalParent ? 'paternal' : 'maternal';
     const isDivorced = marriageIsDivorced(parentIds);
-    const marriageClass = isDivorced ? 'divorced' : stemClass;
+    const marriageClass = `marriage-couple${isDivorced ? ' divorced' : ''}`;
     parentIds.forEach((id, parentIndex) => {
       const pos = positions.get(parentKeys[parentIndex]);
       const lineage = state.people[id]?.gender === 'male' ? 'paternal' : 'maternal';

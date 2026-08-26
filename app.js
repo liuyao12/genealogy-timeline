@@ -2028,8 +2028,11 @@ function renderTimeline() {
   if (state.collapsedIds.size && state.people[state.rootId]) {
     const activeVisibleIds = new Set(activeLineageIds);
     // Spouses are occurrences attached to an active lineage household. They
-    // remain visible without opening their unrelated branches.
+    // remain visible without opening their unrelated branches. A collapsed
+    // profile closes its household as well as its descendants, so do not add
+    // that occurrence's spouses back during the visibility pass.
     activeLineageIds.forEach(id => renderedPartnerIds(id).forEach(partnerId => {
+      if (state.collapsedIds.has(id)) return;
       if (visibleIds.has(partnerId)) activeVisibleIds.add(partnerId);
     }));
     visibleIds.clear();
@@ -2192,7 +2195,7 @@ function renderTimeline() {
     // Omitting that inactive natal family also removes its obsolete vertical
     // stem and dotted transport line.
     if (state.collapsedIds.size && state.people[state.rootId] && !activeLineageIds.has(child.id)) return;
-    let parentIds = child.parents.filter(id => datedIds.has(id) && childEdgeVisible(id, child.id));
+    let parentIds = child.parents.filter(id => datedIds.has(id) && childEdgeVisible(id, child.id) && !state.collapsedIds.has(id));
     if (!parentIds.length) return;
     if (parentIds.length === 2 && !renderedPartnerPairs.has(partnerRelationKey(parentIds[0], parentIds[1]))) {
       parentIds = [parentIds.find(id => state.people[id]?.gender === 'male') || parentIds[0]];
@@ -2203,7 +2206,8 @@ function renderTimeline() {
     familyKeyByChild.set(child.id, key);
   });
   people.forEach(person => renderedPartnerIds(person.id).forEach(partnerId => {
-    if (person.id >= partnerId || !datedIds.has(partnerId)) return;
+    if (person.id >= partnerId || !datedIds.has(partnerId)
+      || state.collapsedIds.has(person.id) || state.collapsedIds.has(partnerId)) return;
     const key = familyKey([person.id, partnerId]);
     if (!families.has(key)) families.set(key, { parents: [person.id, partnerId], children: [] });
   }));

@@ -137,6 +137,14 @@
             <label>Place<input name="place" autocomplete="off"></label>
             <label>Profile note<textarea name="note" rows="4"></textarea></label>
 
+            <div class="relationship-section">
+              <div class="relationship-heading">
+                <span class="eyebrow">Family shown in the timeline</span>
+                <small>Click the eye to show or hide one occurrence.</small>
+              </div>
+              <div class="relationship-households" id="relationship-households"></div>
+            </div>
+
             <div class="event-editor-section">
               <span class="eyebrow">Personal events</span>
               <div class="event-editor-list" id="personal-events-list"></div>
@@ -223,6 +231,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=26"></script>
+  <script type="module" src="./app.js?v=27"></script>
 </body>
 </html>

@@ -62,6 +62,7 @@ const state = {
   ephemeral: false,
   reignColor: DEFAULT_REIGN_EVENT_COLOR,
   timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
+  relationVisibility: {},
   starterDataVersion: 0,
   geniAccessToken: initialGeniAccessToken,
   collapsedIds: new Set()
@@ -74,6 +75,7 @@ const els = Object.fromEntries([
   'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'add-local-relative',
+  'relationship-households',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
   'events-dialog', 'close-events-dialog', 'timeline-scale', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
@@ -648,6 +650,7 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
   state.selectedId = '';
   state.ephemeral = false;
+  state.relationVisibility = {};
   state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
   state.title = 'The British royal line from Henry VII';
   els['tree-filter'].value = 'king queen';
@@ -692,6 +695,7 @@ function restore() {
     state.rootId = savedRootId;
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
+    state.relationVisibility = Object.fromEntries(Object.entries(saved.relationVisibility || {}).filter(([, value]) => typeof value === 'boolean'));
     state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
     Object.entries(saved.people || {}).forEach(([id, person]) => { state.people[id] = normalizePerson(person, id); });
@@ -703,7 +707,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, starterDataVersion: state.starterDataVersion }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1142,6 +1146,7 @@ function importBackup(payload) {
   if (!rawPeople || typeof rawPeople !== 'object') throw new Error('This file does not contain a supported people collection.');
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
   state.timelineYearWidth = timelineYearWidth(payload.timelineYearWidth || payload.db?.timelineYearWidth);
+  state.relationVisibility = Object.fromEntries(Object.entries(payload.relationVisibility || payload.db?.relationVisibility || {}).filter(([, value]) => typeof value === 'boolean'));
   const people = {};
   Object.entries(rawPeople).forEach(([id, source]) => { people[id] = normalizePerson(source, id); });
   // The mini-program stores children/spouses on profiles. Reconstruct reverse parent links for the web layout.
@@ -1171,7 +1176,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, relationVisibility: state.relationVisibility,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1184,29 +1189,128 @@ function exportBackup() {
   toast('Tree exported as JSON.');
 }
 
-function branchFilterIds() {
-  const nonSpouseOnly = new Set();
-  Object.values(state.people).forEach(person => person.nonSpouses.forEach(id => nonSpouseOnly.add(id)));
-  Object.values(state.people).forEach(person => person.spouses.forEach(id => nonSpouseOnly.delete(id)));
-  nonSpouseOnly.delete(state.rootId);
-  const ids = Object.keys(state.people).filter(id => !nonSpouseOnly.has(id));
-  const query = clean(els['tree-filter']?.value).toLocaleLowerCase();
-  if (!query) return new Set(ids);
-  const keywords = query.split(/\s+/).filter(Boolean);
-  const matches = ids.filter(id => keywords.some(keyword => matchesKeyword(state.people[id], keyword)));
-  const visible = new Set(matches);
-  const queue = [...matches];
-  while (queue.length) {
-    const person = state.people[queue.shift()];
-    if (!person) continue;
-    person.parents.forEach(parentId => {
-      if (state.people[parentId] && !visible.has(parentId)) { visible.add(parentId); queue.push(parentId); }
-    });
-    person.spouses.forEach(partnerId => {
-      if (state.people[partnerId] && !visible.has(partnerId)) { visible.add(partnerId); queue.push(partnerId); }
+function partnerRelationKey(firstId, secondId) {
+  return `partner:${[firstId, secondId].sort().join('|')}`;
+}
+function childRelationKey(parentId, childId) { return `child:${parentId}>${childId}`; }
+function relationOverride(key) { return Object.hasOwn(state.relationVisibility, key) ? state.relationVisibility[key] : null; }
+function allPartnerIds(person) { return unique([...(person?.spouses || []), ...(person?.partners || [])]).filter(id => state.people[id]); }
+function householdChildren(personId, partnerId = '') {
+  const person = state.people[personId];
+  if (!person) return [];
+  return person.children.filter(childId => {
+    const child = state.people[childId];
+    if (!child) return false;
+    if (!partnerId) return !child.parents.some(parentId => parentId !== personId && allPartnerIds(person).includes(parentId));
+    return child.parents.includes(partnerId);
+  });
+}
+
+function buildTimelineVisibility() {
+  const allIds = Object.keys(state.people);
+  const childEdgeVisible = (parentId, childId) => relationOverride(childRelationKey(parentId, childId)) !== false;
+  const descendantsOfRoot = new Set();
+  const descendantQueue = state.people[state.rootId] ? [state.rootId] : [];
+  while (descendantQueue.length) {
+    const id = descendantQueue.shift();
+    if (descendantsOfRoot.has(id) || !state.people[id]) continue;
+    descendantsOfRoot.add(id);
+    state.people[id].children.forEach(childId => {
+      if (childEdgeVisible(id, childId)) descendantQueue.push(childId);
     });
   }
-  return visible;
+  const connectedByBlood = new Set();
+  const bloodQueue = state.people[state.rootId] ? [state.rootId] : [];
+  while (bloodQueue.length) {
+    const id = bloodQueue.shift();
+    if (connectedByBlood.has(id) || !state.people[id]) continue;
+    connectedByBlood.add(id);
+    state.people[id].parents.forEach(parentId => {
+      if (childEdgeVisible(parentId, id)) bloodQueue.push(parentId);
+    });
+    state.people[id].children.forEach(childId => {
+      if (childEdgeVisible(id, childId)) bloodQueue.push(childId);
+    });
+  }
+
+  const query = clean(els['tree-filter']?.value).toLocaleLowerCase();
+  const keywords = query.split(/\s+/).filter(Boolean);
+  const matches = allIds.filter(id => keywords.some(keyword => matchesKeyword(state.people[id], keyword)));
+  const lineMatches = matches.filter(id => descendantsOfRoot.has(id));
+  const seeds = lineMatches.length ? lineMatches : matches;
+  const visible = new Set(query ? seeds : (connectedByBlood.size ? connectedByBlood : allIds));
+
+  if (query) {
+    const queue = [...seeds];
+    while (queue.length) {
+      const childId = queue.shift();
+      const child = state.people[childId];
+      if (!child) continue;
+      child.parents.forEach(parentId => {
+        if (!state.people[parentId] || !childEdgeVisible(parentId, childId) || visible.has(parentId)) return;
+        visible.add(parentId);
+        queue.push(parentId);
+      });
+    }
+  } else {
+    Object.entries(state.relationVisibility).forEach(([key, shown]) => {
+      if (shown || !key.startsWith('child:')) return;
+      const childId = key.split('>').pop();
+      const queue = [childId];
+      while (queue.length) {
+        const id = queue.shift();
+        if (!visible.delete(id)) continue;
+        queue.push(...(state.people[id]?.children || []));
+      }
+    });
+  }
+
+  // A manually shown child can be inspected even when it is not part of the
+  // current keyword path. Its descendants still obey the active filter.
+  Object.entries(state.relationVisibility).forEach(([key, shown]) => {
+    if (!shown || !key.startsWith('child:')) return;
+    const relation = key.slice('child:'.length);
+    const split = relation.lastIndexOf('>');
+    const parentId = relation.slice(0, split);
+    const childId = relation.slice(split + 1);
+    if (visible.has(parentId) && state.people[childId]) visible.add(childId);
+  });
+
+  const renderedPartnerPairs = new Set();
+  Object.values(state.people).forEach(person => allPartnerIds(person).forEach(partnerId => {
+    if (person.id >= partnerId) return;
+    const key = partnerRelationKey(person.id, partnerId);
+    const override = relationOverride(key);
+    if (override === false) return;
+    const isFormalSpouse = person.spouses.includes(partnerId) || state.people[partnerId]?.spouses.includes(person.id);
+    const carriesVisibleChild = householdChildren(person.id, partnerId).some(childId => visible.has(childId));
+    const defaultVisible = isFormalSpouse && (!query || carriesVisibleChild);
+    if (override === true || defaultVisible) renderedPartnerPairs.add(key);
+  }));
+
+  // Add only the spouse or partner occurrences that support a visible
+  // household, or that the user explicitly asked to show.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    renderedPartnerPairs.forEach(key => {
+      const [firstId, secondId] = key.slice('partner:'.length).split('|');
+      if (visible.has(firstId) && !visible.has(secondId)) { visible.add(secondId); changed = true; }
+      if (visible.has(secondId) && !visible.has(firstId)) { visible.add(firstId); changed = true; }
+    });
+  }
+
+  // Affinal profiles do not become detached roots when their household
+  // occurrence is hidden. Blood descendants keep their natal occurrence.
+  visible.forEach(id => {
+    if (descendantsOfRoot.has(id) || id === state.rootId) return;
+    const affinalToLine = allPartnerIds(state.people[id]).some(partnerId => descendantsOfRoot.has(partnerId));
+    if (!affinalToLine) return;
+    const hasRenderedHousehold = allPartnerIds(state.people[id]).some(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)) && visible.has(partnerId));
+    if (!hasRenderedHousehold) visible.delete(id);
+  });
+
+  return { visibleIds: visible, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible };
 }
 
 function svg(tag, attrs = {}, text = '') {
@@ -1307,7 +1411,9 @@ function renderTimeline() {
   const ruler = els['timeline-ruler'];
   canvas.replaceChildren();
   ruler.replaceChildren();
-  const visibleIds = branchFilterIds();
+  const visibility = buildTimelineVisibility();
+  const { visibleIds, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible } = visibility;
+  const renderedPartnerIds = id => allPartnerIds(state.people[id]).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
   state.collapsedIds.forEach(id => {
     if (!visibleIds.has(id)) return;
     const queue = [...(state.people[id]?.children || [])];
@@ -1316,7 +1422,7 @@ function renderTimeline() {
       const childId = queue.shift();
       if (hiddenDescendants.has(childId)) continue;
       hiddenDescendants.add(childId);
-      queue.push(...(state.people[childId]?.children || []), ...(state.people[childId]?.spouses || []));
+      queue.push(...(state.people[childId]?.children || []), ...renderedPartnerIds(childId));
     }
     hiddenDescendants.forEach(childId => visibleIds.delete(childId));
   });
@@ -1345,14 +1451,6 @@ function renderTimeline() {
 
   // Row order follows the family. Time controls only horizontal position and width.
   const datedIds = new Set(people.map(person => person.id));
-  const descendantsOfRoot = new Set();
-  const descendantQueue = state.people[state.rootId] ? [state.rootId] : [];
-  while (descendantQueue.length) {
-    const id = descendantQueue.shift();
-    if (descendantsOfRoot.has(id)) continue;
-    descendantsOfRoot.add(id);
-    descendantQueue.push(...(state.people[id]?.children || []));
-  }
   const familyKey = parentIds => [...parentIds].sort().join('|');
   const transportedParent = parentIds => {
     if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id))) return '';
@@ -1361,6 +1459,7 @@ function renderTimeline() {
   const childrenByParent = new Map();
   people.forEach(person => person.parents.forEach(parentId => {
     if (!datedIds.has(parentId)) return;
+    if (!childEdgeVisible(parentId, person.id)) return;
     if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
     childrenByParent.get(parentId).push(person.id);
   }));
@@ -1387,7 +1486,7 @@ function renderTimeline() {
 
     const groups = new Map();
     (childrenByParent.get(id) || []).forEach(childId => {
-      const otherParent = state.people[childId]?.parents.find(parentId => parentId !== id && datedIds.has(parentId) && state.people[id].spouses.includes(parentId)) || '';
+      const otherParent = state.people[childId]?.parents.find(parentId => parentId !== id && datedIds.has(parentId) && renderedPartnerPairs.has(partnerRelationKey(id, parentId))) || '';
       const partnerId = otherParent;
       if (!groups.has(partnerId)) groups.set(partnerId, []);
       groups.get(partnerId).push(childId);
@@ -1419,7 +1518,7 @@ function renderTimeline() {
       pendingChildren.forEach(childId => visit(childId, householdParentId));
     });
 
-    state.people[id].spouses
+    renderedPartnerIds(id)
       .filter(partnerId => datedIds.has(partnerId) && !groupedPartners.has(partnerId))
       .sort(byBirth)
       .forEach(partnerId => {
@@ -1433,13 +1532,16 @@ function renderTimeline() {
 
   const families = new Map();
   people.forEach(child => {
-    const parentIds = child.parents.filter(id => datedIds.has(id));
+    let parentIds = child.parents.filter(id => datedIds.has(id) && childEdgeVisible(id, child.id));
     if (!parentIds.length) return;
+    if (parentIds.length === 2 && !renderedPartnerPairs.has(partnerRelationKey(parentIds[0], parentIds[1]))) {
+      parentIds = [parentIds.find(id => state.people[id]?.gender === 'male') || parentIds[0]];
+    }
     const key = familyKey(parentIds);
     if (!families.has(key)) families.set(key, { parents: parentIds, children: [] });
     families.get(key).children.push(child.id);
   });
-  people.forEach(person => person.spouses.forEach(partnerId => {
+  people.forEach(person => renderedPartnerIds(person.id).forEach(partnerId => {
     if (person.id >= partnerId || !datedIds.has(partnerId)) return;
     const key = familyKey([person.id, partnerId]);
     if (!families.has(key)) families.set(key, { parents: [person.id, partnerId], children: [] });
@@ -1651,7 +1753,7 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    const hasChildren = person.children.some(childId => state.people[childId]);
+    const hasChildren = person.children.some(childId => visibleIds.has(childId) && childEdgeVisible(id, childId));
     const isCollapsed = state.collapsedIds.has(id);
     const icon = isSpouseNode
       ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })
@@ -1806,6 +1908,88 @@ function renderGlobalEventsEditor() {
   }, DEFAULT_GLOBAL_EVENT_COLOR)));
 }
 
+function renderRelationshipHouseholds(person) {
+  const container = els['relationship-households'];
+  if (!person) { container.replaceChildren(); return; }
+  const visibility = buildTimelineVisibility();
+  const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || fullName(state.people[firstId]).localeCompare(fullName(state.people[secondId]));
+  const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
+    const firstYear = numericYear(person.marriageYears[firstId]) ?? Math.min(...householdChildren(person.id, firstId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    const secondYear = numericYear(person.marriageYears[secondId]) ?? Math.min(...householdChildren(person.id, secondId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    return firstYear - secondYear || byBirth(firstId, secondId);
+  });
+  const assignedChildren = new Set();
+  const groups = partnerIds.map(partnerId => {
+    const children = householdChildren(person.id, partnerId).sort(byBirth);
+    children.forEach(id => assignedChildren.add(id));
+    return { partnerId, children };
+  });
+  const ungroupedChildren = person.children.filter(id => state.people[id] && !assignedChildren.has(id)).sort(byBirth);
+  if (ungroupedChildren.length) groups.push({ partnerId: '', children: ungroupedChildren });
+
+  if (!groups.length) {
+    const empty = document.createElement('p');
+    empty.className = 'relationship-empty';
+    empty.textContent = 'No spouses, partners, or children in the local tree.';
+    container.replaceChildren(empty);
+    return;
+  }
+
+  const makeRow = ({ targetId, kind, visible, label, detail }) => {
+    const row = document.createElement('div');
+    row.className = `relationship-row ${kind}${visible ? '' : ' is-hidden'}`;
+    const branch = document.createElement('span');
+    branch.className = 'relationship-branch';
+    branch.textContent = kind === 'spouse' ? '⚭' : '└';
+    const copy = document.createElement('span');
+    copy.className = 'relationship-copy';
+    const name = document.createElement('strong');
+    name.textContent = fullName(state.people[targetId]);
+    const meta = document.createElement('small');
+    meta.textContent = detail;
+    copy.append(name, meta);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'relationship-visibility';
+    toggle.textContent = visible ? '◉' : '○';
+    toggle.title = `${visible ? 'Hide' : 'Show'} ${label} in the timeline`;
+    toggle.setAttribute('aria-label', toggle.title);
+    toggle.addEventListener('click', () => {
+      const key = kind === 'spouse' ? partnerRelationKey(person.id, targetId) : childRelationKey(person.id, targetId);
+      state.relationVisibility[key] = !visible;
+      persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
+      render();
+    });
+    row.append(branch, copy, toggle);
+    return row;
+  };
+
+  container.replaceChildren(...groups.map(group => {
+    const household = document.createElement('div');
+    household.className = 'relationship-household';
+    if (group.partnerId) {
+      const partner = state.people[group.partnerId];
+      const pairKey = partnerRelationKey(person.id, group.partnerId);
+      const visible = visibility.renderedPartnerPairs.has(pairKey);
+      const formal = person.spouses.includes(group.partnerId) || partner.spouses.includes(person.id);
+      const divorced = person.divorcedSpouses.includes(group.partnerId) || partner.divorcedSpouses.includes(person.id);
+      const year = clean(person.marriageYears[group.partnerId] || partner.marriageYears[person.id]);
+      const status = formal ? (divorced ? 'Divorced spouse' : 'Spouse') : 'Partner';
+      household.append(makeRow({ targetId: group.partnerId, kind: 'spouse', visible, label: status.toLocaleLowerCase(), detail: [status, year && `married ${year}`].filter(Boolean).join(' · ') }));
+    } else {
+      const label = document.createElement('p');
+      label.className = 'relationship-empty';
+      label.textContent = 'Children without another recorded parent';
+      household.append(label);
+    }
+    group.children.forEach(childId => {
+      const visible = visibility.visibleIds.has(childId) && visibility.childEdgeVisible(person.id, childId);
+      household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}` }));
+    });
+    return household;
+  }));
+}
+
 function renderDetails() {
   const person = state.people[state.selectedId];
   const isOpen = !!person;
@@ -1829,6 +2013,7 @@ function renderDetails() {
   else sourceLink.removeAttribute('href');
   sourceLink.textContent = person.sourceUrl ? 'Open original profile ↗' : 'No profile linked';
   els['source-updated'].textContent = person.importedAt ? `Imported ${new Date(person.importedAt).toLocaleString()}.` : 'Add a source URL to preserve attribution.';
+  renderRelationshipHouseholds(person);
   renderPersonalEvents(person);
   const isGeniProfile = person.sourceProvider === 'geni' && /^profile-/i.test(person.id);
   els['geni-family-actions'].hidden = !isGeniProfile;

@@ -176,6 +176,24 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .form-content input, .form-content textarea, .dialog-card input, .dialog-card select { display: block; margin-top: 5px; color: var(--ink); font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; }
 .field-grid { display: grid; gap: 10px; }
 .two-column { grid-template-columns: 1fr 1fr; }
+.relationship-section { margin: 6px 0 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; background: #fff; }
+.relationship-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.relationship-heading small { color: #777; font-size: 8px; text-align: right; }
+.relationship-households { display: grid; gap: 10px; margin-top: 10px; }
+.relationship-empty { margin: 0; color: #777; font-size: 10px; }
+.relationship-household { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid #ddd; }
+.relationship-household:first-child { padding-top: 0; border-top: 0; }
+.relationship-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 29px; padding: 3px 5px; border-radius: 6px; }
+.relationship-row.spouse { background: #f5f5f5; }
+.relationship-row.child { margin-left: 17px; }
+.relationship-row.is-hidden { opacity: .48; }
+.relationship-branch { color: #777; font: 12px/1 Georgia, serif; text-align: center; }
+.relationship-copy { min-width: 0; }
+.relationship-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 500; }
+.relationship-copy small { display: block; margin-top: 2px; color: #777; font-size: 8px; }
+.relationship-visibility { width: 27px; height: 25px; display: grid; place-items: center; padding: 0; border: 1px solid #aaa; border-radius: 6px; background: #fff; color: #111; cursor: pointer; font-size: 12px; }
+.relationship-visibility:hover { border-color: #000; }
+.relationship-row.is-hidden .relationship-visibility { color: #777; }
 .provenance-box { margin: 6px 0 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; background: #fff; }
 .provenance-row { display: flex; align-items: center; gap: 10px; margin: 11px 0 14px; }
 .provenance-row strong { display: block; font-size: 11px; }

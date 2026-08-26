@@ -121,9 +121,8 @@ function searchableText(person) {
   return [fullName(person), person.title].filter(Boolean).join(' ').toLocaleLowerCase();
 }
 function matchesKeyword(person, keyword) {
-  const escaped = clean(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (!escaped) return false;
-  return new RegExp(`(?:^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'iu').test(searchableText(person));
+  const fragment = clean(keyword).toLocaleLowerCase();
+  return !!fragment && searchableText(person).includes(fragment);
 }
 function life(person) {
   const start = clean(person.birthYear) || '?';
@@ -2109,7 +2108,6 @@ function renderPersonList() {
   els['people-label'].textContent = keywords.length ? (people.length === 1 ? 'match' : 'matches') : (people.length === 1 ? 'profile' : 'profiles');
   els['people-list'].replaceChildren(...people.map(person => {
     const button = document.createElement('button');
-    const source = sourceMeta(person);
     button.type = 'button'; button.className = `person-list-item${person.id === state.selectedId ? ' active' : ''}`; button.dataset.gender = person.gender;
     const gender = document.createElement('span');
     gender.className = 'person-gender';
@@ -2123,13 +2121,6 @@ function renderPersonList() {
     lifespan.textContent = life(person);
     summary.append(name, lifespan);
     button.append(gender, summary);
-    if (person.sourceUrl) {
-      const sourceTick = document.createElement('span');
-      sourceTick.className = 'source-tick';
-      sourceTick.title = source.name;
-      sourceTick.textContent = source.mark;
-      button.append(sourceTick);
-    }
     button.addEventListener('click', () => selectPerson(person.id));
     return button;
   }));

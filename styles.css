@@ -79,15 +79,14 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
 .search-box { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid #000; border-radius: 8px; background: #fff; color: #555; }
 .search-box input { border: 0; padding: 0; background: transparent; box-shadow: none; font-size: 12px; }
 .people-list { min-height: 0; flex: 1; margin: 10px -7px 0; overflow-y: auto; padding: 0 7px 16px; }
-.person-list-item { width: 100%; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 8px 6px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
+.person-list-item { width: 100%; display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 6px; padding: 8px 6px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
 .person-list-item:hover, .person-list-item.active { background: var(--green-pale); }
 .person-gender { display: grid; place-items: center; width: 18px; color: #555; font: 400 15px/1 "Open Sans", Arial, sans-serif; }
 .person-list-item[data-gender="male"] .person-gender { color: #527f9e; }
 .person-list-item[data-gender="female"] .person-gender { color: #a65f7f; }
 .person-list-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 400; }
-.person-name-match { padding: 0 1px; border-radius: 2px; color: #fff; background: #000; }
+.person-name-match { padding: 0 1px; color: #000; background: #ffeb3b; box-shadow: 0 0 0 1px #ffeb3b; }
 .person-list-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
-.source-tick { color: var(--green); font-size: 10px; }
 .source-links { display: flex; gap: 12px; }
 .source-footer { padding: 13px 16px 15px; border-top: 1px solid var(--line); }
 .source-footer a { font-weight: 700; font-size: 11px; text-decoration: none; }

@@ -15,6 +15,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
+const DEFAULT_TIMELINE_NODE_HEIGHT = 28;
 const BRITISH_ROYAL_STARTER_VERSION = 9;
 
 function sessionValue(key, value) {
@@ -63,6 +64,7 @@ const state = {
   ephemeral: false,
   reignColor: DEFAULT_REIGN_EVENT_COLOR,
   timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
+  timelineNodeHeight: DEFAULT_TIMELINE_NODE_HEIGHT,
   treeFilter: '',
   relationVisibility: {},
   starterDataVersion: 0,
@@ -86,7 +88,7 @@ const els = Object.fromEntries([
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'load-descendants-two', 'load-descendants-all', 'add-local-relative',
   'relationship-households',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
-  'events-dialog', 'close-events-dialog', 'timeline-scale', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
+  'events-dialog', 'close-events-dialog', 'timeline-scale', 'timeline-node-height', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
 
@@ -104,6 +106,10 @@ function lightenHex(value, amount = 0.5) {
 function timelineYearWidth(value) {
   const width = Number(value);
   return [3, 4, 5, 6, 8].includes(width) ? width : DEFAULT_TIMELINE_YEAR_WIDTH;
+}
+function timelineNodeHeight(value) {
+  const height = Number(value);
+  return [24, 28, 32, 36, 42].includes(height) ? height : DEFAULT_TIMELINE_NODE_HEIGHT;
 }
 function uniqueId(prefix = 'id') {
   const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -825,6 +831,7 @@ function restore() {
     state.rootId = savedRootId;
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
+    state.timelineNodeHeight = timelineNodeHeight(saved.timelineNodeHeight);
     state.treeFilter = clean(saved.treeFilter);
     if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
     state.relationVisibility = migratedVisibility.relationVisibility;
@@ -840,7 +847,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1370,6 +1377,7 @@ function importBackup(payload) {
   if (!rawPeople || typeof rawPeople !== 'object') throw new Error('This file does not contain a supported people collection.');
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
   state.timelineYearWidth = timelineYearWidth(payload.timelineYearWidth || payload.db?.timelineYearWidth);
+  state.timelineNodeHeight = timelineNodeHeight(payload.timelineNodeHeight || payload.db?.timelineNodeHeight);
   state.treeFilter = clean(payload.treeFilter || payload.db?.treeFilter);
   state.relationVisibility = migrateRelationVisibility(payload.relationVisibility || payload.db?.relationVisibility).relationVisibility;
   const people = migrateGeniPeople(rawPeople).people;
@@ -1402,7 +1410,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1804,8 +1812,8 @@ function renderTimeline() {
 
   const currentYear = new Date().getFullYear();
   const yearWidth = state.timelineYearWidth;
-  const rowHeight = 36;
-  const rowStep = 42;
+  const rowHeight = state.timelineNodeHeight;
+  const rowStep = rowHeight + 6;
   const top = 58;
   const left = 36;
   const birthYear = person => numericYear(person.birthYear);
@@ -2205,9 +2213,10 @@ function renderTimeline() {
     const lifespanWidth = lifespanWidthFor(person);
     const hasReign = reignEvents(person).length > 0;
     const isSpouseNode = layoutNode.isSpouse;
+    const cornerRadius = Math.min(5, rowHeight / 4);
     const nodeShape = attrs => person.isLiving
-      ? svg('path', { ...attrs, d: leftRoundedRectPath(lifespanWidth, rowHeight) })
-      : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 });
+      ? svg('path', { ...attrs, d: leftRoundedRectPath(lifespanWidth, rowHeight, cornerRadius) })
+      : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: cornerRadius, ry: cornerRadius });
     const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
     group.append(nodeShape({ class: 'lifespan' }));
@@ -2288,10 +2297,11 @@ function renderTimeline() {
     const icon = isSpouseNode
       ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })
       : svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' });
-    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: 18 }, '⚭'));
+    const nodeCenterY = rowHeight / 2;
+    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: nodeCenterY }, '⚭'));
     else {
-      icon.append(svg('rect', { class: 'expander-box', x: 12, y: 12, width: 12, height: 12, rx: 2 }));
-      if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 18, y: 18 }, isCollapsed ? '+' : '−'));
+      icon.append(svg('rect', { class: 'expander-box', x: 12, y: nodeCenterY - 6, width: 12, height: 12, rx: 2 }));
+      if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 18, y: nodeCenterY }, isCollapsed ? '+' : '−'));
     }
     const toggleBranch = event => {
       event.stopPropagation();
@@ -2310,7 +2320,7 @@ function renderTimeline() {
     textMask.append(nodeShape({ fill: '#000' }));
     nodeDefs.append(textMask);
     const makeLabel = className => {
-      const text = svg('text', { class: className, x: 38, y: 19 });
+      const text = svg('text', { class: className, x: 38, y: nodeCenterY + 1 });
       text.append(svg('tspan', { class: 'timeline-name' }, fullName(person)));
       text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, life(person)));
       return text;
@@ -2731,6 +2741,7 @@ els['file-input'].addEventListener('change', async () => {
 els['export-button'].addEventListener('click', exportBackup);
 els['global-events-button'].addEventListener('click', () => {
   els['timeline-scale'].value = String(state.timelineYearWidth);
+  els['timeline-node-height'].value = String(state.timelineNodeHeight);
   renderGlobalEventsEditor();
   els['events-dialog'].showModal();
 });
@@ -2738,6 +2749,11 @@ els['close-events-dialog'].addEventListener('click', () => els['events-dialog'].
 els['timeline-scale'].addEventListener('change', () => {
   state.timelineYearWidth = timelineYearWidth(els['timeline-scale'].value);
   persist('Timeline scale updated');
+  render();
+});
+els['timeline-node-height'].addEventListener('change', () => {
+  state.timelineNodeHeight = timelineNodeHeight(els['timeline-node-height'].value);
+  persist('Node height updated');
   render();
 });
 els['add-global-event'].addEventListener('click', () => {

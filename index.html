@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=39">
+  <link rel="stylesheet" href="./styles.css?v=40">
 </head>
 <body>
   <div class="app-shell">
@@ -222,7 +222,10 @@
         <div><span class="eyebrow">Across the timeline</span><h2>Timeline settings</h2></div>
         <button class="close-detail" id="close-events-dialog" type="button" aria-label="Close">×</button>
       </div>
-      <label class="timeline-scale-setting"><span>Horizontal scale</span><select id="timeline-scale"><option value="3">Compact · 3 px/year</option><option value="4" selected>Default · 4 px/year</option><option value="5">Roomy · 5 px/year</option><option value="6">Wide · 6 px/year</option><option value="8">Extra wide · 8 px/year</option></select></label>
+      <div class="timeline-display-settings">
+        <label><span>Horizontal scale</span><select id="timeline-scale"><option value="3">Compact · 3 px/year</option><option value="4" selected>Default · 4 px/year</option><option value="5">Roomy · 5 px/year</option><option value="6">Wide · 6 px/year</option><option value="8">Extra wide · 8 px/year</option></select></label>
+        <label><span>Node height</span><select id="timeline-node-height"><option value="24">Dense · 24 px</option><option value="28" selected>Compact · 28 px</option><option value="32">Standard · 32 px</option><option value="36">Tall · 36 px</option><option value="42">Extra tall · 42 px</option></select></label>
+      </div>
       <p class="dialog-intro">The ruler always keeps five-year marks. Global events appear behind every profile.</p>
       <span class="eyebrow">Global events</span>
       <div class="event-editor-list global-event-list" id="global-events-list"></div>
@@ -237,6 +240,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=53"></script>
+  <script type="module" src="./app.js?v=54"></script>
 </body>
 </html>

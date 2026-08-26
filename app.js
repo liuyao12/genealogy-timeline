@@ -14,7 +14,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 4;
+const BRITISH_ROYAL_STARTER_VERSION = 5;
 
 function sessionValue(key, value) {
   try {
@@ -404,7 +404,11 @@ function createBritishRoyalSample() {
     ['harry-sussex', 'Harry', 'of Sussex', '1984', '', 'male', 'Duke of Sussex; son of Charles III', historyUrl],
     ['george-wales', 'George', 'of Wales', '2013', '', 'male', 'Prince; grandson of Charles III', historyUrl],
     ['charlotte-wales', 'Charlotte', 'of Wales', '2015', '', 'female', 'Princess; granddaughter of Charles III', historyUrl],
-    ['louis-wales', 'Louis', 'of Wales', '2018', '', 'male', 'Prince; grandson of Charles III', historyUrl]
+    ['louis-wales', 'Louis', 'of Wales', '2018', '', 'male', 'Prince; grandson of Charles III', historyUrl],
+    ['catherine-wales', 'Catherine', 'Princess of Wales', '1982', '', 'female', 'Wife of William, Prince of Wales', historyUrl],
+    ['meghan-sussex', 'Meghan', 'Duchess of Sussex', '1981', '', 'female', 'Wife of Harry, Duke of Sussex', historyUrl],
+    ['archie-sussex', 'Prince Archie Harrison', 'Mountbatten-Windsor', '2019', '', 'male', 'Son of Harry, Duke of Sussex and Meghan, Duchess of Sussex', historyUrl],
+    ['lilibet-sussex', 'Princess Lilibet Diana', 'Mountbatten-Windsor', '2021', '', 'female', 'Daughter of Harry, Duke of Sussex and Meghan, Duchess of Sussex', historyUrl]
   );
   // Public Geni-linked spouses of the bundled line. Unmarried partners and
   // mistresses are deliberately not part of the starter data.
@@ -496,6 +500,11 @@ function createBritishRoyalSample() {
     'george-v': '6000000000701511040', 'edward-viii': '5031922362950130285',
     'george-vi': '6000000001217955606', 'elizabeth-ii': '6000000003075071669',
     'philip': '6000000003075171096', 'charles-iii': '6000000003075030887',
+    'william-wales': '6000000003075211030', 'harry-sussex': '6000000003075017807',
+    'george-wales': '6000000021632971183', 'charlotte-wales': '6000000033295530573',
+    'louis-wales': '6000000077977622390', 'catherine-wales': '6000000013407238004',
+    'meghan-sussex': '6000000049003958965', 'archie-sussex': '6000000092563363034',
+    'lilibet-sussex': '6000000176167113885',
     'mary-tudor': '6000000000307250674', 'frances-brandon': '6000000003760910764',
     'jane-grey': '368988617700011508', 'charles-i': '4498828',
     'charles-ii': '6000000002529545042', 'james-ii-vii': '6000000013038690528',
@@ -541,7 +550,15 @@ function createBritishRoyalSample() {
     'janet-stewart-sutherland': '6000000005559708008', 'lady-leslie': '6000000042163396821'
   };
   const people = {};
-  const displayNameOverrides = { 'henry-vii': 'Henry VII, King of England' };
+  const displayNameOverrides = {
+    'henry-vii': 'Henry VII, King of England',
+    'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',
+    'harry-sussex': 'Harry, Duke of Sussex', 'meghan-sussex': 'Meghan, Duchess of Sussex',
+    'george-wales': 'Prince George of Wales', 'charlotte-wales': 'Princess Charlotte of Wales',
+    'louis-wales': 'Prince Louis of Wales', 'archie-sussex': 'Prince Archie Harrison Mountbatten-Windsor',
+    'lilibet-sussex': 'Princess Lilibet Diana Mountbatten-Windsor'
+  };
+  const livingSlugs = new Set(['charles-iii', 'camilla', 'william-wales', 'catherine-wales', 'harry-sussex', 'meghan-sussex', 'george-wales', 'charlotte-wales', 'louis-wales', 'archie-sussex', 'lilibet-sussex']);
   const titlePrefix = /^(?:the\s+Queen\s+Mother|(?:Grand\s+)?(?:Duke|Duchess)|Prince(?:ss)?|Earl|Count(?:ess)?|Lord|Lady|Baron(?:ess)?|Marquess|Marchioness|King|Queen|Emperor|Empress)\b/i;
   rows.filter(([slug]) => geniIds[slug]).forEach(([slug, firstName, lastName, birthYear, deathYear, gender, note]) => {
     const geniId = geniIds[slug];
@@ -552,7 +569,7 @@ function createBritishRoyalSample() {
     const displayName = displayNameOverrides[slug] || (royalTitle && !/\b(?:king|queen)\b/i.test(baseName) ? `${baseName}, ${royalTitle}` : baseName);
     people[id] = normalizePerson({
       id, firstName, lastName, displayName, title: royalTitle, birthYear, deathYear, gender, note,
-      nameOrder: 'western', isLiving: slug === 'charles-iii', place: '',
+      nameOrder: 'western', isLiving: livingSlugs.has(slug), place: '',
       sourceUrl: `https://www.geni.com/profile/index/${geniId}`, sourceProvider: 'geni', sourceId: id,
       starterProfile: true
     }, id);
@@ -581,8 +598,9 @@ function createBritishRoyalSample() {
     'elizabeth-ii': ['george-vi', 'queen-mother'], 'margaret-snowdon': ['george-vi', 'queen-mother'],
     'charles-iii': ['philip', 'elizabeth-ii'], 'anne-royal': ['philip', 'elizabeth-ii'],
     'andrew-york': ['philip', 'elizabeth-ii'], 'edward-edinburgh': ['philip', 'elizabeth-ii'],
-    'william-wales': ['charles-iii'], 'harry-sussex': ['charles-iii'],
-    'george-wales': ['william-wales'], 'charlotte-wales': ['william-wales'], 'louis-wales': ['william-wales']
+    'william-wales': ['charles-iii', 'diana'], 'harry-sussex': ['charles-iii', 'diana'],
+    'george-wales': ['william-wales', 'catherine-wales'], 'charlotte-wales': ['william-wales', 'catherine-wales'], 'louis-wales': ['william-wales', 'catherine-wales'],
+    'archie-sussex': ['harry-sussex', 'meghan-sussex'], 'lilibet-sussex': ['harry-sussex', 'meghan-sussex']
   };
   Object.entries(parentLinks).forEach(([childSlug, parentSlugs]) => {
     const childId = id(childSlug);
@@ -622,7 +640,8 @@ function createBritishRoyalSample() {
    ['mary-adelaide','francis-teck','1866'], ['victoria-hesse','louis-battenberg','1884'], ['george-v','mary-teck','1893'],
    ['alice-battenberg','andrew-greece','1903'], ['wallis-simpson','earl-winfield-spencer','1916','divorced'],
    ['george-vi','queen-mother','1923'], ['wallis-simpson','ernest-aldrich-simpson','1928','divorced'], ['edward-viii','wallis-simpson','1937'],
-   ['philip','elizabeth-ii','1947'], ['camilla','andrew-parker-bowles','1973','divorced'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005']
+   ['philip','elizabeth-ii','1947'], ['camilla','andrew-parker-bowles','1973','divorced'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005'],
+   ['william-wales','catherine-wales','2011'], ['harry-sussex','meghan-sussex','2018']
   ].forEach(([a, b, marriageYear, marriageStatus]) => {
     if (!people[id(a)] || !people[id(b)]) return;
     people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
@@ -1273,6 +1292,9 @@ function partnerRelationKey(firstId, secondId) {
 }
 function childRelationKey(parentId, childId) { return `child:${parentId}>${childId}`; }
 function relationOverride(key) { return Object.hasOwn(state.relationVisibility, key) ? state.relationVisibility[key] : null; }
+function marriageYearFor(firstId, secondId) {
+  return numericYear(state.people[firstId]?.marriageYears?.[secondId] || state.people[secondId]?.marriageYears?.[firstId]);
+}
 function allPartnerIds(person) { return unique([...(person?.spouses || []), ...(person?.partners || [])]).filter(id => state.people[id]); }
 function householdChildren(personId, partnerId = '') {
   const person = state.people[personId];
@@ -1666,16 +1688,23 @@ function renderTimeline() {
       if (!groups.has(partnerId)) groups.set(partnerId, []);
       groups.get(partnerId).push(childId);
     });
+    renderedPartnerIds(id).filter(partnerId => datedIds.has(partnerId)).forEach(partnerId => {
+      if (!groups.has(partnerId)) groups.set(partnerId, []);
+    });
     const orderedGroups = [...groups.entries()].map(([partnerId, childIds]) => ({
       partnerId,
       childIds: childIds.sort(byBirth),
-      firstBirth: Math.min(...childIds.map(childId => birthYear(state.people[childId])))
-    })).sort((a, b) => a.firstBirth - b.firstBirth || byBirth(a.partnerId || a.childIds[0], b.partnerId || b.childIds[0]));
+      marriageYear: partnerId ? marriageYearFor(id, partnerId) : null,
+      firstBirth: childIds.length ? Math.min(...childIds.map(childId => birthYear(state.people[childId]))) : Number.POSITIVE_INFINITY
+    })).sort((a, b) => {
+      if (a.marriageYear != null || b.marriageYear != null) return (a.marriageYear ?? Number.POSITIVE_INFINITY) - (b.marriageYear ?? Number.POSITIVE_INFINITY);
+      return a.firstBirth - b.firstBirth || byBirth(a.partnerId || a.childIds[0], b.partnerId || b.childIds[0]);
+    });
 
     const groupedPartners = new Set();
     orderedGroups.forEach(group => {
       const pendingChildren = group.childIds.filter(childId => !expanded.has(childId));
-      if (!pendingChildren.length) return;
+      if (!pendingChildren.length && !group.partnerId) return;
       const transportedId = group.partnerId ? transportedParent([id, group.partnerId]) : '';
       // A cousin-marriage household is rendered on the non-transported side.
       // The transported spouse retains their primary occurrence in the natal
@@ -1695,7 +1724,12 @@ function renderTimeline() {
 
     renderedPartnerIds(id)
       .filter(partnerId => datedIds.has(partnerId) && !groupedPartners.has(partnerId))
-      .sort(byBirth)
+      .sort((firstId, secondId) => {
+        const firstYear = marriageYearFor(id, firstId);
+        const secondYear = marriageYearFor(id, secondId);
+        if (firstYear != null || secondYear != null) return (firstYear ?? Number.POSITIVE_INFINITY) - (secondYear ?? Number.POSITIVE_INFINITY);
+        return byBirth(firstId, secondId);
+      })
       .forEach(partnerId => {
         const transportedId = transportedParent([id, partnerId]);
         if (transportedId === id || transportedId === partnerId) return;
@@ -2223,9 +2257,12 @@ function renderRelationshipHouseholds(person) {
   const visibility = buildTimelineVisibility();
   const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || fullName(state.people[firstId]).localeCompare(fullName(state.people[secondId]));
   const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
-    const firstYear = numericYear(person.marriageYears[firstId]) ?? Math.min(...householdChildren(person.id, firstId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
-    const secondYear = numericYear(person.marriageYears[secondId]) ?? Math.min(...householdChildren(person.id, secondId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
-    return firstYear - secondYear || byBirth(firstId, secondId);
+    const firstYear = marriageYearFor(person.id, firstId);
+    const secondYear = marriageYearFor(person.id, secondId);
+    if (firstYear != null || secondYear != null) return (firstYear ?? Number.POSITIVE_INFINITY) - (secondYear ?? Number.POSITIVE_INFINITY);
+    const firstChildYear = Math.min(...householdChildren(person.id, firstId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    const secondChildYear = Math.min(...householdChildren(person.id, secondId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    return firstChildYear - secondChildYear || byBirth(firstId, secondId);
   });
   const assignedChildren = new Set();
   const groups = partnerIds.map(partnerId => {

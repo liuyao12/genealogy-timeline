@@ -1028,6 +1028,7 @@ function fetchGeniJsonp(path, params = {}) {
 }
 
 function geniUnionPayloadRecords(payload) {
+  if (payload && typeof payload === 'object' && /^union-/i.test(refId(payload.id || payload.url))) return [payload];
   const collection = payload?.results ?? payload?.unions ?? payload;
   const records = Array.isArray(collection)
     ? collection
@@ -1044,10 +1045,16 @@ async function fetchGeniUnionDetails(unionIds) {
   const ids = unique(unionIds).filter(id => /^union-/i.test(id));
   for (let index = 0; index < ids.length; index += 25) {
     const chunk = ids.slice(index, index + 25);
-    const payload = await fetchGeniJsonp('union', {
-      ids: chunk.map(id => id.replace(/^union-/i, '')).join(','),
-      fields: 'id,url,partners,children,status,marriage,divorce,marriage_date,divorce_date'
-    });
+    const fields = 'id,url,partners,children,status,marriage,divorce,marriage_date,divorce_date';
+    // Geni's bulk dispatcher returns an empty result for a one-ID request.
+    // Use the resource URL directly for singletons, including a final batch
+    // containing only one union.
+    const payload = chunk.length === 1
+      ? await fetchGeniJsonp(encodeURIComponent(chunk[0]), { fields })
+      : await fetchGeniJsonp('union', {
+        ids: chunk.map(id => id.replace(/^union-/i, '')).join(','),
+        fields
+      });
     if (payload.error) throw new Error(payload.error.message || 'Geni did not return union details.');
     geniUnionPayloadRecords(payload).forEach(raw => {
       const id = refId(raw.id || raw.url);
@@ -1094,6 +1101,7 @@ async function fetchGeniNeighborhood(id) {
 }
 
 function geniProfilePayloadRecords(payload) {
+  if (payload && typeof payload === 'object' && /^profile-/i.test(refId(payload.id || payload.url))) return [payload];
   const collection = payload?.results ?? payload?.profiles ?? payload;
   if (Array.isArray(collection)) return collection.filter(value => value && typeof value === 'object');
   if (!collection || typeof collection !== 'object') return [];
@@ -1107,10 +1115,13 @@ async function fetchGeniProfileDetails(profileIds) {
   const ids = unique(profileIds).filter(id => /^profile-/i.test(id));
   for (let index = 0; index < ids.length; index += 25) {
     const chunk = ids.slice(index, index + 25);
-    const payload = await fetchGeniJsonp('profile', {
-      ids: chunk.map(id => id.replace(/^profile-/i, '')).join(','),
-      fields: 'id,guid,url,profile_url,public,display_name,first_name,middle_name,last_name,maiden_name,title,gender,is_alive,birth,death,birth_date,birth_date_parts,death_date,death_date_parts,unions'
-    });
+    const fields = 'id,guid,url,profile_url,public,display_name,first_name,middle_name,last_name,maiden_name,title,gender,is_alive,birth,death,birth_date,birth_date_parts,death_date,death_date_parts,unions';
+    const payload = chunk.length === 1
+      ? await fetchGeniJsonp(encodeURIComponent(chunk[0]), { fields })
+      : await fetchGeniJsonp('profile', {
+        ids: chunk.map(id => id.replace(/^profile-/i, '')).join(','),
+        fields
+      });
     if (payload.error) throw new Error(payload.error.message || 'Geni did not return profile details.');
     geniProfilePayloadRecords(payload).forEach(raw => {
       const rawId = refId(raw.id || raw.url);

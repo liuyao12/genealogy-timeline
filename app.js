@@ -1963,7 +1963,8 @@ function renderTimeline() {
     // Duplicate an in-line spouse only while both natal occurrences survive.
     // When one ancestral route is collapsed, the one remaining occurrence
     // becomes the household owner and the descendants move there.
-    if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id) && activeLineageIds.has(id))) return '';
+    if (parentIds.length !== 2 || parentIds.some(id => state.collapsedIds.has(id))
+      || !parentIds.every(id => descendantsOfRoot.has(id) && activeLineageIds.has(id))) return '';
     // Western cousin-marriage transport always duplicates the woman. If the
     // imported genders do not identify one, keep a single household rather
     // than arbitrarily transporting the man.
@@ -1973,6 +1974,7 @@ function renderTimeline() {
   people.forEach(person => person.parents.forEach(parentId => {
     if (!datedIds.has(parentId)) return;
     if (!childEdgeVisible(parentId, person.id)) return;
+    if (state.collapsedIds.has(parentId)) return;
     // Profiles retained only as spouses must not reopen a branch that was
     // collapsed above their natal occurrence. Traverse descendants solely
     // along the lineage routes that still survive from the root; the family
@@ -2009,6 +2011,10 @@ function renderTimeline() {
     if (!datedIds.has(id) || expanded.has(id)) return;
     place(id, false, displayParentId);
     expanded.add(id);
+    // Collapsing a profile is unconditional: its household groups may survive
+    // through another cousin-marriage route, but this occurrence must not
+    // continue traversing or claiming them.
+    if (state.collapsedIds.has(id)) return;
 
     const groups = new Map();
     (childrenByParent.get(id) || []).forEach(childId => {
@@ -2045,6 +2051,7 @@ function renderTimeline() {
         if (!transportedId) {
           const partnerWasPlaced = placed.has(group.partnerId);
           place(group.partnerId, true, id);
+          if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
           if (!partnerWasPlaced) householdParentId = group.partnerId;
         }
       }
@@ -2109,7 +2116,6 @@ function renderTimeline() {
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
   const layoutEntries = order.map(id => ({ key: id, id, isSpouse: spouseIds.has(id), isTransportedCopy: false }));
   const transportKeyByFamily = new Map();
-  const transportedChildrenByPrimaryId = new Map();
   [...families.entries()].forEach(([key, family]) => {
     const parentIds = family.parents.filter(id => datedIds.has(id));
     const transportedId = transportedParent(parentIds);
@@ -2123,8 +2129,6 @@ function renderTimeline() {
     family.children.forEach(childId => displayParentByKey.set(childId, copyKey));
     if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
     transportKeyByFamily.set(key, copyKey);
-    if (!transportedChildrenByPrimaryId.has(transportedId)) transportedChildrenByPrimaryId.set(transportedId, new Set());
-    family.children.forEach(childId => transportedChildrenByPrimaryId.get(transportedId).add(childId));
   });
 
   const layoutNodes = layoutEntries.map((entry, index) => {
@@ -2439,27 +2443,30 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    const transportedChildren = transportedChildrenByPrimaryId.get(id) || new Set();
     const hasChildren = person.children.some(childId =>
-      !transportedChildren.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
+      expandableIds.has(childId) && childEdgeVisible(id, childId)
     );
     const isCollapsed = state.collapsedIds.has(id);
-    const icon = isSpouseNode
-      ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })
-      : svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' });
+    // A cousin-marriage collapse can move this profile from its natal
+    // occurrence into the surviving household as a spouse. In that state it
+    // must keep the expansion control; otherwise the marriage symbol would
+    // strand the branch in its collapsed state.
+    const showBranchControl = !isSpouseNode || (isCollapsed && hasChildren);
+    const icon = showBranchControl
+      ? svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' })
+      : svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' });
     const nodeCenterY = rowHeight / 2;
-    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: nodeCenterY }, '⚭'));
-    else {
+    if (showBranchControl) {
       icon.append(svg('rect', { class: 'expander-box', x: 12, y: nodeCenterY - 6, width: 12, height: 12, rx: 2 }));
       if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 18, y: nodeCenterY }, isCollapsed ? '+' : '−'));
-    }
+    } else icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: nodeCenterY }, '⚭'));
     const toggleBranch = event => {
       event.stopPropagation();
       prepareTimelineRelayout(nodeKey);
       if (isCollapsed) state.collapsedIds.delete(id); else state.collapsedIds.add(id);
       render();
     };
-    if (hasChildren && !isSpouseNode) {
+    if (hasChildren && showBranchControl) {
       icon.addEventListener('click', toggleBranch);
       icon.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') toggleBranch(event); });
     }

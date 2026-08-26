@@ -1058,39 +1058,38 @@ async function fetchGeniUnionDetails(unionIds) {
 }
 
 async function fetchGeniNeighborhood(id) {
-  const payload = await fetchGeniJsonp(`${encodeURIComponent(id)}/immediate-family`);
-  if (payload.error) throw new Error(payload.error.message || 'Geni did not return a public profile.');
-  if (payload.message && !payload.nodes && !payload.focus?.nodes) throw new Error(payload.message);
-  const nodes = payload.nodes || payload.focus?.nodes || {};
-  const focusRaw = payload.focus?.id ? payload.focus : (nodes[payload.focus] || payload);
-  if (!focusRaw?.id) throw new Error('Geni did not return the selected profile’s immediate family.');
-  const rawFocusId = refId(focusRaw.id);
-  const preferredFocusId = /^profile-g/i.test(id) ? canonicalGeniProfileId(id) : '';
-  const preferredIds = preferredFocusId && rawFocusId ? { [rawFocusId]: preferredFocusId } : {};
-  // `focus` is documented separately from `nodes` and is not guaranteed to
-  // be repeated there. Include it while resolving unions; otherwise its
-  // spouse and children are imported as profiles but never linked to it.
-  const relationNodes = Array.isArray(nodes)
-    ? [...nodes, focusRaw]
-    : { ...nodes, [rawFocusId || clean(focusRaw.id)]: focusRaw };
-  const relationRecords = geniGraphNodeRecords(relationNodes);
-  const unionIds = unique([
-    ...relationRecords.filter(node => /^union-/i.test(node.id)).map(node => node.id),
-    ...relationRecords.flatMap(node => uniqueRefs(node.unions))
-  ]);
-  // The graph endpoint may return only union references or sparse union
-  // objects. Fetch each union authoritatively so children can be assigned to
-  // the correct pair of spouses instead of becoming unclassified relatives.
+  const requestedFocusId = canonicalGeniProfileId(id);
+  const initialProfiles = await fetchGeniProfileDetails([requestedFocusId]);
+  const focusRaw = initialProfiles[requestedFocusId] || Object.values(initialProfiles)[0];
+  if (!focusRaw) throw new Error('Geni did not return the selected public profile.');
+
+  const rawFocusId = refId(focusRaw.id || focusRaw.url);
+  const focusId = geniProfileIdForApiProfile(focusRaw, requestedFocusId);
+  const unionIds = uniqueRefs(focusRaw.unions);
   const unionDetails = unionIds.length ? await fetchGeniUnionDetails(unionIds) : {};
-  const completeRecordsById = new Map(relationRecords.map(node => [node.id, node]));
-  Object.entries(unionDetails).forEach(([unionId, detail]) => {
-    completeRecordsById.set(unionId, { ...(completeRecordsById.get(unionId) || {}), ...detail, id: unionId });
-  });
-  const mapped = inferRelationsFromUnions([...completeRecordsById.values()], preferredIds);
-  const focusId = preferredFocusId || geniProfileIdForApiProfile(focusRaw, rawFocusId);
+  const relatedProfileIds = unique([
+    rawFocusId,
+    requestedFocusId,
+    ...Object.values(unionDetails).flatMap(union => [
+      ...uniqueRefs(union.partners || union.partner_ids || union.profiles),
+      ...uniqueRefs(union.children || union.child_ids)
+    ])
+  ]).filter(profileId => /^profile-/i.test(profileId));
+  const detailedProfiles = await fetchGeniProfileDetails(relatedProfileIds);
+  const profileRecords = Object.values({ ...initialProfiles, ...detailedProfiles });
+  if (!profileRecords.length) throw new Error('Geni returned no public profiles for the selected profile’s unions.');
+
+  // A profile's unions include both its parents' family group and each family
+  // group it formed. Union partners and children therefore provide an exact
+  // family structure; individual profile calls supply the names and dates.
+  const preferredIds = rawFocusId ? { [rawFocusId]: focusId } : {};
+  const mapped = inferRelationsFromUnions([
+    ...profileRecords,
+    ...Object.values(unionDetails)
+  ], preferredIds);
   const canonicalFocus = { ...focusRaw, id: focusId };
   if (!mapped[focusId]) mapped[focusId] = canonicalFocus;
-  if (!Object.keys(mapped).length) throw new Error('Geni returned no verifiable immediate-family profiles.');
+  if (!Object.keys(mapped).length) throw new Error('Geni returned no verifiable profiles from the selected profile’s unions.');
   return { mapped, focusRaw: canonicalFocus };
 }
 
@@ -1110,7 +1109,7 @@ async function fetchGeniProfileDetails(profileIds) {
     const chunk = ids.slice(index, index + 25);
     const payload = await fetchGeniJsonp('profile', {
       ids: chunk.map(id => id.replace(/^profile-/i, '')).join(','),
-      fields: 'id,guid,url,profile_url,public,display_name,first_name,middle_name,last_name,maiden_name,title,gender,is_alive,birth,death,birth_date,birth_date_parts,death_date,death_date_parts'
+      fields: 'id,guid,url,profile_url,public,display_name,first_name,middle_name,last_name,maiden_name,title,gender,is_alive,birth,death,birth_date,birth_date_parts,death_date,death_date_parts,unions'
     });
     if (payload.error) throw new Error(payload.error.message || 'Geni did not return profile details.');
     geniProfilePayloadRecords(payload).forEach(raw => {
@@ -1135,6 +1134,10 @@ async function loadGeniImmediateFamily(profileId) {
   const importedAt = new Date().toISOString();
   const { mapped } = await fetchGeniNeighborhood(profileId);
   const existingIds = new Set(Object.keys(state.people));
+  const existingDateState = new Map(Object.keys(mapped).filter(id => existingIds.has(id)).map(id => [id, {
+    birth: numericYear(state.people[id]?.birthYear),
+    death: numericYear(state.people[id]?.deathYear)
+  }]));
   Object.entries(mapped).forEach(([id, raw]) => {
     if (raw.public === false) return;
     const incoming = normalizePerson({
@@ -1149,41 +1152,10 @@ async function loadGeniImmediateFamily(profileId) {
   });
   const receivedIds = Object.keys(mapped).filter(id => state.people[id]);
   const newIds = receivedIds.filter(id => !existingIds.has(id));
-  const sparseIds = receivedIds.filter(id => {
-    const relative = state.people[id];
-    return numericYear(relative?.birthYear) == null || (!relative?.isLiving && numericYear(relative?.deathYear) == null);
-  });
-  const dateStateBefore = new Map(sparseIds.map(id => [id, {
-    birth: numericYear(state.people[id]?.birthYear),
-    death: numericYear(state.people[id]?.deathYear)
-  }]));
-  let completedExistingProfiles = 0;
-  if (sparseIds.length) {
-    try {
-      const detailsById = await fetchGeniProfileDetails(sparseIds);
-      Object.entries(detailsById).forEach(([id, raw]) => {
-        if (!state.people[id]) return;
-        const incoming = normalizePerson({
-          ...raw,
-          id,
-          sourceId: id,
-          sourceUrl: validGeniUrl(raw.profile_url || raw.url) || state.people[id].sourceUrl,
-          sourceProvider: 'geni',
-          importedAt
-        }, id);
-        state.people[id] = mergePersonRecords(state.people[id], incoming);
-      });
-    } catch (error) {
-      if (error?.code === 'GENI_INVALID_ACCESS_TOKEN') throw error;
-      // Keep the family graph when detailed fields are restricted.
-    }
-    completedExistingProfiles = sparseIds.filter(id => {
-      if (!existingIds.has(id)) return false;
-      const before = dateStateBefore.get(id);
-      return (before.birth == null && numericYear(state.people[id]?.birthYear) != null)
-        || (before.death == null && numericYear(state.people[id]?.deathYear) != null);
-    }).length;
-  }
+  const completedExistingProfiles = [...existingDateState].filter(([id, before]) => (
+    (before.birth == null && numericYear(state.people[id]?.birthYear) != null)
+    || (before.death == null && numericYear(state.people[id]?.deathYear) != null)
+  )).length;
   if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
   const refreshedFamilyIds = new Set([
     ...state.people[profileId].parents,
@@ -1223,7 +1195,7 @@ async function loadGeniImmediateFamily(profileId) {
   const updateSummary = completedExistingProfiles
     ? ` ${completedExistingProfiles} existing profile${completedExistingProfiles === 1 ? '' : 's'} received missing date data.`
     : '';
-  toast(`Geni returned ${receivedIds.length} immediate-family profiles; ${countSummary}.${updateSummary} ${dateSummary} All are listed in this profile’s family panel.`, true);
+  toast(`Geni returned ${receivedIds.length} union-linked family profiles; ${countSummary}.${updateSummary} ${dateSummary} All are listed in this profile’s family panel.`, true);
 }
 
 async function fetchGeniReignEvents(profileIds) {

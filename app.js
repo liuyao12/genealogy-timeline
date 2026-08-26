@@ -1679,12 +1679,6 @@ function renderTimeline() {
       const pos = positions.get(id);
       connectors.append(svg('path', { d: `M ${trunkX} ${pos.y + rowHeight / 2} H ${pos.x + 1}`, class: `timeline-edge horizontal ${stemClass}` }));
     });
-    if (recordedMarriageYear) {
-      const markerY = parentYs.length > 1 ? (Math.min(...parentYs) + Math.max(...parentYs)) / 2 : parentYs[0];
-      connectors.append(svg('rect', { x: trunkX - 3, y: markerY - 3, width: 6, height: 6, transform: `rotate(45 ${trunkX} ${markerY})`, class: 'marriage-marker' }));
-      connectors.append(svg('title', {}, `Married ${recordedMarriageYear}`));
-    }
-
     if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
       const natal = positions.get(transportedId);
       const transported = positions.get(transportedCopyKey);
@@ -1764,10 +1758,10 @@ function renderTimeline() {
     const icon = isSpouseNode
       ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })
       : svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' });
-    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 24, y: 19 }, '⚭'));
+    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: 19 }, '⚭'));
     else {
-      icon.append(svg('rect', { class: 'expander-box', x: 15, y: 9, width: 18, height: 18, rx: 3 }));
-      if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 24, y: 18 }, isCollapsed ? '+' : '−'));
+      icon.append(svg('rect', { class: 'expander-box', x: 11, y: 11, width: 14, height: 14, rx: 2 }));
+      if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 18, y: 18 }, isCollapsed ? '+' : '−'));
     }
     const toggleBranch = event => {
       event.stopPropagation();

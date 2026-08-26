@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=41">
+  <link rel="stylesheet" href="./styles.css?v=42">
 </head>
 <body>
   <div class="app-shell">
@@ -42,12 +42,15 @@
         <section class="source-card">
           <div class="source-heading">
             <div>
-              <span class="eyebrow">Primary source</span>
-              <h2>Geni public trees</h2>
+              <span class="eyebrow">Build your own</span>
+              <h2>One profile at a time</h2>
             </div>
-            <span class="source-monogram" aria-hidden="true">G</span>
+            <span class="source-monogram" aria-hidden="true">+</span>
           </div>
-          <p>Recursively follow public family connections and stitch overlapping profiles by their stable Geni IDs.</p>
+          <p>Start with one person, then add their parents, spouses, and children. A Geni ID is optional.</p>
+          <button class="button primary grow start-tree-button" id="new-tree-button" type="button">Start a new tree</button>
+          <div class="source-divider"><span>or import public profiles</span></div>
+          <div class="source-subheading"><span class="eyebrow">Geni shortcut</span><strong>Grow from a public profile</strong></div>
           <form id="source-form">
             <label class="sr-only" for="source-provider">Profile source</label>
             <div class="source-options">
@@ -64,7 +67,7 @@
               <button class="icon-button accent" type="submit" aria-label="Import public profile">→</button>
             </div>
           </form>
-          <p class="source-note">Geni first · OAuth required · Public profiles only · 160-profile safety limit</p>
+          <p class="source-note">OAuth required for importing · Public profiles only · 160-profile safety limit</p>
           <button class="example-button" id="royal-example-button" type="button">♔ Restore the bundled British royal line</button>
           <a id="source-download-link" class="source-download-link" href="#" target="_blank" rel="noreferrer" hidden>Open official API JSON ↗</a>
         </section>
@@ -96,7 +99,7 @@
             <div class="empty-emblem">◇</div>
             <span class="eyebrow">Start locally</span>
             <h1>Add your first profile</h1>
-            <p>Build a family timeline one person at a time. Add names and life dates here, then connect each new profile to a parent. Your working copy remains in this browser.</p>
+            <p>Build a family timeline one person at a time. Add names and life dates here, then connect each new profile as a parent, spouse, or child. Your working copy remains in this browser.</p>
             <div class="empty-actions">
               <button class="button primary" id="empty-add-person-button" type="button">Add first profile</button>
               <button class="button secondary" id="empty-file-button" type="button">Open a backup</button>
@@ -136,6 +139,7 @@
                 <label>Birth year<input name="birthYear" inputmode="numeric"></label>
                 <label>Death year<input name="deathYear" inputmode="numeric"></label>
               </div>
+              <label>Geni public ID <small>Optional</small><input name="geniId" autocomplete="off" placeholder="g600000… or a Geni profile URL"></label>
             </div>
 
             <div class="relationship-section">
@@ -144,6 +148,7 @@
                 <small>Click the eye to show or hide one occurrence.</small>
               </div>
               <div class="relationship-households" id="relationship-households"></div>
+              <button class="button secondary grow relationship-add-button" id="add-relative" type="button">Add a relative</button>
             </div>
 
             <div class="event-editor-section">
@@ -196,7 +201,7 @@
   <dialog id="add-dialog">
     <form method="dialog" id="add-form" class="dialog-card">
       <div class="dialog-heading">
-        <div><span class="eyebrow">Local profile</span><h2>Add a person</h2></div>
+        <div><span class="eyebrow">Local profile</span><h2 id="add-dialog-heading">Add a person</h2></div>
         <button class="close-detail" value="cancel" aria-label="Close">×</button>
       </div>
       <div class="field-grid two-column">
@@ -207,11 +212,29 @@
         <label>Birth year<input name="birthYear" inputmode="numeric"></label>
         <label>Gender<select name="gender"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></label>
       </div>
-      <label>Parent<select name="parentId" id="parent-select"><option value="">No parent selected</option></select></label>
-      <label>Geni public profile URL<input name="sourceUrl" type="url"></label>
+      <div class="field-grid two-column">
+        <label>Relationship<select name="relationType" id="relation-type"><option value="child">Child of</option><option value="parent">Parent of</option><option value="spouse">Spouse of</option><option value="none">Not connected</option></select></label>
+        <label>Existing profile<select name="relatedPersonId" id="parent-select"><option value="">No profile selected</option></select></label>
+      </div>
+      <label>Geni public ID <small>Optional</small><input name="geniId" autocomplete="off" placeholder="g600000… or a Geni profile URL"></label>
       <div class="dialog-actions">
         <button class="button secondary" value="cancel">Cancel</button>
         <button class="button primary" value="default">Add profile</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="new-tree-dialog">
+    <form method="dialog" id="new-tree-form" class="dialog-card compact-dialog-card">
+      <div class="dialog-heading">
+        <div><span class="eyebrow">Manual tree</span><h2>Start with one profile</h2></div>
+        <button class="close-detail" value="cancel" aria-label="Close">×</button>
+      </div>
+      <p class="dialog-intro new-tree-intro">This starts a blank tree stored in this browser. You can restore the British royal example at any time.</p>
+      <label>Tree title<input name="title" autocomplete="off" placeholder="My family tree"></label>
+      <div class="dialog-actions">
+        <button class="button secondary" value="cancel">Cancel</button>
+        <button class="button primary" value="default">Add the first profile</button>
       </div>
     </form>
   </dialog>
@@ -240,6 +263,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=56"></script>
+  <script type="module" src="./app.js?v=57"></script>
 </body>
 </html>

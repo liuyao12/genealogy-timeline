@@ -76,6 +76,7 @@ const state = {
   treeFilter: '',
   relationVisibility: {},
   starterDataVersion: 0,
+  manualTree: false,
   geniAccessToken: initialGeniAccessToken,
   geniImport: null,
   collapsedIds: new Set(),
@@ -92,12 +93,12 @@ const els = Object.fromEntries([
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
-  'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
+  'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog', 'add-dialog-heading',
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'load-descendants-two', 'load-descendants-all', 'add-local-relative',
-  'relationship-households',
+  'relationship-households', 'add-relative',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
   'events-dialog', 'close-events-dialog', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
-  'add-form', 'parent-select', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
+  'add-form', 'parent-select', 'relation-type', 'new-tree-button', 'new-tree-dialog', 'new-tree-form', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
 ].map(id => [id, document.getElementById(id)]));
 
 function clean(value) { return value == null ? '' : String(value).trim(); }
@@ -189,14 +190,21 @@ function profileIdFromInput(input) {
   if (!raw) return '';
   const direct = raw.match(/profile-g?\d+/i);
   if (direct) return canonicalGeniProfileId(direct[0]);
+  if (/^g?\d+$/i.test(raw)) return canonicalGeniProfileId(raw);
   try {
     const url = new URL(/^https?:/i.test(raw) ? raw : `https://${raw}`);
     if (!/(^|\.)geni\.com$/i.test(url.hostname)) return '';
     const segment = url.pathname.split('/').filter(Boolean).pop();
     return segment ? canonicalGeniProfileId(segment) : '';
-  } catch {
-    return /^g?\d+$/i.test(raw) ? canonicalGeniProfileId(raw) : '';
-  }
+  } catch { return ''; }
+}
+function optionalGeniLink(input) {
+  const sourceId = profileIdFromInput(input);
+  return sourceId ? {
+    sourceId,
+    sourceUrl: `https://www.geni.com/profile/index/${geniProfileUrlId(sourceId)}`,
+    sourceProvider: 'geni'
+  } : null;
 }
 function wikiTreeIdFromInput(input) {
   const raw = clean(input);
@@ -739,6 +747,7 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   state.relationVisibility = {};
   state.treeFilter = 'king queen';
   state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
+  state.manualTree = false;
   state.title = 'The British royal line from Henry VII';
   els['tree-filter'].value = state.treeFilter;
   if (persistResult) persist('Bundled royal line restored');
@@ -844,6 +853,7 @@ function restore() {
     if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
     state.relationVisibility = migratedVisibility.relationVisibility;
     state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
+    state.manualTree = saved.manualTree === true;
     state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
     state.people = migratedPeople.people;
     return migratedPeople.migrated || migratedVisibility.migrated || savedRootId !== clean(saved.rootId);
@@ -855,7 +865,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion, manualTree: state.manualTree }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1360,6 +1370,7 @@ function importGedcom(text, fileName = 'GEDCOM tree') {
   });
   if (!Object.keys(people).length) throw new Error('No individual records were found in that GEDCOM file.');
   state.people = people;
+  state.manualTree = true;
   state.globalEvents = normalizeGlobalEvents(payload.globalEvents || payload.timelineEvents || payload.db?.timelineEvents);
   state.rootId = Object.keys(people).find(id => !people[id].parents.length) || Object.keys(people)[0];
   state.selectedId = state.rootId;
@@ -1405,6 +1416,7 @@ function importBackup(payload) {
     });
   });
   state.people = people;
+  state.manualTree = payload.manualTree !== false;
   const importedRootId = clean(payload.activeRootId || payload.db?.activeRootId);
   state.rootId = (/^profile-/i.test(importedRootId) ? canonicalGeniProfileId(importedRootId) : importedRootId) || Object.keys(people)[0] || '';
   state.title = clean(payload.title || payload.familyName) || `${fullName(people[state.rootId] || {})} family`;
@@ -1418,7 +1430,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, manualTree: state.manualTree,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2753,6 +2765,9 @@ function renderDetails() {
   form.elements.displayName.value = fullName(person);
   form.elements.birthYear.value = person.birthYear || '';
   form.elements.deathYear.value = person.deathYear || '';
+  form.elements.geniId.value = person.sourceProvider === 'geni' || /^profile-/i.test(person.sourceId)
+    ? clean(person.sourceId || person.id).replace(/^profile-/i, '')
+    : '';
   const sourceLink = els['person-source-link'];
   const source = sourceMeta(person);
   els['person-source-name'].textContent = source.name;
@@ -2768,9 +2783,11 @@ function renderDetails() {
   // Bundled and older saved records retain their Geni ID even when their
   // displayed provenance link points to another historical source.
   const isGeniProfile = /^profile-/i.test(person.id);
+  const complete = Boolean(person.geniImmediateFamilyVerifiedAt);
+  els['add-relative'].disabled = isGeniProfile && (!complete || !!state.geniImport);
+  els['add-relative'].title = els['add-relative'].disabled ? 'Import the complete immediate family from Geni before adding a local relative.' : '';
   els['geni-family-actions'].hidden = !isGeniProfile;
   if (isGeniProfile) {
-    const complete = Boolean(person.geniImmediateFamilyVerifiedAt);
     const importButtons = [
       [els['load-immediate-family'], 'immediate'],
       [els['load-descendants-two'], 'descendants-2'],
@@ -2797,7 +2814,7 @@ function renderDetails() {
   }
 }
 function renderParentOptions() {
-  const options = ['<option value="">No parent selected</option>', ...Object.values(state.people).sort((a,b) => fullName(a).localeCompare(fullName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(fullName(person))}</option>`)].join('');
+  const options = ['<option value="">No profile selected</option>', ...Object.values(state.people).sort((a,b) => fullName(a).localeCompare(fullName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(fullName(person))}</option>`)].join('');
   els['parent-select'].innerHTML = options;
 }
 function render() {
@@ -2899,10 +2916,44 @@ function openAddPersonDialog(parentId = '') {
     toast('Verify this Geni profile’s complete immediate family before adding a local relative.', true);
     return;
   }
+  const isFirstProfile = !Object.keys(state.people).length;
+  els['add-dialog-heading'].textContent = isFirstProfile ? 'Add the first profile' : 'Add a relative';
+  els['relation-type'].value = isFirstProfile ? 'none' : 'child';
+  els['relation-type'].disabled = isFirstProfile;
+  els['parent-select'].disabled = isFirstProfile;
   els['add-dialog'].showModal();
   els['parent-select'].value = parent ? parent.id : '';
 }
 els['empty-add-person-button'].addEventListener('click', () => openAddPersonDialog());
+els['relation-type'].addEventListener('change', () => {
+  els['parent-select'].disabled = els['relation-type'].value === 'none';
+});
+els['new-tree-button'].addEventListener('click', () => {
+  els['new-tree-form'].elements.title.value = '';
+  els['new-tree-dialog'].showModal();
+});
+els['new-tree-form'].addEventListener('submit', event => {
+  if (event.submitter?.value === 'cancel') return;
+  event.preventDefault();
+  if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with a new blank tree? Export first if you want to keep it.')) return;
+  const title = clean(new FormData(event.currentTarget).get('title'));
+  state.title = title || 'Untitled family';
+  state.people = {};
+  state.globalEvents = [];
+  state.rootId = '';
+  state.selectedId = '';
+  state.editingProfileId = '';
+  state.relationVisibility = {};
+  state.treeFilter = '';
+  state.starterDataVersion = 0;
+  state.manualTree = true;
+  state.collapsedIds.clear();
+  els['tree-filter'].value = '';
+  els['new-tree-dialog'].close();
+  persist('New local tree started');
+  render();
+  openAddPersonDialog();
+});
 els['royal-example-button'].addEventListener('click', () => {
   if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with the British royal example? Export first if you want to keep it.')) return;
   loadBritishRoyalExample();
@@ -2975,6 +3026,7 @@ els['cancel-person-edit'].addEventListener('click', () => { state.editingProfile
   catch (error) { toast(error.message || 'Could not load this Geni family.', true); render(); }
 }));
 els['add-local-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
+els['add-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
 els['add-personal-event'].addEventListener('click', () => {
   const person = state.people[state.selectedId];
   if (!person) return;
@@ -3018,10 +3070,19 @@ els['person-form'].addEventListener('submit', event => {
   const data = new FormData(event.currentTarget);
   const displayName = clean(data.get('displayName'));
   if (!displayName) return toast('Enter a profile name.', true);
+  const geniInput = clean(data.get('geniId'));
+  const geniLink = optionalGeniLink(geniInput);
+  if (geniInput && !geniLink) return toast('Enter a Geni public ID such as g600000… or a Geni profile URL.', true);
   person.displayName = displayName;
   person.birthYear = clean(data.get('birthYear'));
   person.deathYear = clean(data.get('deathYear'));
   if (person.deathYear) person.isLiving = false;
+  if (geniLink) Object.assign(person, geniLink);
+  else if (!/^profile-/i.test(person.id) && person.sourceProvider === 'geni') {
+    person.sourceId = '';
+    person.sourceUrl = '';
+    person.sourceProvider = '';
+  }
   state.editingProfileId = '';
   persist('Profile saved'); render(); toast('Profile saved.');
 });
@@ -3051,11 +3112,30 @@ els['add-person-button'].addEventListener('click', () => {
 els['add-form'].addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault(); const data = new FormData(event.currentTarget); const id = uniqueId('local');
-  const person = normalizePerson({ id, ...Object.fromEntries(data.entries()) }, id);
-  const parentId = clean(data.get('parentId'));
-  if (parentId && state.people[parentId]) { person.parents = [parentId]; state.people[parentId].children = unique([...state.people[parentId].children, id]); }
+  const geniInput = clean(data.get('geniId'));
+  const geniLink = optionalGeniLink(geniInput);
+  if (geniInput && !geniLink) return toast('Enter a Geni public ID such as g600000… or a Geni profile URL.', true);
+  const person = normalizePerson({ id, ...Object.fromEntries(data.entries()), ...(geniLink || {}) }, id);
+  const relationType = clean(data.get('relationType')) || 'none';
+  const relatedId = clean(data.get('relatedPersonId'));
+  const related = state.people[relatedId];
+  if (relationType !== 'none' && !related) return toast('Choose the existing profile this person is related to.', true);
+  if (relationType === 'child') {
+    person.parents = [relatedId];
+    related.children = unique([...related.children, id]);
+  } else if (relationType === 'parent') {
+    person.children = [relatedId];
+    related.parents = unique([...related.parents, id]);
+    if (state.rootId === relatedId) state.rootId = id;
+  } else if (relationType === 'spouse') {
+    person.partners = [relatedId];
+    person.spouses = [relatedId];
+    related.partners = unique([...related.partners, id]);
+    related.spouses = unique([...related.spouses, id]);
+  }
   state.people[id] = person; state.rootId = state.rootId || id; state.selectedId = id;
-  els['add-dialog'].close(); event.currentTarget.reset(); persist('Profile added'); render();
+  if (state.title === 'Untitled family' && Object.keys(state.people).length === 1) state.title = `${fullName(person)} family`;
+  els['add-dialog'].close(); event.currentTarget.reset(); els['relation-type'].disabled = false; els['parent-select'].disabled = false; persist('Profile added'); render();
 });
 
 initializeEventColorPalette(els['personal-event-color'], DEFAULT_PERSONAL_EVENT_COLOR);
@@ -3069,7 +3149,7 @@ els['personal-event-name'].addEventListener('input', () => {
 });
 
 const migratedStoredGeniIds = restore();
-if (!Object.keys(state.people).length) loadBritishRoyalExample({ persistResult: true });
+if (!Object.keys(state.people).length && !state.manualTree) loadBritishRoyalExample({ persistResult: true });
 else {
   const upgradedBundledLine = upgradeBundledBritishRoyalLine();
   if (upgradedBundledLine || migratedStoredGeniIds) persist(upgradedBundledLine ? 'Bundled royal example updated' : 'Geni profile IDs updated');

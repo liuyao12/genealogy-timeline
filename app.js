@@ -1336,9 +1336,24 @@ function leftRoundedRectPath(width, height, radius = 5) {
   return `M ${r} 0 H ${width} V ${height} H ${r} A ${r} ${r} 0 0 1 0 ${height - r} V ${r} A ${r} ${r} 0 0 1 ${r} 0 Z`;
 }
 
-function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
-  const ranges = nodes.map(node => ({ left: node.x - 36, right: node.x + Math.max(node.occupancyWidth, 2) + 36 }));
-  const overlapsHorizontally = (a, b) => a.left < b.right && b.left < a.right;
+function timelineNodeRange(node) {
+  const gutter = 4;
+  return { left: node.x - gutter, right: node.x + Math.max(node.occupancyWidth, 2) + gutter };
+}
+
+function timelineRowsConflict(firstIndex, secondIndex, nodeRanges, horizontalRangesByKey, nodes) {
+  const overlaps = (a, b) => a.left < b.right && b.left < a.right;
+  const firstNodeRange = nodeRanges[firstIndex];
+  const secondNodeRange = nodeRanges[secondIndex];
+  if (overlaps(firstNodeRange, secondNodeRange)) return true;
+  const firstLines = horizontalRangesByKey.get(nodes[firstIndex].key) || [];
+  const secondLines = horizontalRangesByKey.get(nodes[secondIndex].key) || [];
+  return firstLines.some(line => overlaps(line, secondNodeRange))
+    || secondLines.some(line => overlaps(line, firstNodeRange));
+}
+
+function stabilizeTimelineOrder(nodes, rowHeight, rowStep, horizontalRangesByKey) {
+  const ranges = nodes.map(timelineNodeRange);
   // Match the mini-program's row invariant: intersecting horizontal ranges must
   // occupy distinct full rows. Using only rowHeight allowed adjacent strokes to
   // touch after the fractional-row compaction passes; rowStep retains the
@@ -1347,7 +1362,7 @@ function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
   nodes.forEach((node, index) => {
     let targetY = Math.max(0, node.y);
     for (let previous = 0; previous < index; previous += 1) {
-      if (!overlapsHorizontally(ranges[index], ranges[previous])) continue;
+      if (!timelineRowsConflict(index, previous, ranges, horizontalRangesByKey, nodes)) continue;
       if (targetY - nodes[previous].y < requiredVerticalSeparation) {
         targetY = nodes[previous].y + requiredVerticalSeparation;
       }
@@ -1360,7 +1375,7 @@ function stabilizeTimelineOrder(nodes, rowHeight, rowStep) {
 // rather than assigning every node a permanently distinct row. This rotated
 // adaptation keeps time on x, preserves each depth-first household block, and
 // lifts that block into the earliest y-space where its occupied x-ranges fit.
-function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowStep) {
+function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey) {
   if (nodes.length < 2) return;
   const indexByKey = new Map(nodes.map((node, index) => [node.key, index]));
   const childrenByIndex = new Map(nodes.map((_, index) => [index, []]));
@@ -1386,11 +1401,7 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
     }
     return result;
   };
-  const horizontalRanges = nodes.map(node => ({
-    left: node.x - 36,
-    right: node.x + Math.max(node.occupancyWidth, 2) + 36
-  }));
-  const rangesOverlap = (a, b) => a.left < b.right && b.left < a.right;
+  const nodeRanges = nodes.map(timelineNodeRange);
   const verticallyOverlap = (a, b) => Math.abs(a - b) < rowStep;
   const blocks = nodes.map((_, index) => ({
     rootIndex: index,
@@ -1409,7 +1420,7 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
       const targetY = nodes[index].y - lift;
       if (targetY < 0) return false;
       for (let other = 0; other < nodes.length; other += 1) {
-        if (contained.has(other) || !rangesOverlap(horizontalRanges[index], horizontalRanges[other])) continue;
+        if (contained.has(other) || !timelineRowsConflict(index, other, nodeRanges, horizontalRangesByKey, nodes)) continue;
         if (verticallyOverlap(targetY, nodes[other].y)) return false;
       }
       return true;
@@ -1595,8 +1606,45 @@ function renderTimeline() {
     const labelWidth = 38 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
     return { ...entry, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth) };
   });
-  compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep);
-  stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep);
+  // Horizontal relationship segments remain collision obstacles, while their
+  // vertical stems deliberately do not. This lets otherwise unrelated rows
+  // cross marriage/transport stems without letting a label obscure a branch.
+  const layoutNodeByKey = new Map(layoutNodes.map(node => [node.key, node]));
+  const horizontalRangesByKey = new Map();
+  const addHorizontalRange = (nodeKey, x1, x2) => {
+    if (!layoutNodeByKey.has(nodeKey)) return;
+    const strokeAllowance = 2;
+    const range = {
+      left: Math.min(x1, x2) - strokeAllowance,
+      right: Math.max(x1, x2) + strokeAllowance
+    };
+    if (range.right - range.left < 0.5) return;
+    if (!horizontalRangesByKey.has(nodeKey)) horizontalRangesByKey.set(nodeKey, []);
+    horizontalRangesByKey.get(nodeKey).push(range);
+  };
+  families.forEach((family, key) => {
+    const parentIds = family.parents.filter(id => datedIds.has(id));
+    const transportedId = transportedParent(parentIds);
+    const transportedCopyKey = transportKeyByFamily.get(key) || '';
+    const parentKeys = parentIds.map(id => id === transportedId && transportedCopyKey ? transportedCopyKey : id);
+    const childIds = family.children.filter(id => layoutNodeByKey.has(id));
+    if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
+    const recordedMarriageYear = parentIds.map(id => parentIds.map(other => state.people[id]?.marriageYears?.[other])).flat().map(numericYear).find(year => year != null);
+    const fallbackYear = childIds.length
+      ? Math.min(...childIds.map(id => birthYear(state.people[id]))) - 4.5
+      : Math.max(...parentIds.map(id => birthYear(state.people[id]))) + 20;
+    const trunkX = xForYear(recordedMarriageYear ?? fallbackYear);
+    parentKeys.forEach(parentKey => {
+      const node = layoutNodeByKey.get(parentKey);
+      if (node) addHorizontalRange(parentKey, node.x + 24, trunkX);
+    });
+    childIds.forEach(childId => {
+      const node = layoutNodeByKey.get(childId);
+      if (node) addHorizontalRange(childId, trunkX, node.x + 18);
+    });
+  });
+  compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
+  stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep, horizontalRangesByKey);
 
   const width = Math.max(900, xForYear(maxYear) + 42);
   const height = Math.max(560, top + Math.max(...layoutNodes.map(node => node.y)) + rowHeight + 38);

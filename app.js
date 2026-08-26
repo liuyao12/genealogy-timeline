@@ -1653,6 +1653,7 @@ function renderTimeline() {
   people.map(person => person.id).sort(byBirth).forEach(visit);
 
   const families = new Map();
+  const familyKeyByChild = new Map();
   people.forEach(child => {
     let parentIds = child.parents.filter(id => datedIds.has(id) && childEdgeVisible(id, child.id));
     if (!parentIds.length) return;
@@ -1662,6 +1663,7 @@ function renderTimeline() {
     const key = familyKey(parentIds);
     if (!families.has(key)) families.set(key, { parents: parentIds, children: [] });
     families.get(key).children.push(child.id);
+    familyKeyByChild.set(child.id, key);
   });
   people.forEach(person => renderedPartnerIds(person.id).forEach(partnerId => {
     if (person.id >= partnerId || !datedIds.has(partnerId)) return;
@@ -1672,6 +1674,16 @@ function renderTimeline() {
   const marriageIsDivorced = parentIds => parentIds.some(id =>
     parentIds.some(other => other !== id && state.people[id]?.divorcedSpouses?.includes(other))
   );
+  const familyTimingByKey = new Map([...families.entries()].map(([key, family]) => {
+    const parentIds = family.parents.filter(id => datedIds.has(id));
+    const childIds = family.children.filter(id => datedIds.has(id));
+    const recordedMarriageYear = parentIds.map(id => parentIds.map(other => state.people[id]?.marriageYears?.[other])).flat().map(numericYear).find(year => year != null);
+    const fallbackYear = childIds.length
+      ? Math.min(...childIds.map(id => birthYear(state.people[id]))) - 4.5
+      : Math.max(...parentIds.map(id => birthYear(state.people[id]))) + 20;
+    const junctionYear = recordedMarriageYear ?? fallbackYear;
+    return [key, { recordedMarriageYear, junctionYear, trunkX: xForYear(junctionYear) }];
+  }));
 
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
   const layoutEntries = order.map(id => ({ key: id, id, isSpouse: spouseIds.has(id), isTransportedCopy: false }));
@@ -1720,11 +1732,7 @@ function renderTimeline() {
     const parentKeys = parentIds.map(id => id === transportedId && transportedCopyKey ? transportedCopyKey : id);
     const childIds = family.children.filter(id => layoutNodeByKey.has(id));
     if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
-    const recordedMarriageYear = parentIds.map(id => parentIds.map(other => state.people[id]?.marriageYears?.[other])).flat().map(numericYear).find(year => year != null);
-    const fallbackYear = childIds.length
-      ? Math.min(...childIds.map(id => birthYear(state.people[id]))) - 4.5
-      : Math.max(...parentIds.map(id => birthYear(state.people[id]))) + 20;
-    const trunkX = xForYear(recordedMarriageYear ?? fallbackYear);
+    const trunkX = familyTimingByKey.get(key).trunkX;
     parentKeys.forEach(parentKey => {
       const node = layoutNodeByKey.get(parentKey);
       if (node) addHorizontalRange(parentKey, node.x + 24, trunkX);
@@ -1733,6 +1741,11 @@ function renderTimeline() {
       const node = layoutNodeByKey.get(childId);
       if (node) addHorizontalRange(childId, trunkX, node.x + 18);
     });
+    if (transportedId && transportedCopyKey) {
+      const natalFamilyKey = familyKeyByChild.get(transportedId);
+      const natalTrunkX = familyTimingByKey.get(natalFamilyKey)?.trunkX;
+      if (natalTrunkX != null) addHorizontalRange(transportedCopyKey, natalTrunkX, trunkX);
+    }
   });
   compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
   stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep, horizontalRangesByKey);
@@ -1794,12 +1807,7 @@ function renderTimeline() {
     const parentKeys = parentIds.map(id => id === transportedId && transportedCopyKey ? transportedCopyKey : id);
     const childIds = family.children.filter(id => positions.has(id));
     if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
-    const recordedMarriageYear = parentIds.map(id => parentIds.map(other => state.people[id]?.marriageYears?.[other])).flat().map(numericYear).find(year => year != null);
-    const fallbackYear = childIds.length
-      ? Math.min(...childIds.map(id => birthYear(state.people[id]))) - 4.5
-      : Math.max(...parentIds.map(id => birthYear(state.people[id]))) + 20;
-    const junctionYear = recordedMarriageYear ?? fallbackYear;
-    const trunkX = xForYear(junctionYear);
+    const { recordedMarriageYear, trunkX } = familyTimingByKey.get(key);
     const parentYs = parentKeys.map(parentKey => positions.get(parentKey).y + rowHeight / 2);
     const childYs = childIds.map(id => positions.get(id).y + rowHeight / 2);
     const hasPaternalParent = parentIds.some(id => state.people[id]?.gender === 'male');
@@ -1845,17 +1853,30 @@ function renderTimeline() {
     if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
       const natal = positions.get(transportedId);
       const transported = positions.get(transportedCopyKey);
-      const transportX = trunkX;
+      const natalFamilyKey = familyKeyByChild.get(transportedId);
+      const transportX = familyTimingByKey.get(natalFamilyKey)?.trunkX;
+      if (transportX == null) return;
       const natalY = natal.y + rowHeight / 2;
       const transportedY = transported.y + rowHeight / 2;
       const transportLine = svg('line', {
         x1: transportX, y1: Math.min(natalY, transportedY),
         x2: transportX, y2: Math.max(natalY, transportedY),
         class: 'timeline-edge transport vertical',
-        'data-family-key': key
+        'data-family-key': key,
+        'data-source-family-key': natalFamilyKey,
+        'data-transported-id': transportedId
       });
-      transportLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from the biological family branch to this marriage`));
+      transportLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from the biological parents’ marriage line to this marriage`));
       connectors.append(transportLine);
+      if (Math.abs(transportX - trunkX) >= 0.5) {
+        connectors.append(svg('path', {
+          d: `M ${transportX} ${transportedY} H ${trunkX}`,
+          class: 'timeline-edge transport-bridge horizontal',
+          'data-family-key': key,
+          'data-source-family-key': natalFamilyKey,
+          'data-transported-id': transportedId
+        }));
+      }
     }
   });
   canvas.append(connectors);

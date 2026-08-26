@@ -380,6 +380,7 @@ function normalizePerson(source, fallbackId) {
     importedAt: clean(source.importedAt || source.provenance?.importedAt),
     geniImmediateFamilyLoaded: source.geniImmediateFamilyLoaded === true,
     geniImmediateFamilyVerifiedAt: clean(source.geniImmediateFamilyVerifiedAt),
+    geniImmediateFamilyIds: uniqueRefs(source.geniImmediateFamilyIds),
     starterProfile: source.starterProfile === true
   };
 }
@@ -911,7 +912,7 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
   // Geni's immediate-family graph is a hash. Depending on the API response,
   // a node's ID may exist only as its hash key rather than inside the node.
   const nodeRecords = Object.entries(nodes || {}).map(([key, node]) => (
-    node && typeof node === 'object' ? { ...node, id: clean(node.id) || refId(key) } : null
+    node && typeof node === 'object' ? { ...node, id: refId(node.id || node.url || key) } : null
   )).filter(Boolean);
   const profiles = nodeRecords.filter(node => clean(node.id).startsWith('profile-'));
   const aliases = {};
@@ -961,6 +962,23 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
       }
     });
     children.forEach(id => { profileMap[id].parents = unique([...(profileMap[id].parents || []), ...partners]); });
+  });
+  // Normalize every relationship in both directions before merging it into
+  // the local tree. This repairs sparse immediate-family payloads in which a
+  // relation is present on only one of the returned profiles.
+  Object.values(profileMap).forEach(profile => {
+    uniqueRefs(profile.parents).forEach(parentId => {
+      if (profileMap[parentId]) profileMap[parentId].children = unique([...(profileMap[parentId].children || []), profile.id]);
+    });
+    uniqueRefs(profile.children).forEach(childId => {
+      if (profileMap[childId]) profileMap[childId].parents = unique([...(profileMap[childId].parents || []), profile.id]);
+    });
+    uniqueRefs(profile.partners).forEach(partnerId => {
+      if (profileMap[partnerId]) profileMap[partnerId].partners = unique([...(profileMap[partnerId].partners || []), profile.id]);
+    });
+    uniqueRefs(profile.spouses).forEach(spouseId => {
+      if (profileMap[spouseId]) profileMap[spouseId].spouses = unique([...(profileMap[spouseId].spouses || []), profile.id]);
+    });
   });
   return profileMap;
 }
@@ -1064,6 +1082,10 @@ async function loadGeniImmediateFamily(profileId) {
   const restoredRelations = [...refreshedFamilyIds].filter(id => !existingFamilyIds.has(id)).length;
   state.people[profileId].geniImmediateFamilyLoaded = true;
   state.people[profileId].geniImmediateFamilyVerifiedAt = importedAt;
+  state.people[profileId].geniImmediateFamilyIds = unique([
+    ...state.people[profileId].geniImmediateFamilyIds,
+    ...receivedIds.filter(id => id !== profileId)
+  ]);
   if (state.geniImport?.profileId === profileId) {
     state.geniImport.loaded = Object.keys(mapped).length;
     state.geniImport.requests = 1;
@@ -1136,6 +1158,7 @@ function mergePersonRecords(existing, incoming) {
   merged.importedAt = incoming.importedAt || existing.importedAt;
   merged.geniImmediateFamilyLoaded = incoming.geniImmediateFamilyLoaded || existing.geniImmediateFamilyLoaded;
   merged.geniImmediateFamilyVerifiedAt = incoming.geniImmediateFamilyVerifiedAt || existing.geniImmediateFamilyVerifiedAt;
+  merged.geniImmediateFamilyIds = unique([...incoming.geniImmediateFamilyIds, ...existing.geniImmediateFamilyIds]);
   merged.starterProfile = incoming.starterProfile || existing.starterProfile;
   return merged;
 }
@@ -2745,8 +2768,17 @@ function renderRelationshipHouseholds(person) {
     siblingParentsById.get(childId).push(parentId);
   }));
   const siblingIds = [...siblingParentsById.keys()].sort(byBirth);
+  const classifiedFamilyIds = new Set([
+    ...parentIds,
+    ...siblingIds,
+    ...partnerIds,
+    ...groups.flatMap(group => group.children)
+  ]);
+  const otherImmediateIds = person.geniImmediateFamilyIds
+    .filter(id => id !== person.id && state.people[id] && !classifiedFamilyIds.has(id))
+    .sort(byBirth);
 
-  if (!groups.length && !parentIds.length && !siblingIds.length) {
+  if (!groups.length && !parentIds.length && !siblingIds.length && !otherImmediateIds.length) {
     const empty = document.createElement('p');
     empty.className = 'relationship-empty';
     empty.textContent = 'No family members in the local tree.';
@@ -2847,6 +2879,25 @@ function renderRelationshipHouseholds(person) {
     });
     return household;
   }));
+  if (otherImmediateIds.length) {
+    const returned = document.createElement('div');
+    returned.className = 'relationship-household family-origin';
+    const heading = document.createElement('p');
+    heading.className = 'relationship-group-label';
+    heading.textContent = 'Other immediate family returned by Geni';
+    returned.append(heading);
+    otherImmediateIds.forEach(relativeId => {
+      returned.append(makeRow({
+        targetId: relativeId,
+        kind: 'relative',
+        visible: visibility.visibleIds.has(relativeId),
+        label: 'relative',
+        detail: `Immediate family · ${life(state.people[relativeId])}`,
+        canToggle: false
+      }));
+    });
+    sections.push(returned);
+  }
   container.replaceChildren(...sections);
 }
 

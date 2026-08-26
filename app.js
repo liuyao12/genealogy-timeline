@@ -14,7 +14,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 2;
+const BRITISH_ROYAL_STARTER_VERSION = 3;
 
 function sessionValue(key, value) {
   try {
@@ -66,7 +66,8 @@ const state = {
   relationVisibility: {},
   starterDataVersion: 0,
   geniAccessToken: initialGeniAccessToken,
-  collapsedIds: new Set()
+  collapsedIds: new Set(),
+  editingProfileId: ''
 };
 let pendingTimelineRelayout = null;
 let activeTimelineAnimationFrame = 0;
@@ -75,7 +76,7 @@ const els = Object.fromEntries([
   'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
-  'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar',
+  'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog',
   'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'add-local-relative',
   'relationship-households',
@@ -105,7 +106,11 @@ function uniqueId(prefix = 'id') {
 }
 function array(value) { return Array.isArray(value) ? value.filter(Boolean).map(String) : []; }
 function initials(person) {
-  const parts = [person.firstName, person.lastName].filter(Boolean);
+  const primaryName = clean(person.displayName).split(',')[0];
+  const displayParts = primaryName.split(/\s+/).filter(Boolean);
+  const parts = displayParts.length
+    ? [displayParts[0], displayParts.length > 1 ? displayParts.at(-1) : ''].filter(Boolean)
+    : [person.firstName, person.lastName].filter(Boolean);
   return (parts.map(part => Array.from(part)[0]).join('') || '?').slice(0, 2).toUpperCase();
 }
 function fullName(person) {
@@ -537,10 +542,11 @@ function createBritishRoyalSample() {
   };
   const people = {};
   const displayNameOverrides = { 'henry-vii': 'Henry VII, King of England' };
+  const titlePrefix = /^(?:the\s+Queen\s+Mother|(?:Grand\s+)?(?:Duke|Duchess)|Prince(?:ss)?|Earl|Count(?:ess)?|Lord|Lady|Baron(?:ess)?|Marquess|Marchioness|King|Queen|Emperor|Empress)\b/i;
   rows.filter(([slug]) => geniIds[slug]).forEach(([slug, firstName, lastName, birthYear, deathYear, gender, note]) => {
     const geniId = geniIds[slug];
     const id = `profile-${geniId}`;
-    const baseName = [firstName, lastName].filter(Boolean).join(' ');
+    const baseName = lastName && titlePrefix.test(lastName) ? `${firstName}, ${lastName}` : [firstName, lastName].filter(Boolean).join(' ');
     const titleClause = clean(note).split(/[;,]/)[0];
     const royalTitle = titleClause.match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+.+$/i)?.[0] || '';
     const displayName = displayNameOverrides[slug] || (royalTitle && !/\b(?:king|queen)\b/i.test(baseName) ? `${baseName}, ${royalTitle}` : baseName);
@@ -687,6 +693,13 @@ function upgradeBundledBritishRoyalLine() {
     // Preserve locally edited profile fields while adding relationships and
     // profiles introduced by newer versions of the bundled starter tree.
     const merged = mergePersonRecords(bundled, saved);
+    const oldBaseName = [saved.firstName, saved.lastName].filter(Boolean).join(' ');
+    const oldTitleClause = clean(saved.note).split(/[;,]/)[0];
+    const oldRoyalTitle = oldTitleClause.match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+.+$/i)?.[0] || '';
+    const oldGeneratedName = oldRoyalTitle && !/\b(?:king|queen)\b/i.test(oldBaseName) ? `${oldBaseName}, ${oldRoyalTitle}` : oldBaseName;
+    if (saved.starterProfile && saved.displayName === oldGeneratedName && bundled.displayName !== oldGeneratedName) {
+      merged.displayName = bundled.displayName;
+    }
     merged.marriageYears = { ...bundled.marriageYears, ...saved.marriageYears };
     merged.personalEvents = normalizePersonalEvents([...bundled.personalEvents, ...saved.personalEvents]);
     state.people[id] = merged;
@@ -2004,7 +2017,12 @@ function appendHighlightedName(container, value, keywords) {
   if (cursor < text.length) container.append(document.createTextNode(text.slice(cursor)));
 }
 
-function selectPerson(id) { state.selectedId = id; render(); }
+function selectPerson(id) {
+  state.selectedId = id;
+  state.editingProfileId = '';
+  render();
+  els['detail-sidebar'].scrollTop = 0;
+}
 function renderPersonList() {
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const people = Object.values(state.people).filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
@@ -2226,7 +2244,13 @@ function renderDetails() {
   els['person-avatar'].textContent = initials(person);
   els['person-avatar'].style.background = '#fff';
   const form = els['person-form'];
-  ['firstName', 'lastName', 'birthYear', 'deathYear', 'gender', 'place', 'note', 'sourceUrl'].forEach(name => { form.elements[name].value = person[name] || ''; });
+  const isEditing = state.editingProfileId === person.id;
+  els['edit-person'].hidden = isEditing;
+  els['person-edit-fields'].hidden = !isEditing;
+  els['person-edit-actions'].hidden = !isEditing;
+  form.elements.displayName.value = fullName(person);
+  form.elements.birthYear.value = person.birthYear || '';
+  form.elements.deathYear.value = person.deathYear || '';
   const sourceLink = els['person-source-link'];
   const source = sourceMeta(person);
   els['person-source-name'].textContent = source.name;
@@ -2234,7 +2258,9 @@ function renderDetails() {
   if (person.sourceUrl) sourceLink.href = person.sourceUrl;
   else sourceLink.removeAttribute('href');
   sourceLink.textContent = person.sourceUrl ? 'Open original profile ↗' : 'No profile linked';
-  els['source-updated'].textContent = person.importedAt ? `Imported ${new Date(person.importedAt).toLocaleString()}.` : 'Add a source URL to preserve attribution.';
+  els['source-updated'].textContent = person.importedAt
+    ? `Imported ${new Date(person.importedAt).toLocaleString()}.`
+    : person.sourceUrl ? 'Public source linked to this local profile.' : 'No public source is linked.';
   renderRelationshipHouseholds(person);
   renderPersonalEvents(person);
   const isGeniProfile = person.sourceProvider === 'geni' && /^profile-/i.test(person.id);
@@ -2377,7 +2403,15 @@ els['canvas-viewport'].addEventListener('pointerup', endCanvasDrag);
 els['canvas-viewport'].addEventListener('pointercancel', endCanvasDrag);
 els['canvas-viewport'].addEventListener('dragstart', event => event.preventDefault());
 
-els['close-detail'].addEventListener('click', () => { state.selectedId = ''; render(); });
+els['close-detail'].addEventListener('click', () => { state.selectedId = ''; state.editingProfileId = ''; render(); });
+els['edit-person'].addEventListener('click', () => {
+  if (!state.selectedId) return;
+  state.editingProfileId = state.selectedId;
+  render();
+  els['person-form'].elements.displayName.focus();
+  els['person-form'].elements.displayName.select();
+});
+els['cancel-person-edit'].addEventListener('click', () => { state.editingProfileId = ''; render(); });
 els['load-immediate-family'].addEventListener('click', async () => {
   try { await loadGeniImmediateFamily(state.selectedId); }
   catch (error) { toast(error.message || 'Could not load this Geni family.', true); render(); }
@@ -2411,19 +2445,26 @@ els['add-personal-event'].addEventListener('click', () => {
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.selectedId && !els['add-dialog'].open) {
+    if (state.editingProfileId) {
+      state.editingProfileId = '';
+      render();
+      return;
+    }
     state.selectedId = '';
     render();
   }
 });
 els['person-form'].addEventListener('submit', event => {
   event.preventDefault(); const person = state.people[state.selectedId]; if (!person) return;
+  if (state.editingProfileId !== person.id) return;
   const data = new FormData(event.currentTarget);
-  ['firstName', 'lastName', 'birthYear', 'deathYear', 'place', 'note'].forEach(name => { person[name] = clean(data.get(name)); });
-  person.nameOrder = 'western';
-  person.gender = ['male', 'female'].includes(data.get('gender')) ? data.get('gender') : 'unknown';
-  person.sourceUrl = validPublicUrl(data.get('sourceUrl'));
-  if (clean(data.get('sourceUrl')) && !person.sourceUrl) return toast('Source URL must be a valid public http(s) address.', true);
-  person.sourceProvider = sourceProviderFromUrl(person.sourceUrl) || person.sourceProvider;
+  const displayName = clean(data.get('displayName'));
+  if (!displayName) return toast('Enter a profile name.', true);
+  person.displayName = displayName;
+  person.birthYear = clean(data.get('birthYear'));
+  person.deathYear = clean(data.get('deathYear'));
+  if (person.deathYear) person.isLiving = false;
+  state.editingProfileId = '';
   persist('Profile saved'); render(); toast('Profile saved.');
 });
 els['delete-person'].addEventListener('click', () => {
@@ -2473,7 +2514,7 @@ els['personal-event-name'].addEventListener('input', () => {
 
 restore();
 if (!Object.keys(state.people).length) loadBritishRoyalExample({ persistResult: true });
-else if (upgradeBundledBritishRoyalLine()) persist('Bundled royal spouses updated');
+else if (upgradeBundledBritishRoyalLine()) persist('Bundled royal example updated');
 els['tree-filter'].value = state.treeFilter;
 render();
 const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);

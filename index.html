@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=35">
+  <link rel="stylesheet" href="./styles.css?v=36">
 </head>
 <body>
   <div class="app-shell">
@@ -121,6 +121,7 @@
         <form id="person-form" class="person-form" hidden>
           <div class="person-hero">
             <div class="avatar" id="person-avatar">?</div>
+            <button class="button secondary person-edit-button" id="edit-person" type="button">Edit</button>
             <button class="close-detail" id="close-detail" type="button" aria-label="Close profile">×</button>
             <span class="eyebrow">Selected profile</span>
             <h2 id="person-heading">Person</h2>
@@ -128,17 +129,13 @@
           </div>
 
           <div class="form-content">
-            <div class="field-grid two-column">
-              <label>First / given name<input name="firstName" autocomplete="off"></label>
-              <label>Last / family name<input name="lastName" autocomplete="off"></label>
+            <div class="profile-edit-fields" id="person-edit-fields" hidden>
+              <label>Name<input name="displayName" autocomplete="off" required></label>
+              <div class="field-grid two-column">
+                <label>Birth year<input name="birthYear" inputmode="numeric"></label>
+                <label>Death year<input name="deathYear" inputmode="numeric"></label>
+              </div>
             </div>
-            <div class="field-grid two-column">
-              <label>Birth year<input name="birthYear" inputmode="numeric"></label>
-              <label>Death year<input name="deathYear" inputmode="numeric"></label>
-            </div>
-            <label>Gender<select name="gender"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></label>
-            <label>Place<input name="place" autocomplete="off"></label>
-            <label>Profile note<textarea name="note" rows="4"></textarea></label>
 
             <div class="relationship-section">
               <div class="relationship-heading">
@@ -169,7 +166,6 @@
                   <a id="person-source-link" href="#" target="_blank" rel="noreferrer">No profile linked</a>
                 </div>
               </div>
-              <label>Public profile URL<input name="sourceUrl" type="url" placeholder="https://…"></label>
               <small id="source-updated">Add a source URL to preserve attribution.</small>
             </div>
 
@@ -180,8 +176,9 @@
               <button class="button primary grow" id="add-local-relative" type="button" disabled>Add local relative</button>
             </div>
 
-            <div class="form-actions">
+            <div class="form-actions" id="person-edit-actions" hidden>
               <button class="button primary grow" type="submit">Save profile</button>
+              <button class="button secondary" id="cancel-person-edit" type="button">Cancel</button>
               <button class="button danger" id="delete-person" type="button">Delete</button>
             </div>
           </div>
@@ -234,6 +231,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=40"></script>
+  <script type="module" src="./app.js?v=41"></script>
 </body>
 </html>

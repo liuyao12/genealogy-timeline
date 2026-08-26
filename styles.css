@@ -176,9 +176,11 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .avatar { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 12px; border: 1px solid #000; border-radius: 50%; background: #fff; font: 700 19px Georgia, serif; color: #000; }
 .close-detail { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #555; font-size: 21px; cursor: pointer; }
 .person-hero .close-detail { position: absolute; right: 13px; top: 12px; }
+.person-edit-button { position: absolute; left: 13px; top: 12px; min-height: 29px; padding: 0 10px; }
 .person-hero h2 { margin: 6px 0 3px; font: 650 21px Georgia, serif; }
 .person-hero p { margin: 0; color: var(--muted); font-size: 11px; }
 .form-content { padding: 18px 20px 25px; }
+.profile-edit-fields { margin-bottom: 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; }
 .form-content > label, .dialog-card > label, .field-grid label, .provenance-box label { display: block; margin-bottom: 13px; color: #555; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .form-content input, .form-content textarea, .dialog-card input, .dialog-card select { display: block; margin-top: 5px; color: var(--ink); font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; }
 .field-grid { display: grid; gap: 10px; }

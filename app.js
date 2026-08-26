@@ -1552,22 +1552,45 @@ function timelineRowsConflict(firstIndex, secondIndex, nodeRanges, horizontalRan
     || secondLines.some(line => overlaps(line, firstNodeRange));
 }
 
-function stabilizeTimelineOrder(nodes, rowHeight, rowStep, horizontalRangesByKey) {
+function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey) {
   const ranges = nodes.map(timelineNodeRange);
   // Match the mini-program's row invariant: intersecting horizontal ranges must
   // occupy distinct full rows. Using only rowHeight allowed adjacent strokes to
   // touch after the fractional-row compaction passes; rowStep retains the
   // intended six-pixel vertical gutter for the web's 36px boxes on 42px rows.
   const requiredVerticalSeparation = Math.max(rowHeight, rowStep);
-  nodes.forEach((node, index) => {
-    let targetY = Math.max(0, node.y);
-    for (let previous = 0; previous < index; previous += 1) {
-      if (!timelineRowsConflict(index, previous, ranges, horizontalRangesByKey, nodes)) continue;
-      if (targetY - nodes[previous].y < requiredVerticalSeparation) {
-        targetY = nodes[previous].y + requiredVerticalSeparation;
+  const indexByKey = new Map(nodes.map((node, index) => [node.key, index]));
+  const preferredY = nodes.map(node => Math.max(0, node.y));
+  const spatialOrder = nodes.map((_, index) => index).sort((first, second) =>
+    preferredY[first] - preferredY[second] || first - second
+  );
+  const placed = [];
+
+  spatialOrder.forEach(index => {
+    const node = nodes[index];
+    const parentIndex = indexByKey.get(displayParentByKey.get(node.key));
+    const parentFloor = parentIndex != null && placed.includes(parentIndex)
+      ? nodes[parentIndex].y + rowStep
+      : 0;
+    let targetY = Math.max(preferredY[index], parentFloor);
+
+    // Search final destinations rather than replaying the original row order.
+    // A node may therefore settle safely above a previously indexed obstacle;
+    // when it really intersects one, jump directly below the entire blocking
+    // band and test again.
+    let moved;
+    do {
+      moved = false;
+      for (const other of placed) {
+        if (!timelineRowsConflict(index, other, ranges, horizontalRangesByKey, nodes)) continue;
+        if (Math.abs(targetY - nodes[other].y) >= requiredVerticalSeparation) continue;
+        targetY = nodes[other].y + requiredVerticalSeparation;
+        moved = true;
       }
-    }
+    } while (moved);
+
     node.y = Math.round(targetY * 1000) / 1000;
+    placed.push(index);
   });
 }
 
@@ -1883,7 +1906,7 @@ function renderTimeline() {
     }
   });
   compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
-  stabilizeTimelineOrder(layoutNodes, rowHeight, rowStep, horizontalRangesByKey);
+  stabilizeTimelineOrder(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
 
   const contentWidth = Math.max(
     900,

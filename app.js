@@ -302,7 +302,7 @@ function normalizePerson(source, fallbackId) {
   const sourceUrl = validPublicUrl(source.sourceUrl || source.profile_url || source.profileUrl || '');
   const marriageYears = Object.fromEntries(Object.entries(source.marriageYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
   const relationshipEndYears = Object.fromEntries(Object.entries(source.relationshipEndYears || source.divorceYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
-  const relationshipEndStatuses = Object.fromEntries(Object.entries(source.relationshipEndStatuses || {}).map(([partnerId, status]) => [refId(partnerId), clean(status).toLowerCase()]).filter(([partnerId, status]) => partnerId && ['annulled', 'divorced'].includes(status)));
+  const relationshipEndStatuses = Object.fromEntries(Object.entries(source.relationshipEndStatuses || {}).map(([partnerId, status]) => [refId(partnerId), clean(status).toLowerCase()]).filter(([partnerId, status]) => partnerId && ['annulled', 'divorced', 'ended'].includes(status)));
   const partners = uniqueRefs(source.partners || source.spouses);
   return {
     id,
@@ -822,6 +822,7 @@ function inferRelationsFromUnions(nodes) {
       union.marriage?.date?.year ?? union.marriage?.year ?? union.marriage?.date
       ?? union.marriage_date?.year ?? union.marriage_date
     ).match(/-?\d{3,4}/)?.[0] || '';
+    const divorceEvent = union.divorce || union.divorce_date;
     const relationshipEndYear = clean(
       union.divorce?.date?.year ?? union.divorce?.year ?? union.divorce?.date
       ?? union.divorce_date?.year ?? union.divorce_date
@@ -829,13 +830,15 @@ function inferRelationsFromUnions(nodes) {
     ).match(/-?\d{3,4}/)?.[0] || '';
     const status = clean(union.status || union.relationship_status || union.type).toLowerCase().replace(/[\s-]+/g, '_');
     const isSpouseUnion = ['spouse', 'ex_spouse', 'married', 'divorced', 'annulled'].includes(status) || Boolean(marriageYear);
-    const relationshipEndStatus = status === 'annulled' ? 'annulled' : ['ex_spouse', 'divorced'].includes(status) ? 'divorced' : '';
-    const isDivorcedUnion = Boolean(relationshipEndStatus);
+    const relationshipEndStatus = status === 'annulled' ? 'annulled'
+      : divorceEvent || status === 'divorced' ? 'divorced'
+        : status === 'ex_spouse' ? 'ended' : '';
+    const isEndedUnion = Boolean(relationshipEndStatus);
     partners.forEach(id => {
       profileMap[id].partners = unique([...(profileMap[id].partners || []), ...partners.filter(other => other !== id)]);
       const relationKey = isSpouseUnion ? 'spouses' : 'nonSpouses';
       profileMap[id][relationKey] = unique([...(profileMap[id][relationKey] || []), ...partners.filter(other => other !== id)]);
-      if (isDivorcedUnion) profileMap[id].divorcedSpouses = unique([...(profileMap[id].divorcedSpouses || []), ...partners.filter(other => other !== id)]);
+      if (isEndedUnion) profileMap[id].divorcedSpouses = unique([...(profileMap[id].divorcedSpouses || []), ...partners.filter(other => other !== id)]);
       if (relationshipEndStatus) {
         profileMap[id].relationshipEndStatuses = { ...(profileMap[id].relationshipEndStatuses || {}) };
         profileMap[id].relationshipEndYears = { ...(profileMap[id].relationshipEndYears || {}) };
@@ -2452,15 +2455,17 @@ function renderRelationshipHouseholds(person) {
       const formal = person.spouses.includes(group.partnerId) || partner.spouses.includes(person.id);
       const divorced = person.divorcedSpouses.includes(group.partnerId) || partner.divorcedSpouses.includes(person.id);
       const year = clean(person.marriageYears[group.partnerId] || partner.marriageYears[person.id]);
-      const relationshipEndStatus = clean(person.relationshipEndStatuses[group.partnerId] || partner.relationshipEndStatuses[person.id] || (divorced ? 'divorced' : ''));
+      const relationshipEndStatus = clean(person.relationshipEndStatuses[group.partnerId] || partner.relationshipEndStatuses[person.id] || (divorced ? 'ended' : ''));
       const relationshipEndYear = clean(person.relationshipEndYears[group.partnerId] || partner.relationshipEndYears[person.id]);
       const status = formal ? (relationshipEndStatus ? 'Former spouse' : 'Spouse') : 'Partner';
-      const ended = relationshipEndStatus && `${relationshipEndStatus} ${relationshipEndYear}`.trim();
+      const ended = relationshipEndStatus === 'ended'
+        ? (relationshipEndYear ? `relationship ended ${relationshipEndYear}` : '')
+        : relationshipEndStatus && `${relationshipEndStatus} ${relationshipEndYear}`.trim();
       household.append(makeRow({
         targetId: group.partnerId,
         kind: 'spouse',
         visible,
-        label: relationshipEndStatus ? `${relationshipEndStatus} spouse` : status.toLocaleLowerCase(),
+        label: relationshipEndStatus === 'ended' ? 'former spouse' : relationshipEndStatus ? `${relationshipEndStatus} spouse` : status.toLocaleLowerCase(),
         detail: [status, year && `married ${year}`, ended].filter(Boolean).join(' · ')
       }));
     } else {

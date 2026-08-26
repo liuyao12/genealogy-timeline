@@ -1964,18 +1964,34 @@ function renderTimeline() {
     // When one ancestral route is collapsed, the one remaining occurrence
     // becomes the household owner and the descendants move there.
     if (parentIds.length !== 2 || !parentIds.every(id => descendantsOfRoot.has(id) && activeLineageIds.has(id))) return '';
-    return parentIds.find(id => state.people[id]?.gender === 'female') || parentIds[1];
+    // Western cousin-marriage transport always duplicates the woman. If the
+    // imported genders do not identify one, keep a single household rather
+    // than arbitrarily transporting the man.
+    return parentIds.find(id => state.people[id]?.gender === 'female') || '';
   };
   const childrenByParent = new Map();
   people.forEach(person => person.parents.forEach(parentId => {
     if (!datedIds.has(parentId)) return;
     if (!childEdgeVisible(parentId, person.id)) return;
+    // Profiles retained only as spouses must not reopen a branch that was
+    // collapsed above their natal occurrence. Traverse descendants solely
+    // along the lineage routes that still survive from the root; the family
+    // record below will still connect the retained spouse to the children.
+    if (state.collapsedIds.size && state.people[state.rootId]
+      && (!activeLineageIds.has(parentId) || !activeLineageIds.has(person.id))) return;
     if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
     childrenByParent.get(parentId).push(person.id);
   }));
   const byBirth = (a, b) => birthYear(state.people[a]) - birthYear(state.people[b]) || fullName(state.people[a]).localeCompare(fullName(state.people[b]));
   childrenByParent.forEach(ids => ids.sort(byBirth));
-  const roots = people.filter(person => !person.parents.some(id => datedIds.has(id))).map(person => person.id).sort(byBirth);
+  // Start layout traversal from independently surviving lineage occurrences.
+  // A spouse retained only through the other side of a cousin marriage must
+  // not become a detached root and claim the household before that lineage is
+  // visited.
+  const lineageRoots = people.filter(person => activeLineageIds.has(person.id)
+    && !person.parents.some(id => datedIds.has(id) && activeLineageIds.has(id)));
+  const roots = (lineageRoots.length ? lineageRoots : people.filter(person => !person.parents.some(id => datedIds.has(id))))
+    .map(person => person.id).sort(byBirth);
   if (datedIds.has(state.rootId)) roots.sort((a, b) => (a === state.rootId ? -1 : b === state.rootId ? 1 : byBirth(a, b)));
   const order = [];
   const placed = new Set();

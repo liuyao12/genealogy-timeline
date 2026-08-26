@@ -1840,6 +1840,25 @@ function escapeHtml(value) {
   const node = document.createElement('span'); node.textContent = value; return node.innerHTML;
 }
 
+function appendHighlightedName(container, value, keywords) {
+  const text = String(value || '');
+  const terms = [...new Set(keywords.map(clean).filter(Boolean))].sort((a, b) => b.length - a.length);
+  if (!terms.length) { container.textContent = text; return; }
+  const pattern = terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const matcher = new RegExp(pattern, 'giu');
+  let cursor = 0;
+  for (const match of text.matchAll(matcher)) {
+    const index = match.index ?? 0;
+    if (index > cursor) container.append(document.createTextNode(text.slice(cursor, index)));
+    const mark = document.createElement('mark');
+    mark.className = 'person-name-match';
+    mark.textContent = match[0];
+    container.append(mark);
+    cursor = index + match[0].length;
+  }
+  if (cursor < text.length) container.append(document.createTextNode(text.slice(cursor)));
+}
+
 function selectPerson(id) { state.selectedId = id; render(); }
 function renderPersonList() {
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
@@ -1851,7 +1870,25 @@ function renderPersonList() {
     const button = document.createElement('button');
     const source = sourceMeta(person);
     button.type = 'button'; button.className = `person-list-item${person.id === state.selectedId ? ' active' : ''}`; button.dataset.gender = person.gender;
-    button.innerHTML = `<span class="mini-avatar">${escapeHtml(initials(person))}</span><span><strong>${escapeHtml(fullName(person))}</strong><small>${escapeHtml(life(person))}</small></span>${person.sourceUrl ? `<span class="source-tick" title="${escapeHtml(source.name)}">${escapeHtml(source.mark)}</span>` : ''}`;
+    const gender = document.createElement('span');
+    gender.className = 'person-gender';
+    gender.setAttribute('role', 'img');
+    gender.setAttribute('aria-label', person.gender === 'male' ? 'Male' : person.gender === 'female' ? 'Female' : 'Gender unknown');
+    gender.textContent = person.gender === 'male' ? '♂' : person.gender === 'female' ? '♀' : '·';
+    const summary = document.createElement('span');
+    const name = document.createElement('strong');
+    appendHighlightedName(name, fullName(person), keywords);
+    const lifespan = document.createElement('small');
+    lifespan.textContent = life(person);
+    summary.append(name, lifespan);
+    button.append(gender, summary);
+    if (person.sourceUrl) {
+      const sourceTick = document.createElement('span');
+      sourceTick.className = 'source-tick';
+      sourceTick.title = source.name;
+      sourceTick.textContent = source.mark;
+      button.append(sourceTick);
+    }
     button.addEventListener('click', () => selectPerson(person.id));
     return button;
   }));

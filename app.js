@@ -1691,6 +1691,23 @@ function timelineRowsConflict(firstIndex, secondIndex, nodeRanges, horizontalRan
     || secondLines.some(line => overlaps(line, firstNodeRange));
 }
 
+function timelineNodesAreImmediateFamily(firstNode, secondNode) {
+  if (!firstNode || !secondNode || firstNode.id === secondNode.id) return true;
+  const first = state.people[firstNode.id];
+  const second = state.people[secondNode.id];
+  if (!first || !second) return false;
+  const spouses = first.spouses.includes(second.id) || second.spouses.includes(first.id);
+  const parentChild = first.children.includes(second.id) || second.children.includes(first.id)
+    || first.parents.includes(second.id) || second.parents.includes(first.id);
+  const siblings = first.parents.some(parentId => second.parents.includes(parentId));
+  return spouses || parentChild || siblings;
+}
+
+function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
+  const unrelatedExtraGutter = 6;
+  return rowStep + (timelineNodesAreImmediateFamily(nodes[firstIndex], nodes[secondIndex]) ? 0 : unrelatedExtraGutter);
+}
+
 function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey) {
   const ranges = nodes.map(timelineNodeRange);
   // Match the mini-program's row invariant: intersecting horizontal ranges must
@@ -1725,32 +1742,58 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
   // the compacted branch slots in birth order, translating every node in each
   // block together. This keeps the compact layout without leaving one sibling
   // sitting on top of another sibling's descendants.
+  const siblingHouseholdConstraints = new Map();
   [...childrenByIndex.entries()]
     .filter(([, childIndexes]) => childIndexes.length > 1)
     .sort(([firstParent], [secondParent]) => depthOf(secondParent) - depthOf(firstParent))
     .forEach(([, childIndexes]) => {
       const branches = childIndexes.map(rootIndex => ({ rootIndex, indexes: subtreeIndexes(rootIndex) }));
-      const compactedSlots = branches
-        .map(branch => Math.min(...branch.indexes.map(index => preferredY[index])))
-        .sort((first, second) => first - second);
+      const originalSlots = branches.map(branch => Math.min(...branch.indexes.map(index => preferredY[index])));
+      const compactedSlots = [...originalSlots].sort((first, second) => first - second);
       branches.forEach((branch, branchIndex) => {
         const top = Math.min(...branch.indexes.map(index => preferredY[index]));
         const shift = compactedSlots[branchIndex] - top;
         branch.indexes.forEach(index => { preferredY[index] += shift; });
       });
+      // Keep the next sibling below the preceding sibling's immediate
+      // household (the sibling, spouses, and their children). Deeper dynastic
+      // descendants may still use empty timeline space, so long lines remain
+      // compact without mixing two adjacent sibling households.
+      for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
+        const precedingRoot = branches[branchIndex - 1].rootIndex;
+        const precedingHousehold = [precedingRoot];
+        childrenByIndex.get(precedingRoot).forEach(childIndex => {
+          precedingHousehold.push(childIndex);
+          if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
+        });
+        const uniquePrecedingHousehold = unique(precedingHousehold);
+        const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
+        const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
+        const householdShift = Math.max(0, householdBottom + rowStep - followingTop);
+        if (householdShift) branches[branchIndex].indexes.forEach(index => { preferredY[index] += householdShift; });
+        branches[branchIndex].indexes.forEach(index => {
+          if (!siblingHouseholdConstraints.has(index)) siblingHouseholdConstraints.set(index, []);
+          siblingHouseholdConstraints.get(index).push(uniquePrecedingHousehold);
+        });
+      }
   });
   const spatialOrder = nodes.map((_, index) => index).sort((first, second) =>
     preferredY[first] - preferredY[second] || first - second
   );
   const placed = [];
+  const placedSet = new Set();
 
   spatialOrder.forEach(index => {
     const node = nodes[index];
     const parentIndex = indexByKey.get(displayParentByKey.get(node.key));
-    const parentFloor = parentIndex != null && placed.includes(parentIndex)
+    const parentFloor = parentIndex != null && placedSet.has(parentIndex)
       ? nodes[parentIndex].y + rowStep
       : 0;
-    let targetY = Math.max(preferredY[index], parentFloor);
+    const siblingHouseholdFloor = Math.max(0, ...(siblingHouseholdConstraints.get(index) || []).map(precedingIndexes => {
+      const placedIndexes = precedingIndexes.filter(other => placedSet.has(other));
+      return placedIndexes.length ? Math.max(...placedIndexes.map(other => nodes[other].y)) + rowStep : 0;
+    }));
+    let targetY = Math.max(preferredY[index], parentFloor, siblingHouseholdFloor);
 
     // Search final destinations rather than replaying the original row order.
     // A node may therefore settle safely above a previously indexed obstacle;
@@ -1761,14 +1804,16 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
       moved = false;
       for (const other of placed) {
         if (!timelineRowsConflict(index, other, ranges, horizontalRangesByKey, nodes)) continue;
-        if (Math.abs(targetY - nodes[other].y) >= requiredVerticalSeparation) continue;
-        targetY = nodes[other].y + requiredVerticalSeparation;
+        const relationshipSeparation = Math.max(requiredVerticalSeparation, timelineVerticalSeparation(index, other, nodes, rowStep));
+        if (Math.abs(targetY - nodes[other].y) >= relationshipSeparation) continue;
+        targetY = nodes[other].y + relationshipSeparation;
         moved = true;
       }
     } while (moved);
 
     node.y = Math.round(targetY * 1000) / 1000;
     placed.push(index);
+    placedSet.add(index);
   });
 }
 
@@ -1803,7 +1848,8 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
     return result;
   };
   const nodeRanges = nodes.map(timelineNodeRange);
-  const verticallyOverlap = (a, b) => Math.abs(a - b) < rowStep;
+  const verticallyOverlap = (index, targetY, otherIndex) =>
+    Math.abs(targetY - nodes[otherIndex].y) < timelineVerticalSeparation(index, otherIndex, nodes, rowStep);
   const blocks = nodes.map((_, index) => ({
     rootIndex: index,
     parentIndex: parentIndexByIndex.get(index),
@@ -1822,7 +1868,7 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
       if (targetY < 0) return false;
       for (let other = 0; other < nodes.length; other += 1) {
         if (contained.has(other) || !timelineRowsConflict(index, other, nodeRanges, horizontalRangesByKey, nodes)) continue;
-        if (verticallyOverlap(targetY, nodes[other].y)) return false;
+        if (verticallyOverlap(index, targetY, other)) return false;
       }
       return true;
     });

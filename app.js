@@ -1798,9 +1798,9 @@ function renderTimeline() {
     const icon = isSpouseNode
       ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })
       : svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' });
-    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: 19 }, '⚭'));
+    if (isSpouseNode) icon.append(svg('text', { class: 'marriage-symbol', x: 18, y: 18 }, '⚭'));
     else {
-      icon.append(svg('rect', { class: 'expander-box', x: 11, y: 11, width: 14, height: 14, rx: 2 }));
+      icon.append(svg('rect', { class: 'expander-box', x: 12, y: 12, width: 12, height: 12, rx: 2 }));
       if (hasChildren) icon.append(svg('text', { class: 'node-symbol', x: 18, y: 18 }, isCollapsed ? '+' : '−'));
     }
     const toggleBranch = event => {

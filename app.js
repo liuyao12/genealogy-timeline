@@ -902,7 +902,12 @@ function geniProfileIdForApiProfile(profile, fallbackId = '') {
 }
 
 function inferRelationsFromUnions(nodes, preferredIds = {}) {
-  const profiles = Object.values(nodes).filter(node => node && clean(node.id).startsWith('profile-'));
+  // Geni's immediate-family graph is a hash. Depending on the API response,
+  // a node's ID may exist only as its hash key rather than inside the node.
+  const nodeRecords = Object.entries(nodes || {}).map(([key, node]) => (
+    node && typeof node === 'object' ? { ...node, id: clean(node.id) || refId(key) } : null
+  )).filter(Boolean);
+  const profiles = nodeRecords.filter(node => clean(node.id).startsWith('profile-'));
   const aliases = {};
   const profileMap = {};
   profiles.forEach(profile => {
@@ -911,7 +916,7 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
     aliases[rawId] = id;
     profileMap[id] = { ...profile, id };
   });
-  Object.values(nodes).filter(node => node && clean(node.id).startsWith('union-')).forEach(union => {
+  nodeRecords.filter(node => clean(node.id).startsWith('union-')).forEach(union => {
     const partners = uniqueRefs(union.partners || union.partner_ids || union.profiles).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
     const children = uniqueRefs(union.children || union.child_ids).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
   const marriageYear = clean(
@@ -988,7 +993,13 @@ async function fetchGeniNeighborhood(id) {
   const rawFocusId = refId(focusRaw.id);
   const preferredFocusId = /^profile-g/i.test(id) ? canonicalGeniProfileId(id) : '';
   const preferredIds = preferredFocusId && rawFocusId ? { [rawFocusId]: preferredFocusId } : {};
-  const mapped = inferRelationsFromUnions(nodes, preferredIds);
+  // `focus` is documented separately from `nodes` and is not guaranteed to
+  // be repeated there. Include it while resolving unions; otherwise its
+  // spouse and children are imported as profiles but never linked to it.
+  const relationNodes = Array.isArray(nodes)
+    ? [...nodes, focusRaw]
+    : { ...nodes, [rawFocusId || clean(focusRaw.id)]: focusRaw };
+  const mapped = inferRelationsFromUnions(relationNodes, preferredIds);
   const focusId = preferredFocusId || geniProfileIdForApiProfile(focusRaw, rawFocusId);
   const canonicalFocus = { ...focusRaw, id: focusId };
   if (!mapped[focusId]) mapped[focusId] = canonicalFocus;
@@ -1005,6 +1016,7 @@ async function loadGeniImmediateFamily(profileId) {
     beginGeniAuthorization(`family-import:immediate:${profileId}`);
     return;
   }
+  const existingFamilyIds = new Set([...person.parents, ...person.children, ...allPartnerIds(person)]);
   const importedAt = new Date().toISOString();
   const { mapped } = await fetchGeniNeighborhood(profileId);
   const existingIds = new Set(Object.keys(state.people));
@@ -1023,6 +1035,12 @@ async function loadGeniImmediateFamily(profileId) {
   const receivedIds = Object.keys(mapped).filter(id => state.people[id]);
   const newIds = receivedIds.filter(id => !existingIds.has(id));
   if (!state.people[profileId]) throw new Error('Geni did not return the selected public profile.');
+  const refreshedFamilyIds = new Set([
+    ...state.people[profileId].parents,
+    ...state.people[profileId].children,
+    ...allPartnerIds(state.people[profileId])
+  ]);
+  const restoredRelations = [...refreshedFamilyIds].filter(id => !existingFamilyIds.has(id)).length;
   state.people[profileId].geniImmediateFamilyLoaded = true;
   state.people[profileId].geniImmediateFamilyVerifiedAt = importedAt;
   if (state.geniImport?.profileId === profileId) {
@@ -1041,7 +1059,9 @@ async function loadGeniImmediateFamily(profileId) {
   render();
   const countSummary = newIds.length
     ? `${newIds.length} new profile${newIds.length === 1 ? '' : 's'} added`
-    : 'no new public profiles';
+    : restoredRelations
+      ? `no new profiles, but ${restoredRelations} missing family link${restoredRelations === 1 ? '' : 's'} restored`
+      : 'no new public profiles or family links';
   toast(`Geni returned ${receivedIds.length} immediate-family profiles; ${countSummary}. All are listed in this profile’s family panel.`, true);
 }
 

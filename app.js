@@ -2301,27 +2301,43 @@ function renderPersonList() {
   }));
 }
 
-function styleEventColorSelect(select) {
-  select.style.setProperty('--event-color', paletteColor(select.value, DEFAULT_PERSONAL_EVENT_COLOR));
+function updateEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {
+  picker.value = paletteColor(value, fallback);
+  picker.querySelectorAll('.event-color-swatch').forEach(swatch => {
+    const selected = swatch.dataset.color === picker.value;
+    swatch.setAttribute('aria-selected', String(selected));
+    swatch.tabIndex = selected ? 0 : -1;
+  });
 }
 
-function eventColorSelect(value, label, onColor, fallback) {
-  const select = document.createElement('select');
-  select.className = 'event-color-select';
+function initializeEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {
+  picker.replaceChildren();
   EVENT_COLOR_PALETTE.forEach(([optionValue, optionLabel]) => {
-    const option = document.createElement('option');
-    option.value = optionValue;
-    option.textContent = optionLabel;
-    select.append(option);
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'event-color-swatch';
+    swatch.dataset.color = optionValue;
+    swatch.style.setProperty('--swatch-color', optionValue);
+    swatch.title = optionLabel;
+    swatch.setAttribute('role', 'option');
+    swatch.setAttribute('aria-label', optionLabel);
+    swatch.addEventListener('click', () => {
+      updateEventColorPalette(picker, optionValue, fallback);
+      picker.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    picker.append(swatch);
   });
-  select.value = paletteColor(value, fallback);
-  select.setAttribute('aria-label', label);
-  styleEventColorSelect(select);
-  select.addEventListener('change', () => {
-    styleEventColorSelect(select);
-    onColor(select.value);
-  });
-  return select;
+  updateEventColorPalette(picker, value, fallback);
+}
+
+function eventColorPalette(value, label, onColor, fallback) {
+  const picker = document.createElement('div');
+  picker.className = 'event-color-palette';
+  picker.setAttribute('role', 'listbox');
+  picker.setAttribute('aria-label', label);
+  initializeEventColorPalette(picker, value, fallback);
+  picker.addEventListener('change', () => onColor(picker.value));
+  return picker;
 }
 
 function setSharedReignColor(value) {
@@ -2333,14 +2349,14 @@ function setSharedReignColor(value) {
   render();
 }
 
-function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {
+function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EVENT_COLOR, prefix = '') {
   const row = document.createElement('div');
   row.className = 'event-editor-row';
   const name = document.createElement('strong');
-  name.textContent = event.name;
+  name.textContent = [prefix, event.name].filter(Boolean).join(' · ');
   const years = document.createElement('small');
   years.textContent = formatEventYearRange(event.startYear, event.endYear);
-  const color = eventColorSelect(isReignLabel(event.name) ? state.reignColor : event.color, `Colour for ${event.name}`, onColor, fallback);
+  const color = eventColorPalette(isReignLabel(event.name) ? state.reignColor : event.color, `Colour for ${event.name}`, onColor, fallback);
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.className = 'event-delete';
@@ -2349,6 +2365,16 @@ function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EV
   remove.addEventListener('click', onDelete);
   row.append(name, years, color, remove);
   return row;
+}
+
+function personalEventAgePrefix(person, event) {
+  const birthYear = numericYear(person?.birthYear);
+  const startYear = numericYear(event?.startYear);
+  const endYear = numericYear(event?.endYear) ?? startYear;
+  if (birthYear == null || startYear == null || startYear < birthYear) return '';
+  const startAge = startYear - birthYear + 1;
+  const endAge = endYear == null ? startAge : endYear - birthYear + 1;
+  return `Age ${startAge}${endAge > startAge ? `–${endAge}` : ''}`;
 }
 
 function renderPersonalEvents(person) {
@@ -2369,7 +2395,7 @@ function renderPersonalEvents(person) {
     person.personalEvents.splice(index, 1);
     persist('Personal event deleted');
     render();
-  })));
+  }, DEFAULT_PERSONAL_EVENT_COLOR, personalEventAgePrefix(person, event))));
 }
 
 function renderGlobalEventsEditor() {
@@ -2417,7 +2443,7 @@ function renderRelationshipHouseholds(person) {
   if (!groups.length) {
     const empty = document.createElement('p');
     empty.className = 'relationship-empty';
-    empty.textContent = 'No spouses, partners, or children in the local tree.';
+    empty.textContent = 'No family members in the local tree.';
     container.replaceChildren(empty);
     return;
   }
@@ -2463,16 +2489,15 @@ function renderRelationshipHouseholds(person) {
       const year = clean(person.marriageYears[group.partnerId] || partner.marriageYears[person.id]);
       const relationshipEndStatus = clean(person.relationshipEndStatuses[group.partnerId] || partner.relationshipEndStatuses[person.id] || (divorced ? 'ended' : ''));
       const relationshipEndYear = clean(person.relationshipEndYears[group.partnerId] || partner.relationshipEndYears[person.id]);
-      const status = formal ? (relationshipEndStatus ? 'Former spouse' : 'Spouse') : 'Partner';
       const ended = relationshipEndStatus === 'ended'
-        ? (relationshipEndYear ? `relationship ended ${relationshipEndYear}` : '')
-        : relationshipEndStatus && `${relationshipEndStatus} ${relationshipEndYear}`.trim();
+        ? (relationshipEndYear ? `Ended ${relationshipEndYear}` : '')
+        : relationshipEndStatus && `${relationshipEndStatus[0].toUpperCase()}${relationshipEndStatus.slice(1)} ${relationshipEndYear}`.trim();
       household.append(makeRow({
         targetId: group.partnerId,
         kind: 'spouse',
         visible,
-        label: relationshipEndStatus === 'ended' ? 'former spouse' : relationshipEndStatus ? `${relationshipEndStatus} spouse` : status.toLocaleLowerCase(),
-        detail: [status, year && `married ${year}`, ended].filter(Boolean).join(' · ')
+        label: fullName(partner),
+        detail: [formal && year && `Married ${year}`, !formal && year && `Relationship ${year}`, ended].filter(Boolean).join(' · ')
       }));
     } else {
       const label = document.createElement('p');
@@ -2789,19 +2814,14 @@ els['add-form'].addEventListener('submit', event => {
   els['add-dialog'].close(); event.currentTarget.reset(); persist('Profile added'); render();
 });
 
-els['personal-event-color'].value = DEFAULT_PERSONAL_EVENT_COLOR;
-els['global-event-color'].value = DEFAULT_GLOBAL_EVENT_COLOR;
-[els['personal-event-color'], els['global-event-color']].forEach(select => {
-  styleEventColorSelect(select);
-  select.addEventListener('change', () => styleEventColorSelect(select));
-});
+initializeEventColorPalette(els['personal-event-color'], DEFAULT_PERSONAL_EVENT_COLOR);
+initializeEventColorPalette(els['global-event-color'], DEFAULT_GLOBAL_EVENT_COLOR, DEFAULT_GLOBAL_EVENT_COLOR);
 let personalColorForReign = false;
 els['personal-event-name'].addEventListener('input', () => {
   const nextIsReign = isReignLabel(els['personal-event-name'].value);
   if (nextIsReign === personalColorForReign) return;
   personalColorForReign = nextIsReign;
-  els['personal-event-color'].value = nextIsReign ? state.reignColor : DEFAULT_PERSONAL_EVENT_COLOR;
-  styleEventColorSelect(els['personal-event-color']);
+  updateEventColorPalette(els['personal-event-color'], nextIsReign ? state.reignColor : DEFAULT_PERSONAL_EVENT_COLOR);
 });
 
 restore();

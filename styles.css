@@ -108,7 +108,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 
 .timeline-canvas { display: block; min-width: 100%; transform-origin: 0 0; overflow: visible; }
 .timeline-canvas[hidden], .timeline-ruler[hidden] { display: none; }
-.timeline-ruler { position: sticky; top: 0; z-index: 5; display: block; height: 43px; min-width: 100%; margin-bottom: -43px; overflow: visible; pointer-events: none; transform-origin: 0 0; }
+.timeline-ruler { position: sticky; top: 0; z-index: 5; display: block; height: 60px; min-width: 100%; margin-bottom: -60px; overflow: visible; pointer-events: none; transform-origin: 0 0; }
 .timeline-grid .ruler-band { fill: rgba(255, 255, 255, .84); stroke: none; }
 .timeline-grid .ruler-line { stroke: #555; stroke-width: 1.2; }
 .timeline-grid .year-tick { stroke: #777; stroke-width: 1; }

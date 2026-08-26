@@ -68,6 +68,8 @@ const state = {
   geniAccessToken: initialGeniAccessToken,
   collapsedIds: new Set()
 };
+let pendingTimelineRelayout = null;
+let activeTimelineAnimationFrame = 0;
 
 const els = Object.fromEntries([
   'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
@@ -1341,6 +1343,80 @@ function timelineNodeRange(node) {
   return { left: node.x - gutter, right: node.x + Math.max(node.occupancyWidth, 2) + gutter };
 }
 
+function renderedTimelinePositions() {
+  return new Map([...els['timeline-canvas'].querySelectorAll('.timeline-node[data-node-key]')].map(node => {
+    const coordinates = (node.getAttribute('transform')?.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+    return [node.dataset.nodeKey, { x: coordinates[0] || 0, y: coordinates[1] || 0 }];
+  }));
+}
+
+function prepareTimelineRelayout(anchorKey) {
+  if (activeTimelineAnimationFrame) cancelAnimationFrame(activeTimelineAnimationFrame);
+  activeTimelineAnimationFrame = 0;
+  const positions = renderedTimelinePositions();
+  if (!positions.has(anchorKey)) return;
+  pendingTimelineRelayout = {
+    anchorKey,
+    positions,
+    scrollTop: els['canvas-viewport'].scrollTop
+  };
+}
+
+function animateTimelineRelayout(newPositions) {
+  const transition = pendingTimelineRelayout;
+  pendingTimelineRelayout = null;
+  if (!transition) return;
+  const oldAnchor = transition.positions.get(transition.anchorKey);
+  const newAnchor = newPositions.get(transition.anchorKey);
+  if (!oldAnchor || !newAnchor) return;
+
+  const viewport = els['canvas-viewport'];
+  const requestedScrollTop = transition.scrollTop + (newAnchor.y - oldAnchor.y) * state.zoom;
+  viewport.scrollTop = Math.max(0, requestedScrollTop);
+  const appliedScrollShift = (viewport.scrollTop - transition.scrollTop) / state.zoom;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const duration = 280;
+  const movements = [];
+  els['timeline-canvas'].querySelectorAll('.timeline-node[data-node-key]').forEach(node => {
+    const key = node.dataset.nodeKey;
+    const finish = newPositions.get(key);
+    const previous = transition.positions.get(key);
+    const start = previous
+      ? { x: previous.x, y: previous.y + appliedScrollShift }
+      : { x: oldAnchor.x, y: oldAnchor.y + appliedScrollShift };
+    if (Math.abs(start.x - finish.x) < 0.5 && Math.abs(start.y - finish.y) < 0.5 && previous) return;
+    node.setAttribute('transform', `translate(${start.x} ${start.y})`);
+    if (!previous) node.style.opacity = '0';
+    movements.push({ node, start, finish, fadeIn: !previous });
+  });
+  const connectors = els['timeline-canvas'].querySelector('.timeline-connectors');
+  if (connectors) connectors.style.opacity = '0.12';
+  if (!movements.length && !connectors) return;
+  const startedAt = performance.now();
+  const drawFrame = now => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - ((1 - progress) ** 3);
+    movements.forEach(({ node, start, finish, fadeIn }) => {
+      const x = start.x + (finish.x - start.x) * eased;
+      const y = start.y + (finish.y - start.y) * eased;
+      node.setAttribute('transform', `translate(${x} ${y})`);
+      if (fadeIn) node.style.opacity = String(eased);
+    });
+    if (connectors) connectors.style.opacity = String(0.12 + 0.88 * eased);
+    if (progress < 1) {
+      activeTimelineAnimationFrame = requestAnimationFrame(drawFrame);
+      return;
+    }
+    movements.forEach(({ node, finish }) => {
+      node.setAttribute('transform', `translate(${finish.x} ${finish.y})`);
+      node.style.removeProperty('opacity');
+    });
+    connectors?.style.removeProperty('opacity');
+    activeTimelineAnimationFrame = 0;
+  };
+  activeTimelineAnimationFrame = requestAnimationFrame(drawFrame);
+}
+
 function timelineRowsConflict(firstIndex, secondIndex, nodeRanges, horizontalRangesByKey, nodes) {
   const overlaps = (a, b) => a.left < b.right && b.left < a.right;
   const firstNodeRange = nodeRanges[firstIndex];
@@ -1434,6 +1510,8 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
 }
 
 function renderTimeline() {
+  if (activeTimelineAnimationFrame) cancelAnimationFrame(activeTimelineAnimationFrame);
+  activeTimelineAnimationFrame = 0;
   const canvas = els['timeline-canvas'];
   const ruler = els['timeline-ruler'];
   canvas.replaceChildren();
@@ -1800,7 +1878,7 @@ function renderTimeline() {
     const nodeShape = attrs => person.isLiving
       ? svg('path', { ...attrs, d: leftRoundedRectPath(lifespanWidth, rowHeight) })
       : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: 5, ry: 5 });
-    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
     group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
@@ -1870,6 +1948,7 @@ function renderTimeline() {
     }
     const toggleBranch = event => {
       event.stopPropagation();
+      prepareTimelineRelayout(nodeKey);
       if (isCollapsed) state.collapsedIds.delete(id); else state.collapsedIds.add(id);
       render();
     };
@@ -1900,6 +1979,7 @@ function renderTimeline() {
     canvas.append(group);
   });
   canvas.style.transform = `scale(${state.zoom})`;
+  animateTimelineRelayout(positions);
 }
 function escapeHtml(value) {
   const node = document.createElement('span'); node.textContent = value; return node.innerHTML;

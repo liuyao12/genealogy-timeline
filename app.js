@@ -15,7 +15,7 @@ const DEFAULT_REIGN_EVENT_COLOR = '#c62828';
 const DEFAULT_PERSONAL_EVENT_COLOR = '#1565c0';
 const DEFAULT_GLOBAL_EVENT_COLOR = '#c2892b';
 const DEFAULT_TIMELINE_YEAR_WIDTH = 4;
-const BRITISH_ROYAL_STARTER_VERSION = 6;
+const BRITISH_ROYAL_STARTER_VERSION = 7;
 
 function sessionValue(key, value) {
   try {
@@ -301,6 +301,8 @@ function normalizePerson(source, fallbackId) {
   const death = source.death || {};
   const sourceUrl = validPublicUrl(source.sourceUrl || source.profile_url || source.profileUrl || '');
   const marriageYears = Object.fromEntries(Object.entries(source.marriageYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
+  const relationshipEndYears = Object.fromEntries(Object.entries(source.relationshipEndYears || source.divorceYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
+  const relationshipEndStatuses = Object.fromEntries(Object.entries(source.relationshipEndStatuses || {}).map(([partnerId, status]) => [refId(partnerId), clean(status).toLowerCase()]).filter(([partnerId, status]) => partnerId && ['annulled', 'divorced'].includes(status)));
   const partners = uniqueRefs(source.partners || source.spouses);
   return {
     id,
@@ -325,6 +327,8 @@ function normalizePerson(source, fallbackId) {
     nonSpouses: uniqueRefs(source.nonSpouses || source.nonSpouseIds),
     divorcedSpouses: uniqueRefs(source.divorcedSpouses || source.divorcedSpouseIds),
     marriageYears,
+    relationshipEndYears,
+    relationshipEndStatuses,
     personalEvents: normalizePersonalEvents([...(Array.isArray(source.personalEvents) ? source.personalEvents : []), ...extractGeniReignFacts(source)]),
     sourceUrl,
     sourceId: clean(source.sourceId || (/^profile-/i.test(id) ? id : '')),
@@ -623,8 +627,8 @@ function createBritishRoyalSample() {
    ['louis-xii-france','jeanne-france','1476'], ['louis-xii-france','anne-brittany','1499'],
    ['charles-brandon','margaret-neville','1507'], ['charles-brandon','anne-browne','1508'], ['charles-brandon','katherine-willoughby','1533'],
    ['archibald-douglas','margaret-hepburn','1509'], ['archibald-douglas','jane-stewart-douglas',''], ['archibald-douglas','margaret-maxwell','1543'],
-   ['henry-viii','catherine-aragon','1509'], ['henry-viii','anne-boleyn','1533'],
-   ['henry-viii','jane-seymour','1536'], ['henry-viii','anne-cleves','1540'], ['henry-viii','catherine-howard','1540'], ['henry-viii','catherine-parr','1543'],
+   ['henry-viii','catherine-aragon','1509','annulled','1533'], ['henry-viii','anne-boleyn','1533','annulled','1536'],
+   ['henry-viii','jane-seymour','1536'], ['henry-viii','anne-cleves','1540','annulled','1540'], ['henry-viii','catherine-howard','1540'], ['henry-viii','catherine-parr','1543'],
    ['catherine-aragon','arthur-tudor','1501'],
    ['catherine-parr','edward-burgh','1529'], ['catherine-parr','john-neville-latimer','1534'], ['catherine-parr','thomas-seymour','1547'],
    ['mary-i','philip-ii-spain','1554'], ['james-v','madeleine-valois','1537'], ['james-v','mary-lorraine','1538'],
@@ -647,15 +651,21 @@ function createBritishRoyalSample() {
    ['george-vi','queen-mother','1923'], ['wallis-simpson','ernest-aldrich-simpson','1928','divorced'], ['edward-viii','wallis-simpson','1937'],
    ['philip','elizabeth-ii','1947'], ['camilla','andrew-parker-bowles','1973','divorced'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005'],
    ['william-wales','catherine-wales','2011'], ['harry-sussex','meghan-sussex','2018']
-  ].forEach(([a, b, marriageYear, marriageStatus]) => {
+  ].forEach(([a, b, marriageYear, marriageStatus, relationshipEndYear]) => {
     if (!people[id(a)] || !people[id(b)]) return;
     people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
     people[id(b)].partners = unique([...people[id(b)].partners, id(a)]);
     people[id(a)].spouses = unique([...people[id(a)].spouses, id(b)]);
     people[id(b)].spouses = unique([...people[id(b)].spouses, id(a)]);
-    if (marriageStatus === 'divorced') {
+    if (['annulled', 'divorced'].includes(marriageStatus)) {
       people[id(a)].divorcedSpouses = unique([...people[id(a)].divorcedSpouses, id(b)]);
       people[id(b)].divorcedSpouses = unique([...people[id(b)].divorcedSpouses, id(a)]);
+      people[id(a)].relationshipEndStatuses[id(b)] = marriageStatus;
+      people[id(b)].relationshipEndStatuses[id(a)] = marriageStatus;
+      if (relationshipEndYear) {
+        people[id(a)].relationshipEndYears[id(b)] = relationshipEndYear;
+        people[id(b)].relationshipEndYears[id(a)] = relationshipEndYear;
+      }
     }
     people[id(a)].marriageYears[id(b)] = marriageYear;
     people[id(b)].marriageYears[id(a)] = marriageYear;
@@ -808,18 +818,32 @@ function inferRelationsFromUnions(nodes) {
   Object.values(nodes).filter(node => node && clean(node.id).startsWith('union-')).forEach(union => {
     const partners = uniqueRefs(union.partners || union.partner_ids || union.profiles).filter(id => profileMap[id]);
     const children = uniqueRefs(union.children || union.child_ids).filter(id => profileMap[id]);
-    const marriageYear = clean(
+  const marriageYear = clean(
       union.marriage?.date?.year ?? union.marriage?.year ?? union.marriage?.date
       ?? union.marriage_date?.year ?? union.marriage_date
     ).match(/-?\d{3,4}/)?.[0] || '';
+    const relationshipEndYear = clean(
+      union.divorce?.date?.year ?? union.divorce?.year ?? union.divorce?.date
+      ?? union.divorce_date?.year ?? union.divorce_date
+      ?? union.annulment_date?.year ?? union.annulment_date
+    ).match(/-?\d{3,4}/)?.[0] || '';
     const status = clean(union.status || union.relationship_status || union.type).toLowerCase().replace(/[\s-]+/g, '_');
-    const isSpouseUnion = ['spouse', 'ex_spouse', 'married', 'divorced'].includes(status) || Boolean(marriageYear);
-    const isDivorcedUnion = ['ex_spouse', 'divorced'].includes(status);
+    const isSpouseUnion = ['spouse', 'ex_spouse', 'married', 'divorced', 'annulled'].includes(status) || Boolean(marriageYear);
+    const relationshipEndStatus = status === 'annulled' ? 'annulled' : ['ex_spouse', 'divorced'].includes(status) ? 'divorced' : '';
+    const isDivorcedUnion = Boolean(relationshipEndStatus);
     partners.forEach(id => {
       profileMap[id].partners = unique([...(profileMap[id].partners || []), ...partners.filter(other => other !== id)]);
       const relationKey = isSpouseUnion ? 'spouses' : 'nonSpouses';
       profileMap[id][relationKey] = unique([...(profileMap[id][relationKey] || []), ...partners.filter(other => other !== id)]);
       if (isDivorcedUnion) profileMap[id].divorcedSpouses = unique([...(profileMap[id].divorcedSpouses || []), ...partners.filter(other => other !== id)]);
+      if (relationshipEndStatus) {
+        profileMap[id].relationshipEndStatuses = { ...(profileMap[id].relationshipEndStatuses || {}) };
+        profileMap[id].relationshipEndYears = { ...(profileMap[id].relationshipEndYears || {}) };
+        partners.filter(other => other !== id).forEach(other => {
+          profileMap[id].relationshipEndStatuses[other] = relationshipEndStatus;
+          if (relationshipEndYear) profileMap[id].relationshipEndYears[other] = relationshipEndYear;
+        });
+      }
       profileMap[id].children = unique([...(profileMap[id].children || []), ...children]);
       if (marriageYear) {
         profileMap[id].marriageYears = { ...(profileMap[id].marriageYears || {}) };
@@ -946,6 +970,8 @@ function mergePersonRecords(existing, incoming) {
   merged.nonSpouses = unique([...incoming.nonSpouses, ...existing.nonSpouses]).filter(id => !merged.spouses.includes(id));
   merged.divorcedSpouses = unique([...incoming.divorcedSpouses, ...existing.divorcedSpouses]).filter(id => merged.spouses.includes(id));
   merged.marriageYears = { ...incoming.marriageYears, ...existing.marriageYears };
+  merged.relationshipEndYears = { ...incoming.relationshipEndYears, ...existing.relationshipEndYears };
+  merged.relationshipEndStatuses = { ...incoming.relationshipEndStatuses, ...existing.relationshipEndStatuses };
   merged.personalEvents = normalizePersonalEvents([...incoming.personalEvents, ...existing.personalEvents]);
   merged.sourceUrl = incoming.sourceUrl || existing.sourceUrl;
   merged.sourceId = incoming.sourceId || existing.sourceId;
@@ -2426,8 +2452,17 @@ function renderRelationshipHouseholds(person) {
       const formal = person.spouses.includes(group.partnerId) || partner.spouses.includes(person.id);
       const divorced = person.divorcedSpouses.includes(group.partnerId) || partner.divorcedSpouses.includes(person.id);
       const year = clean(person.marriageYears[group.partnerId] || partner.marriageYears[person.id]);
-      const status = formal ? (divorced ? 'Divorced spouse' : 'Spouse') : 'Partner';
-      household.append(makeRow({ targetId: group.partnerId, kind: 'spouse', visible, label: status.toLocaleLowerCase(), detail: [status, year && `married ${year}`].filter(Boolean).join(' · ') }));
+      const relationshipEndStatus = clean(person.relationshipEndStatuses[group.partnerId] || partner.relationshipEndStatuses[person.id] || (divorced ? 'divorced' : ''));
+      const relationshipEndYear = clean(person.relationshipEndYears[group.partnerId] || partner.relationshipEndYears[person.id]);
+      const status = formal ? (relationshipEndStatus ? 'Former spouse' : 'Spouse') : 'Partner';
+      const ended = relationshipEndStatus && `${relationshipEndStatus} ${relationshipEndYear}`.trim();
+      household.append(makeRow({
+        targetId: group.partnerId,
+        kind: 'spouse',
+        visible,
+        label: relationshipEndStatus ? `${relationshipEndStatus} spouse` : status.toLocaleLowerCase(),
+        detail: [status, year && `married ${year}`, ended].filter(Boolean).join(' · ')
+      }));
     } else {
       const label = document.createElement('p');
       label.className = 'relationship-empty';
@@ -2721,6 +2756,9 @@ els['delete-person'].addEventListener('click', () => {
     other.spouses = other.spouses.filter(x => x !== id);
     other.nonSpouses = other.nonSpouses.filter(x => x !== id);
     other.divorcedSpouses = other.divorcedSpouses.filter(x => x !== id);
+    delete other.marriageYears[id];
+    delete other.relationshipEndYears[id];
+    delete other.relationshipEndStatuses[id];
   });
   state.rootId = state.rootId === id ? Object.keys(state.people)[0] || '' : state.rootId; state.selectedId = '';
   persist('Profile deleted'); render();

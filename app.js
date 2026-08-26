@@ -1424,6 +1424,9 @@ function renderTimeline() {
   ruler.replaceChildren();
   const visibility = buildTimelineVisibility();
   const { visibleIds, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible } = visibility;
+  // Preserve the pre-collapse branch membership. A collapsed node's children
+  // are removed from `visibleIds` below, but its control must remain expandable.
+  const expandableIds = new Set(visibleIds);
   const renderedPartnerIds = id => allPartnerIds(state.people[id]).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
   state.collapsedIds.forEach(id => {
     if (!visibleIds.has(id)) return;
@@ -1776,7 +1779,7 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    const hasChildren = person.children.some(childId => visibleIds.has(childId) && childEdgeVisible(id, childId));
+    const hasChildren = person.children.some(childId => expandableIds.has(childId) && childEdgeVisible(id, childId));
     const isCollapsed = state.collapsedIds.has(id);
     const icon = isSpouseNode
       ? svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' })

@@ -3107,7 +3107,28 @@ function setSharedReignColor(value) {
   render();
 }
 
-function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EVENT_COLOR, prefix = '') {
+function rowActionButton(className, symbol, label, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.textContent = symbol;
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function inlineYearInput(value, label) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'numeric';
+  input.value = value ?? '';
+  input.placeholder = label;
+  input.setAttribute('aria-label', label);
+  return input;
+}
+
+function eventEditorRow(event, onSave, onColor, onDelete, fallback = DEFAULT_PERSONAL_EVENT_COLOR, prefix = '') {
   const row = document.createElement('div');
   row.className = 'event-editor-row';
   const name = document.createElement('strong');
@@ -3115,13 +3136,29 @@ function eventEditorRow(event, onColor, onDelete, fallback = DEFAULT_PERSONAL_EV
   const years = document.createElement('small');
   years.textContent = formatEventYearRange(event.startYear, event.endYear);
   const color = eventColorPalette(isReignLabel(event.name) ? state.reignColor : event.color, `Colour for ${event.name}`, onColor, fallback);
-  const remove = document.createElement('button');
-  remove.type = 'button';
-  remove.className = 'event-delete';
-  remove.textContent = '×';
-  remove.setAttribute('aria-label', `Delete ${event.name}`);
-  remove.addEventListener('click', onDelete);
-  row.append(name, years, color, remove);
+  const edit = rowActionButton('row-edit', '✎', `Edit ${event.name}`, () => {
+    row.classList.add('editing');
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = event.name;
+    nameInput.setAttribute('aria-label', 'Event name');
+    const startInput = inlineYearInput(event.startYear, 'Start year');
+    const endInput = inlineYearInput(event.endYear, 'End year');
+    const draftColor = eventColorPalette(isReignLabel(event.name) ? state.reignColor : event.color, `Colour for ${event.name}`, () => {}, fallback);
+    const save = rowActionButton('row-save', '✓', `Save ${event.name}`, () => {
+      const nextName = clean(nameInput.value);
+      let startYear = numericYear(startInput.value);
+      let endYear = numericYear(endInput.value) ?? startYear;
+      if (!nextName || startYear == null) return toast('Enter an event name and start year.', true);
+      if (endYear < startYear) [startYear, endYear] = [endYear, startYear];
+      onSave({ ...event, name: nextName, startYear, endYear, color: paletteColor(draftColor.value, fallback) });
+    });
+    const remove = rowActionButton('row-delete', '×', `Delete ${event.name}`, onDelete);
+    row.replaceChildren(nameInput, startInput, endInput, draftColor, save, remove);
+    nameInput.focus();
+    nameInput.select();
+  });
+  row.append(name, years, color, edit);
   return row;
 }
 
@@ -3156,15 +3193,35 @@ function renderNamePeriods(person) {
     if (period.sourceUrl) { text.href = period.sourceUrl; text.target = '_blank'; text.rel = 'noreferrer'; }
     const years = document.createElement('small');
     years.textContent = formatNamePeriod(period);
-    const remove = document.createElement('button');
-    remove.type = 'button'; remove.className = 'event-delete'; remove.textContent = '×';
-    remove.setAttribute('aria-label', `Delete name period ${period.name}`);
-    remove.addEventListener('click', () => {
-      person.namePeriods.splice(index, 1);
-      persist('Historical name deleted');
-      render();
+    const edit = rowActionButton('row-edit', '✎', `Edit name period ${period.name}`, () => {
+      row.classList.add('editing');
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = period.name;
+      nameInput.setAttribute('aria-label', 'Historical name');
+      const startInput = inlineYearInput(period.startYear, 'From year');
+      const endInput = inlineYearInput(period.endYear, 'To year');
+      const save = rowActionButton('row-save', '✓', `Save name period ${period.name}`, () => {
+        const nextName = clean(nameInput.value);
+        let startYear = numericYear(startInput.value);
+        let endYear = numericYear(endInput.value);
+        if (!nextName) return toast('Enter the historical name or title.', true);
+        if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
+        person.namePeriods[index] = { ...period, name: nextName, startYear, endYear };
+        person.namePeriods = normalizeNamePeriods(person.namePeriods);
+        persist('Historical name saved');
+        render();
+      });
+      const remove = rowActionButton('row-delete', '×', `Delete name period ${period.name}`, () => {
+        person.namePeriods.splice(index, 1);
+        persist('Historical name deleted');
+        render();
+      });
+      row.replaceChildren(nameInput, startInput, endInput, save, remove);
+      nameInput.focus();
+      nameInput.select();
     });
-    row.append(text, years, remove);
+    row.append(text, years, edit);
     return row;
   }));
 }
@@ -3178,7 +3235,18 @@ function renderPersonalEvents(person) {
     list.replaceChildren(empty);
     return;
   }
-  list.replaceChildren(...person.personalEvents.map((event, index) => eventEditorRow(event, value => {
+  list.replaceChildren(...person.personalEvents.map((event, index) => eventEditorRow(event, updated => {
+    person.personalEvents[index] = updated;
+    if (isReignLabel(updated.name)) {
+      state.reignColor = paletteColor(updated.color, DEFAULT_REIGN_EVENT_COLOR);
+      Object.values(state.people).forEach(profile => profile.personalEvents.forEach(item => {
+        if (isReignLabel(item.name)) item.color = state.reignColor;
+      }));
+    }
+    person.personalEvents = normalizePersonalEvents(person.personalEvents);
+    persist('Personal event saved');
+    render();
+  }, value => {
     if (isReignLabel(event.name)) return setSharedReignColor(value);
     person.personalEvents[index].color = paletteColor(value, DEFAULT_PERSONAL_EVENT_COLOR);
     persist('Event colour saved');
@@ -3199,7 +3267,12 @@ function renderGlobalEventsEditor() {
     list.replaceChildren(empty);
     return;
   }
-  list.replaceChildren(...state.globalEvents.map((event, index) => eventEditorRow(event, value => {
+  list.replaceChildren(...state.globalEvents.map((event, index) => eventEditorRow(event, updated => {
+    state.globalEvents[index] = updated;
+    state.globalEvents = normalizeGlobalEvents(state.globalEvents);
+    persist('Global event saved');
+    render();
+  }, value => {
     state.globalEvents[index].color = paletteColor(value, DEFAULT_GLOBAL_EVENT_COLOR);
     persist('Global event colour saved');
     render();

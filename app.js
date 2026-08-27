@@ -1,5 +1,8 @@
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
+const REPOSITORY_URL = 'https://github.com/liuyao12/genealogy-timeline';
+const STITCH_SCHEMA_URL = `${REPOSITORY_URL}/blob/main/docs/import-schema.md`;
+const STITCH_EXAMPLE_URL = `${REPOSITORY_URL}/blob/main/examples/stitch-import.example.json`;
 const GENI_TOKEN_SESSION_KEY = 'lineage-geni-access-token';
 const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
@@ -45,23 +48,6 @@ function oauthCallbackParams() {
   };
 }
 
-const oauthCallback = oauthCallbackParams();
-if (oauthCallback.accessToken) {
-  sessionValue(GENI_TOKEN_SESSION_KEY, oauthCallback.accessToken);
-  sessionValue(GENI_OAUTH_PENDING_KEY, null);
-}
-if (oauthCallback.status) {
-  sessionValue(GENI_OAUTH_PENDING_KEY, null);
-  sessionValue(GENI_IMPORT_INTENT_KEY, null);
-}
-const initialGeniAccessToken = oauthCallback.accessToken || sessionValue(GENI_TOKEN_SESSION_KEY);
-if (oauthCallback.accessToken || oauthCallback.status || oauthCallback.message) {
-  const cleanUrl = new URL(location.href);
-  ['access_token', 'expires_in', 'status', 'message'].forEach(name => cleanUrl.searchParams.delete(name));
-  cleanUrl.hash = '';
-  history.replaceState(null, '', `${cleanUrl.pathname}${cleanUrl.search}`);
-}
-
 const state = {
   title: 'Untitled family',
   people: {},
@@ -77,7 +63,7 @@ const state = {
   relationVisibility: {},
   starterDataVersion: 0,
   manualTree: false,
-  geniAccessToken: initialGeniAccessToken,
+  geniAccessToken: '',
   geniImport: null,
   collapsedIds: new Set(),
   editingProfileId: ''
@@ -87,16 +73,17 @@ let timelineViewportInitialized = false;
 const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
 
 const els = Object.fromEntries([
-  'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'source-form', 'source-provider', 'source-input', 'source-depth',
+  'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'prepare-ai-import',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog', 'add-dialog-heading',
-  'geni-family-actions', 'geni-family-status', 'load-immediate-family', 'load-descendants-two', 'load-descendants-all', 'add-local-relative',
+  'prepare-ai-person-import', 'ai-family-status',
   'relationship-households', 'add-relative',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
   'events-dialog', 'close-events-dialog', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
-  'add-form', 'parent-select', 'relation-type', 'new-tree-button', 'new-tree-dialog', 'new-tree-form', 'toast', 'save-status', 'source-download-link', 'tree-filter', 'royal-example-button'
+  'add-form', 'parent-select', 'relation-type', 'new-tree-button', 'new-tree-dialog', 'new-tree-form', 'toast', 'save-status', 'tree-filter', 'royal-example-button',
+  'ai-import-dialog', 'close-ai-import', 'ai-import-prompt', 'copy-ai-import-prompt', 'ai-import-json', 'upload-ai-import', 'stitch-ai-import'
 ].map(id => [id, document.getElementById(id)]));
 
 function clean(value) { return value == null ? '' : String(value).trim(); }
@@ -1571,7 +1558,124 @@ async function importFromSource(input, provider = 'auto', depth = 2) {
   throw new Error('Choose a supported public source, or import a JSON/GEDCOM file exported by that service.');
 }
 
+function stitchPrompt(anchorId = '') {
+  const anchorIds = unique([anchorId, state.rootId]).filter(id => state.people[id]);
+  const anchors = anchorIds.map(id => {
+    const person = state.people[id];
+    return {
+      id: person.id,
+      displayName: fullName(person),
+      birthYear: person.birthYear || null,
+      deathYear: person.isLiving ? null : (person.deathYear || null),
+      isLiving: person.isLiving,
+      sourceUrl: person.sourceUrl || null,
+      sourceId: person.sourceId || null,
+      sourceProvider: person.sourceProvider || null
+    };
+  });
+  const task = anchorId && state.people[anchorId]
+    ? `Research the publicly documented family I request around ${fullName(state.people[anchorId])}. Include the relatives and generations I specify when I give you this prompt.`
+    : 'Research the publicly documented family branch I describe when I give you this prompt.';
+  return `${task}
+
+Prepare an import package for the Lineage genealogy-timeline web app:
+Repository: ${REPOSITORY_URL}
+Schema: ${STITCH_SCHEMA_URL}
+Example JSON: ${STITCH_EXAMPLE_URL}
+
+Read the schema and example before answering. Return exactly one JSON object using schema "lineage-stitch" and version 1. Do not wrap it in Markdown and do not add commentary.
+
+Requirements:
+- Use public, attributable sources only. Do not infer uncertain relationships as facts.
+- Include every person referenced by a parent, child, partner, or spouse ID.
+- Preserve the exact IDs of matching anchors below so the web app can stitch new records into its existing tree.
+- For other people, use a durable public identifier prefixed by its provider, such as "profile-g…", "wikitree-Clemens-1", or "wikidata-Q…". Never use a bare name as an ID.
+- Put formally married people in both "partners" and "spouses". Put non-marital partners in "partners" and "nonSpouses", never in "spouses".
+- Make parent/child and partner/spouse relationships reciprocal. Group children under the correct two parents.
+- Give marriage years in "marriageYears" keyed by spouse ID. Use relationshipEndStatuses values "annulled", "divorced", or "ended" when supported.
+- Prefer displayName as publicly displayed, including titles useful for searching. Use four-digit years where known; use null or omit fields when unknown.
+- Include sourceUrl, sourceId, and sourceProvider for every researched profile.
+- Set focusId to the main person researched. Do not include global events unless I explicitly ask for them.
+
+Existing anchors (these are facts from the current local tree; do not rename their IDs):
+${JSON.stringify(anchors, null, 2)}
+
+My specific research request:
+[Replace this line with the relatives, direction, and generation depth you want researched.]`;
+}
+
+function normalizeStitchPeople(rawPeople) {
+  if (Array.isArray(rawPeople)) {
+    return Object.fromEntries(rawPeople.map((person, index) => {
+      const id = clean(person?.id);
+      if (!id) throw new Error(`AI import profile ${index + 1} has no stable ID.`);
+      return [id, person];
+    }));
+  }
+  if (!rawPeople || typeof rawPeople !== 'object') throw new Error('AI import must contain a people object or array.');
+  return rawPeople;
+}
+
+function stitchImport(payload) {
+  if (payload?.schema !== 'lineage-stitch' || Number(payload.version) !== 1) {
+    throw new Error('This is not a lineage-stitch version 1 package.');
+  }
+  const importedAt = new Date().toISOString();
+  const incomingPeople = migrateGeniPeople(normalizeStitchPeople(payload.people)).people;
+  const incomingIds = Object.keys(incomingPeople);
+  if (!incomingIds.length) throw new Error('The AI import contains no profiles.');
+  const previousIds = new Set(Object.keys(state.people));
+
+  incomingIds.forEach(id => {
+    const incoming = normalizePerson({ ...incomingPeople[id], importedAt: incomingPeople[id].importedAt || importedAt }, id);
+    state.people[id] = mergePersonRecords(state.people[id], incoming);
+  });
+
+  const missingRefs = new Set();
+  const existingRef = id => {
+    if (state.people[id]) return true;
+    missingRefs.add(id);
+    return false;
+  };
+  incomingIds.forEach(id => {
+    const person = state.people[id];
+    person.parents = person.parents.filter(existingRef);
+    person.children = person.children.filter(existingRef);
+    person.partners = person.partners.filter(existingRef);
+    person.spouses = person.spouses.filter(existingRef);
+    person.nonSpouses = person.nonSpouses.filter(existingRef);
+    person.divorcedSpouses = person.divorcedSpouses.filter(existingRef);
+    person.parents.forEach(parentId => { state.people[parentId].children = unique([...state.people[parentId].children, id]); });
+    person.children.forEach(childId => { state.people[childId].parents = unique([...state.people[childId].parents, id]); });
+    person.partners.forEach(partnerId => { state.people[partnerId].partners = unique([...state.people[partnerId].partners, id]); });
+    person.spouses.forEach(spouseId => {
+      state.people[spouseId].partners = unique([...state.people[spouseId].partners, id]);
+      state.people[spouseId].spouses = unique([...state.people[spouseId].spouses, id]);
+      person.partners = unique([...person.partners, spouseId]);
+      const marriageYear = clean(person.marriageYears[spouseId]);
+      if (marriageYear && !clean(state.people[spouseId].marriageYears[id])) state.people[spouseId].marriageYears[id] = marriageYear;
+    });
+  });
+
+  if (Array.isArray(payload.globalEvents)) {
+    const combined = [...state.globalEvents, ...normalizeGlobalEvents(payload.globalEvents)];
+    state.globalEvents = combined.filter((event, index) => combined.findIndex(other => other.id === event.id) === index);
+  }
+  const focusId = clean(payload.focusId);
+  if (!state.rootId || !state.people[state.rootId]) state.rootId = state.people[clean(payload.rootId)] ? clean(payload.rootId) : incomingIds[0];
+  if (state.people[focusId]) state.selectedId = focusId;
+  state.manualTree = true;
+  persist('AI research stitched into this tree');
+  render();
+  const newCount = incomingIds.filter(id => !previousIds.has(id)).length;
+  const updatedCount = incomingIds.length - newCount;
+  const missingNote = missingRefs.size ? ` ${missingRefs.size} dangling reference${missingRefs.size === 1 ? '' : 's'} omitted.` : '';
+  toast(`Stitched ${newCount} new and ${updatedCount} matching profile${updatedCount === 1 ? '' : 's'} into this tree.${missingNote}`, true);
+  return { newCount, updatedCount, missingCount: missingRefs.size };
+}
+
 function importBackup(payload) {
+  if (payload?.schema === 'lineage-stitch') return stitchImport(payload);
   const wikiEnvelope = Array.isArray(payload) ? payload[0] : payload;
   if (wikiEnvelope?.items?.[0]?.person) return applyWikiTreePayload(payload);
   const rawPeople = payload.people || payload.db?.people;
@@ -3027,38 +3131,9 @@ function renderDetails() {
     : person.sourceUrl ? 'Public source linked to this local profile.' : 'No public source is linked.';
   renderRelationshipHouseholds(person);
   renderPersonalEvents(person);
-  // Bundled and older saved records retain their Geni ID even when their
-  // displayed provenance link points to another historical source.
-  const isGeniProfile = /^profile-/i.test(person.id);
-  const complete = Boolean(person.geniImmediateFamilyVerifiedAt);
-  els['add-relative'].disabled = isGeniProfile && (!complete || !!state.geniImport);
-  els['add-relative'].title = els['add-relative'].disabled ? 'Import the complete immediate family from Geni before adding a local relative.' : '';
-  els['geni-family-actions'].hidden = !isGeniProfile;
-  if (isGeniProfile) {
-    const importButtons = [
-      [els['load-immediate-family'], 'immediate'],
-      [els['load-descendants-two'], 'descendants-2'],
-      [els['load-descendants-all'], 'descendants-all']
-    ];
-    const activeImport = state.geniImport;
-    importButtons.forEach(([button, scope]) => {
-      const active = activeImport?.profileId === person.id && activeImport.scope === scope;
-      button.disabled = !!activeImport;
-      button.classList.toggle('is-loading', active);
-      button.textContent = active ? `Loading ${GENI_FAMILY_IMPORT_SCOPES[scope].label.toLowerCase()}…` : GENI_FAMILY_IMPORT_SCOPES[scope].label;
-    });
-    if (activeImport?.profileId === person.id) {
-      const progress = activeImport.loaded ? ` ${activeImport.loaded} profiles received in ${activeImport.requests} request${activeImport.requests === 1 ? '' : 's'}.` : '';
-      els['geni-family-status'].textContent = `Importing from Geni.${progress} The timeline grows after each response.`;
-    } else if (activeImport) {
-      els['geni-family-status'].textContent = 'Another Geni branch is currently being imported.';
-    } else {
-      els['geni-family-status'].textContent = complete
-        ? `The complete public immediate family was verified with Geni ${new Date(person.geniImmediateFamilyVerifiedAt).toLocaleString()}. You can refresh it or continue down the descendants.`
-        : 'Import this profile’s public immediate family before adding local relatives, or continue directly down its descendants.';
-    }
-    els['add-local-relative'].disabled = !complete || !!activeImport;
-  }
+  els['add-relative'].disabled = false;
+  els['add-relative'].removeAttribute('title');
+  els['ai-family-status'].textContent = `The generated prompt will preserve “${fullName(person)}” as anchor ID ${person.id}.`;
 }
 function renderParentOptions() {
   const options = ['<option value="">No profile selected</option>', ...Object.values(state.people).sort((a,b) => fullName(a).localeCompare(fullName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(fullName(person))}</option>`)].join('');
@@ -3076,16 +3151,34 @@ function render() {
   renderPersonList(); renderTimeline(); renderDetails(); renderParentOptions(); renderGlobalEventsEditor();
 }
 
-els['source-form'].addEventListener('submit', async event => {
-  event.preventDefault();
-  els['source-download-link'].hidden = true;
-  const submit = event.submitter; if (submit) submit.disabled = true;
-  toast('Requesting this profile from its official public API…', true);
-  try { await importFromSource(els['source-input'].value, els['source-provider'].value, els['source-depth'].value); els['source-input'].value = ''; }
-  catch (error) {
-    toast(`${error.message} GitHub Pages cannot proxy restricted requests; use an official export when direct access is unavailable.`, true);
-  } finally { if (submit) submit.disabled = false; }
+function openAiImport(anchorId = '') {
+  els['ai-import-prompt'].value = stitchPrompt(anchorId);
+  els['ai-import-json'].value = '';
+  els['ai-import-dialog'].showModal();
+}
+
+els['prepare-ai-import'].addEventListener('click', () => openAiImport(state.selectedId));
+els['prepare-ai-person-import'].addEventListener('click', () => openAiImport(state.selectedId));
+els['close-ai-import'].addEventListener('click', () => els['ai-import-dialog'].close());
+els['copy-ai-import-prompt'].addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(els['ai-import-prompt'].value);
+  } catch {
+    els['ai-import-prompt'].focus();
+    els['ai-import-prompt'].select();
+    document.execCommand('copy');
+  }
+  toast('Research prompt copied.');
 });
+els['stitch-ai-import'].addEventListener('click', () => {
+  try {
+    const raw = els['ai-import-json'].value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    if (!raw) throw new Error('Paste the returned JSON first.');
+    stitchImport(JSON.parse(raw));
+    els['ai-import-dialog'].close();
+  } catch (error) { toast(error.message || 'Could not stitch that JSON.', true); }
+});
+els['upload-ai-import'].addEventListener('click', () => els['file-input'].click());
 els['import-file-button'].addEventListener('click', () => els['file-input'].click());
 els['empty-file-button'].addEventListener('click', () => els['file-input'].click());
 els['file-input'].addEventListener('change', async () => {
@@ -3094,7 +3187,10 @@ els['file-input'].addEventListener('change', async () => {
     if (file) {
       const text = await file.text();
       if (/\.(ged|gedcom)$/i.test(file.name) || /^0\s+HEAD\b/m.test(text)) importGedcom(text, file.name);
-      else importBackup(JSON.parse(text));
+      else {
+        importBackup(JSON.parse(text));
+        if (els['ai-import-dialog'].open) els['ai-import-dialog'].close();
+      }
     }
   }
   catch (error) { toast(error.message || 'Could not read that backup.', true); }
@@ -3264,15 +3360,6 @@ els['edit-person'].addEventListener('click', () => {
   els['person-form'].elements.displayName.select();
 });
 els['cancel-person-edit'].addEventListener('click', () => { state.editingProfileId = ''; render(); });
-[
-  [els['load-immediate-family'], 'immediate'],
-  [els['load-descendants-two'], 'descendants-2'],
-  [els['load-descendants-all'], 'descendants-all']
-].forEach(([button, scope]) => button.addEventListener('click', async () => {
-  try { await runGeniFamilyImport(state.selectedId, scope); }
-  catch (error) { toast(error.message || 'Could not load this Geni family.', true); render(); }
-}));
-els['add-local-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
 els['add-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
 els['add-personal-event'].addEventListener('click', () => {
   const person = state.people[state.selectedId];
@@ -3403,15 +3490,3 @@ else {
 }
 els['tree-filter'].value = state.treeFilter;
 render();
-const pendingGeniIntent = sessionValue(GENI_IMPORT_INTENT_KEY);
-const pendingFamilyImport = geniFamilyImportIntent(pendingGeniIntent);
-if (initialGeniAccessToken && pendingFamilyImport) {
-  sessionValue(GENI_IMPORT_INTENT_KEY, null);
-  const { profileId, scope } = pendingFamilyImport;
-  state.selectedId = state.people[profileId] ? profileId : '';
-  render();
-  runGeniFamilyImport(profileId, scope).catch(error => {
-    toast(error.message || 'Could not load this Geni family.', true);
-    render();
-  });
-}

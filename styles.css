@@ -72,6 +72,7 @@ input, textarea, select { width: 100%; border: 1px solid #999; border-radius: 7p
 input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,.10); }
 .source-note { margin: 9px 0 0 !important; font-size: 9px !important; letter-spacing: .02em; }
 .start-tree-button { width: 100%; margin-top: 2px; }
+.ai-import-button { width: 100%; }
 .source-divider { display: flex; align-items: center; gap: 8px; margin: 13px 0 10px; color: #777; font-size: 8px; text-transform: uppercase; letter-spacing: .08em; }
 .source-divider::before, .source-divider::after { content: ''; flex: 1; height: 1px; background: #ddd; }
 .source-divider span { white-space: nowrap; }
@@ -256,8 +257,8 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-stepper button:disabled { color: #bbb; cursor: default; }
 .timeline-stepper output { overflow: hidden; color: #222; font-size: 9px; font-weight: 500; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .global-event-list { min-height: 44px; max-height: 290px; overflow-y: auto; }
-.geni-family-actions { display: grid; gap: 8px; margin: 0 0 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; background: #f5f5f5; }
-.geni-family-actions p { margin: 0 0 3px; color: #555; font-size: 10px; line-height: 1.45; }
+.ai-family-actions { display: grid; gap: 8px; margin: 0 0 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; background: #f5f5f5; }
+.ai-family-actions p { margin: 0 0 3px; color: #555; font-size: 10px; line-height: 1.45; }
 .geni-import-buttons { display: grid; gap: 6px; }
 .geni-import-buttons .button { justify-content: flex-start; text-align: left; }
 .geni-import-buttons .button.is-loading { border-color: #000; background: #000; color: #fff; }
@@ -268,6 +269,12 @@ dialog { width: 470px; padding: 0; border: 0; border-radius: 14px; box-shadow: v
 dialog::backdrop { background: rgba(0, 0, 0, .36); backdrop-filter: blur(3px); }
 .dialog-card { padding: 22px; }
 .dialog-heading { margin-bottom: 18px; }
+#ai-import-dialog { width: min(760px, calc(100vw - 80px)); }
+.ai-import-dialog-card { max-height: calc(100vh - 70px); overflow-y: auto; }
+.ai-import-dialog-card label { display: block; margin: 14px 0 7px; color: #555; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.ai-import-dialog-card textarea { display: block; margin-top: 6px; resize: vertical; font: 10px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: none; }
+.ai-prompt-links { display: flex; gap: 14px; margin: 8px 0 10px; font-size: 10px; font-weight: 700; }
+.ai-json-label { padding-top: 5px; border-top: 1px solid #ddd; }
 #events-dialog { position: fixed; z-index: 40; inset: 76px 0 28px auto; width: 370px; max-width: calc(100vw - 300px); height: auto; max-height: none; margin: 0; border-left: 1px solid #000; border-radius: 0; overflow: hidden; box-shadow: -16px 0 40px rgba(0,0,0,.16); }
 #events-dialog .dialog-card { box-sizing: border-box; height: 100%; overflow-y: auto; background: #fff; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }

@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="geni-app-id" content="2164">
   <meta name="color-scheme" content="light">
   <meta name="description" content="Lineage places family trees on a shared timeline, revealing genealogy against the backdrop of history.">
   <title>Lineage · Genealogy against the backdrop of history</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=44">
+  <link rel="stylesheet" href="./styles.css?v=45">
 </head>
 <body>
   <div class="app-shell">
@@ -47,29 +46,13 @@
             </div>
             <span class="source-monogram" aria-hidden="true">+</span>
           </div>
-          <p>Start with one person, then add their parents, spouses, and children. A Geni ID is optional.</p>
+          <p>Start with one person, then add their parents, spouses, and children. A public profile ID is optional.</p>
           <button class="button primary grow start-tree-button" id="new-tree-button" type="button">Start a new tree</button>
-          <div class="source-divider"><span>or import public profiles</span></div>
-          <div class="source-subheading"><span class="eyebrow">Geni shortcut</span><strong>Grow from a public profile</strong></div>
-          <form id="source-form">
-            <label class="sr-only" for="source-provider">Profile source</label>
-            <div class="source-options">
-            <select id="source-provider" class="source-provider">
-              <option value="geni" selected>Geni public profile</option>
-              <option value="auto">Detect another source</option>
-              <option value="wikitree">WikiTree public profile</option>
-            </select>
-            <label class="depth-select">Depth<select id="source-depth"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select></label>
-            </div>
-            <label class="sr-only" for="source-input">Public profile URL or ID</label>
-            <div class="input-row">
-              <input id="source-input" type="text" autocomplete="off" placeholder="Paste a public profile URL or ID">
-              <button class="icon-button accent" type="submit" aria-label="Import public profile">→</button>
-            </div>
-          </form>
-          <p class="source-note">OAuth required for importing · Public profiles only · 160-profile safety limit</p>
+          <div class="source-divider"><span>or research a public branch</span></div>
+          <div class="source-subheading"><span class="eyebrow">AI-assisted import</span><strong>Bring back structured public research</strong></div>
+          <p>Copy a prepared prompt into your preferred AI chatbot, then paste or upload its JSON response. Matching IDs are stitched into this tree.</p>
+          <button class="button secondary grow ai-import-button" id="prepare-ai-import" type="button">Prepare research prompt</button>
           <button class="example-button" id="royal-example-button" type="button">♔ Restore the bundled British royal line</button>
-          <a id="source-download-link" class="source-download-link" href="#" target="_blank" rel="noreferrer" hidden>Open official API JSON ↗</a>
         </section>
 
         <section class="people-section">
@@ -88,7 +71,7 @@
         </section>
 
         <footer class="source-footer">
-          <div class="source-links"><a href="https://www.geni.com" target="_blank" rel="noreferrer">Geni ↗</a><a href="https://www.wikitree.com" target="_blank" rel="noreferrer">WikiTree ↗</a></div>
+          <div class="source-links"><a href="https://github.com/liuyao12/genealogy-timeline" target="_blank" rel="noreferrer">GitHub ↗</a><a href="https://github.com/liuyao12/genealogy-timeline/blob/main/docs/import-schema.md" target="_blank" rel="noreferrer">JSON schema ↗</a></div>
           <p>Independent software. Not endorsed, operated, or sponsored by the linked genealogy services.</p>
         </footer>
       </aside>
@@ -175,16 +158,10 @@
               <small id="source-updated">Add a source URL to preserve attribution.</small>
             </div>
 
-            <div class="geni-family-actions" id="geni-family-actions" hidden>
-              <span class="eyebrow">Local Geni working copy</span>
-              <p id="geni-family-status">Load this profile’s complete public immediate family before adding local relatives.</p>
-              <div class="geni-import-buttons">
-                <button class="button secondary grow" id="load-immediate-family" type="button">Immediate family</button>
-                <button class="button secondary grow" id="load-descendants-two" type="button">Descendants · 2 generations</button>
-                <button class="button secondary grow" id="load-descendants-all" type="button">All descendants</button>
-              </div>
-              <small class="geni-import-note">All-descendants import stops at 160 profiles or 80 Geni requests. New public nodes appear as they arrive.</small>
-              <button class="button primary grow" id="add-local-relative" type="button" disabled>Add local relative</button>
+            <div class="ai-family-actions">
+              <span class="eyebrow">Extend this branch</span>
+              <p id="ai-family-status">Prepare an AI research prompt anchored to this profile, then stitch the returned JSON into the current tree.</p>
+              <button class="button secondary grow" id="prepare-ai-person-import" type="button">Prepare prompt for this profile</button>
             </div>
 
             <div class="form-actions" id="person-edit-actions" hidden>
@@ -262,7 +239,28 @@
     </div>
   </dialog>
 
+  <dialog id="ai-import-dialog">
+    <div class="dialog-card ai-import-dialog-card">
+      <div class="dialog-heading">
+        <div><span class="eyebrow">AI-assisted import</span><h2>Research, then stitch</h2></div>
+        <button class="close-detail" id="close-ai-import" type="button" aria-label="Close">×</button>
+      </div>
+      <p class="dialog-intro">Edit the request if needed, copy it into your preferred AI chatbot, then paste the chatbot’s JSON-only response below.</p>
+      <label>Research prompt<textarea id="ai-import-prompt" rows="12" spellcheck="false"></textarea></label>
+      <div class="ai-prompt-links">
+        <a href="https://github.com/liuyao12/genealogy-timeline/blob/main/docs/import-schema.md" target="_blank" rel="noreferrer">Schema ↗</a>
+        <a href="https://github.com/liuyao12/genealogy-timeline/blob/main/examples/stitch-import.example.json" target="_blank" rel="noreferrer">Example JSON ↗</a>
+      </div>
+      <button class="button secondary" id="copy-ai-import-prompt" type="button">Copy prompt</button>
+      <label class="ai-json-label">Returned JSON<textarea id="ai-import-json" rows="8" spellcheck="false" placeholder="Paste the JSON object here"></textarea></label>
+      <div class="dialog-actions">
+        <button class="button secondary" id="upload-ai-import" type="button">Choose JSON file</button>
+        <button class="button primary" id="stitch-ai-import" type="button">Stitch into tree</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=75"></script>
+  <script type="module" src="./app.js?v=76"></script>
 </body>
 </html>

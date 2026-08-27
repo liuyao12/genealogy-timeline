@@ -1,0 +1,49 @@
+{
+  "schema": "lineage-stitch",
+  "version": 1,
+  "focusId": "profile-g6000000003409427757",
+  "people": {
+    "profile-g6000000003760873898": {
+      "id": "profile-g6000000003760873898",
+      "displayName": "Henry VII, King of England",
+      "gender": "male",
+      "birthYear": "1457",
+      "deathYear": "1509",
+      "children": ["profile-g6000000003409427757"],
+      "partners": ["profile-g5111879481690102566"],
+      "spouses": ["profile-g5111879481690102566"],
+      "marriageYears": { "profile-g5111879481690102566": "1486" },
+      "sourceUrl": "https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898",
+      "sourceId": "g6000000003760873898",
+      "sourceProvider": "geni"
+    },
+    "profile-g5111879481690102566": {
+      "id": "profile-g5111879481690102566",
+      "displayName": "Elizabeth of York, Queen consort of England",
+      "gender": "female",
+      "birthYear": "1466",
+      "deathYear": "1503",
+      "children": ["profile-g6000000003409427757"],
+      "partners": ["profile-g6000000003760873898"],
+      "spouses": ["profile-g6000000003760873898"],
+      "marriageYears": { "profile-g6000000003760873898": "1486" },
+      "sourceUrl": "https://www.geni.com/profile/index/5111879481690102566",
+      "sourceId": "g5111879481690102566",
+      "sourceProvider": "geni"
+    },
+    "profile-g6000000003409427757": {
+      "id": "profile-g6000000003409427757",
+      "displayName": "Arthur Tudor, Prince of Wales",
+      "gender": "male",
+      "birthYear": "1486",
+      "deathYear": "1502",
+      "parents": [
+        "profile-g6000000003760873898",
+        "profile-g5111879481690102566"
+      ],
+      "sourceUrl": "https://www.geni.com/profile/index/6000000003409427757",
+      "sourceId": "g6000000003409427757",
+      "sourceProvider": "geni"
+    }
+  }
+}

@@ -27,7 +27,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 9;
+const BRITISH_ROYAL_STARTER_VERSION = 10;
 
 function sessionValue(key, value) {
   try {
@@ -59,6 +59,7 @@ const state = {
   reignColor: DEFAULT_REIGN_EVENT_COLOR,
   timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
   timelineNodeHeight: DEFAULT_TIMELINE_NODE_HEIGHT,
+  asOfYear: null,
   treeFilter: '',
   relationVisibility: {},
   starterDataVersion: 0,
@@ -80,8 +81,9 @@ const els = Object.fromEntries([
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog', 'add-dialog-heading',
   'prepare-ai-person-import', 'ai-family-status',
   'relationship-households', 'add-relative',
+  'name-periods-list', 'name-period-name', 'name-period-start', 'name-period-end', 'add-name-period',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
-  'events-dialog', 'close-events-dialog', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
+  'events-dialog', 'close-events-dialog', 'timeline-as-of-year', 'set-timeline-as-of', 'clear-timeline-as-of', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'relation-type', 'new-tree-button', 'new-tree-dialog', 'new-tree-form', 'toast', 'save-status', 'tree-filter', 'royal-example-button',
   'ai-import-dialog', 'close-ai-import', 'ai-import-prompt', 'copy-ai-import-prompt', 'ai-import-json', 'upload-ai-import', 'stitch-ai-import'
 ].map(id => [id, document.getElementById(id)]));
@@ -111,7 +113,7 @@ function uniqueId(prefix = 'id') {
 }
 function array(value) { return Array.isArray(value) ? value.filter(Boolean).map(String) : []; }
 function initials(person) {
-  const primaryName = clean(person.displayName).split(',')[0];
+  const primaryName = visibleName(person).split(',')[0];
   const displayParts = primaryName.split(/\s+/).filter(Boolean);
   const parts = displayParts.length
     ? [displayParts[0], displayParts.length > 1 ? displayParts.at(-1) : ''].filter(Boolean)
@@ -121,8 +123,22 @@ function initials(person) {
 function fullName(person) {
   return clean(person.displayName) || [person.firstName, person.lastName].filter(Boolean).join(' ') || 'Unnamed profile';
 }
+function nameAtYear(person, year) {
+  const targetYear = numericYear(year);
+  const periods = person?.namePeriods || [];
+  if (targetYear == null || !periods.length) return fullName(person);
+  const exact = periods.filter(period =>
+    (period.startYear == null || period.startYear <= targetYear)
+    && (period.endYear == null || period.endYear >= targetYear)
+  ).sort((a, b) => (b.startYear ?? -Infinity) - (a.startYear ?? -Infinity));
+  if (exact[0]?.name) return exact[0].name;
+  const reached = periods.filter(period => period.startYear != null && period.startYear <= targetYear)
+    .sort((a, b) => b.startYear - a.startYear);
+  return reached[0]?.name || periods[0]?.name || fullName(person);
+}
+function visibleName(person) { return nameAtYear(person, state.asOfYear); }
 function searchableText(person) {
-  return [fullName(person), person.title].filter(Boolean).join(' ').toLocaleLowerCase();
+  return [fullName(person), person.title, ...(person.namePeriods || []).map(period => period.name)].filter(Boolean).join(' ').toLocaleLowerCase();
 }
 function matchesKeyword(person, keyword) {
   const fragment = clean(keyword).toLocaleLowerCase();
@@ -246,6 +262,24 @@ function normalizePersonalEvents(events) {
   return [...new Map(normalized.map(event => [`${event.name.toLocaleLowerCase()}|${event.startYear}|${event.endYear}`, event])).values()];
 }
 
+function normalizeNamePeriods(periods) {
+  const normalized = (Array.isArray(periods) ? periods : []).map(period => {
+    const name = clean(period?.name || period?.displayName || period?.display_name || period?.label);
+    let startYear = numericYear(period?.startYear ?? period?.start_year ?? period?.fromYear ?? period?.from);
+    let endYear = numericYear(period?.endYear ?? period?.end_year ?? period?.toYear ?? period?.to);
+    if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
+    return {
+      id: clean(period?.id) || `name-${encodeURIComponent(name.toLocaleLowerCase())}-${startYear ?? 'open'}-${endYear ?? 'open'}`,
+      name,
+      startYear,
+      endYear,
+      sourceUrl: validPublicUrl(period?.sourceUrl || period?.source_url || '')
+    };
+  }).filter(period => period.name);
+  normalized.sort((a, b) => (a.startYear ?? -Infinity) - (b.startYear ?? -Infinity) || (a.endYear ?? Infinity) - (b.endYear ?? Infinity));
+  return [...new Map(normalized.map(period => [period.id, period])).values()];
+}
+
 function normalizeGlobalEvents(events) {
   return (Array.isArray(events) ? events : []).map(event => {
     const name = clean(event?.name || event?.title || event?.label);
@@ -361,6 +395,7 @@ function normalizePerson(source, fallbackId) {
     marriageYears,
     relationshipEndYears,
     relationshipEndStatuses,
+    namePeriods: normalizeNamePeriods(source.namePeriods || source.historicalNames || source.names),
     personalEvents: normalizePersonalEvents([...(Array.isArray(source.personalEvents) ? source.personalEvents : []), ...extractGeniReignFacts(source)]),
     sourceUrl,
     sourceId: clean(source.sourceId || (/^profile-/i.test(id) ? id : '')),
@@ -721,6 +756,27 @@ function createBritishRoyalSample() {
     if (!people[id(slug)]) return;
     people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal', color: state.reignColor }));
   });
+  const historicalNames = {
+    'henry-vii': [
+      { id: 'henry-vii-before-accession', name: 'Henry Tudor', startYear: 1457, endYear: 1485, sourceUrl: 'https://www.royal.uk/henry-vii' },
+      { id: 'henry-vii-reign-name', name: 'Henry VII, King of England', startYear: 1485, endYear: 1509, sourceUrl: 'https://www.royal.uk/henry-vii' }
+    ],
+    'elizabeth-ii': [
+      { id: 'elizabeth-ii-york', name: 'Princess Elizabeth of York', startYear: 1926, endYear: 1936, sourceUrl: historyUrl },
+      { id: 'elizabeth-ii-princess', name: 'The Princess Elizabeth', startYear: 1936, endYear: 1947, sourceUrl: historyUrl },
+      { id: 'elizabeth-ii-edinburgh', name: 'The Princess Elizabeth, Duchess of Edinburgh', startYear: 1947, endYear: 1952, sourceUrl: historyUrl },
+      { id: 'elizabeth-ii-reign-name', name: 'Elizabeth II, Queen of the United Kingdom', startYear: 1952, endYear: 2022, sourceUrl: historyUrl }
+    ],
+    'charles-iii': [
+      { id: 'charles-iii-edinburgh', name: 'Prince Charles of Edinburgh', startYear: 1948, endYear: 1952, sourceUrl: historyUrl },
+      { id: 'charles-iii-cornwall', name: 'Charles, Duke of Cornwall', startYear: 1952, endYear: 1958, sourceUrl: historyUrl },
+      { id: 'charles-iii-prince', name: 'Charles, Prince of Wales', startYear: 1958, endYear: 2022, sourceUrl: historyUrl },
+      { id: 'charles-iii-reign-name', name: 'Charles III, King of the United Kingdom', startYear: 2022, endYear: null, sourceUrl: historyUrl }
+    ]
+  };
+  Object.entries(historicalNames).forEach(([slug, periods]) => {
+    if (people[id(slug)]) people[id(slug)].namePeriods = normalizeNamePeriods(periods);
+  });
   return people;
 }
 
@@ -736,6 +792,7 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   const button = els['royal-example-button'];
   state.people = createBritishRoyalSample();
   state.globalEvents = createBritishHistoryEvents();
+  state.asOfYear = null;
   state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
   state.selectedId = '';
   state.ephemeral = false;
@@ -844,6 +901,7 @@ function restore() {
     state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
     state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
     state.timelineNodeHeight = timelineNodeHeight(saved.timelineNodeHeight);
+    state.asOfYear = numericYear(saved.asOfYear);
     state.treeFilter = clean(saved.treeFilter);
     if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
     state.relationVisibility = migratedVisibility.relationVisibility;
@@ -860,7 +918,7 @@ function persist(message = 'All changes saved locally') {
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion, manualTree: state.manualTree }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, asOfYear: state.asOfYear, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion, manualTree: state.manualTree }));
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -1239,6 +1297,7 @@ function mergePersonRecords(existing, incoming) {
   merged.marriageYears = { ...incoming.marriageYears, ...existing.marriageYears };
   merged.relationshipEndYears = { ...incoming.relationshipEndYears, ...existing.relationshipEndYears };
   merged.relationshipEndStatuses = { ...incoming.relationshipEndStatuses, ...existing.relationshipEndStatuses };
+  merged.namePeriods = normalizeNamePeriods([...incoming.namePeriods, ...existing.namePeriods]);
   merged.personalEvents = normalizePersonalEvents([...incoming.personalEvents, ...existing.personalEvents]);
   merged.sourceUrl = incoming.sourceUrl || existing.sourceUrl;
   merged.sourceId = incoming.sourceId || existing.sourceId;
@@ -1570,7 +1629,8 @@ function stitchPrompt(anchorId = '') {
       isLiving: person.isLiving,
       sourceUrl: person.sourceUrl || null,
       sourceId: person.sourceId || null,
-      sourceProvider: person.sourceProvider || null
+      sourceProvider: person.sourceProvider || null,
+      namePeriods: person.namePeriods
     };
   });
   const task = anchorId && state.people[anchorId]
@@ -1594,6 +1654,8 @@ Requirements:
 - Make parent/child and partner/spouse relationships reciprocal. Group children under the correct two parents.
 - Give marriage years in "marriageYears" keyed by spouse ID. Use relationshipEndStatuses values "annulled", "divorced", or "ended" when supported.
 - Prefer displayName as publicly displayed, including titles useful for searching. Use four-digit years where known; use null or omit fields when unknown.
+- Research the names and titles by which each person was known during different periods of life. Consult Wikipedia and other reliable public biographical or official sources in addition to genealogy profiles.
+- Put those chronological labels in "namePeriods" as objects with id, name, startYear, endYear, and sourceUrl. Use open null boundaries when necessary, avoid overlapping periods, and do not invent unsupported titles.
 - Include sourceUrl, sourceId, and sourceProvider for every researched profile.
 - Set focusId to the main person researched. Do not include global events unless I explicitly ask for them.
 
@@ -1683,6 +1745,7 @@ function importBackup(payload) {
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);
   state.timelineYearWidth = timelineYearWidth(payload.timelineYearWidth || payload.db?.timelineYearWidth);
   state.timelineNodeHeight = timelineNodeHeight(payload.timelineNodeHeight || payload.db?.timelineNodeHeight);
+  state.asOfYear = numericYear(payload.asOfYear || payload.db?.asOfYear);
   state.treeFilter = clean(payload.treeFilter || payload.db?.treeFilter);
   state.relationVisibility = migrateRelationVisibility(payload.relationVisibility || payload.db?.relationVisibility).relationVisibility;
   const people = migrateGeniPeople(rawPeople).people;
@@ -1716,7 +1779,7 @@ function importBackup(payload) {
 function exportBackup() {
   const payload = {
     schema: 'lineage-web', version: 1, exportedAt: new Date().toISOString(),
-    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, manualTree: state.manualTree,
+    title: state.title, activeRootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, asOfYear: state.asOfYear, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, manualTree: state.manualTree,
     provenance: { sources: ['public APIs', 'linked public profiles', 'portable tree files'], disclaimer: 'Independent software; not endorsed by linked genealogy services.' }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2153,6 +2216,7 @@ function renderTimeline() {
   }
 
   const currentYear = new Date().getFullYear();
+  const historicalYear = numericYear(state.asOfYear);
   const yearWidth = state.timelineYearWidth;
   const rowHeight = state.timelineNodeHeight;
   const rowStep = rowHeight + 6;
@@ -2166,9 +2230,10 @@ function renderTimeline() {
     const rawWidth = Math.max(0, (endYear(person) - birthYear(person)) * yearWidth);
     return person.isLiving ? rawWidth : Math.max(2, rawWidth);
   };
-  const minYear = Math.floor((Math.min(...people.map(birthYear)) - 40) / 20) * 20;
+  const earliestTimelineYear = Math.min(...people.map(birthYear), ...(historicalYear == null ? [] : [historicalYear]));
+  const minYear = Math.floor((earliestTimelineYear - 40) / 20) * 20;
   const latestLifeYear = Math.max(...people.map(endYear), ...(people.some(person => person.isLiving) ? [currentYear] : []));
-  const maxYear = Math.ceil((latestLifeYear + 20) / 20) * 20;
+  const maxYear = Math.ceil((Math.max(latestLifeYear, historicalYear ?? latestLifeYear) + 20) / 20) * 20;
   // A year without a month/day is represented at the midpoint of that year.
   const xForYear = year => left + (year - minYear + 0.5) * yearWidth;
 
@@ -2200,7 +2265,7 @@ function renderTimeline() {
     if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
     childrenByParent.get(parentId).push(person.id);
   }));
-  const byBirth = (a, b) => birthYear(state.people[a]) - birthYear(state.people[b]) || fullName(state.people[a]).localeCompare(fullName(state.people[b]));
+  const byBirth = (a, b) => birthYear(state.people[a]) - birthYear(state.people[b]) || visibleName(state.people[a]).localeCompare(visibleName(state.people[b]));
   childrenByParent.forEach(ids => ids.sort(byBirth));
   // Start layout traversal from independently surviving lineage occurrences.
   // A spouse retained only through the other side of a cousin marriage must
@@ -2354,7 +2419,7 @@ function renderTimeline() {
   const layoutNodes = layoutEntries.map((entry, index) => {
     const person = state.people[entry.id];
     const lifespanWidth = lifespanWidthFor(person);
-    const labelWidth = 38 + estimateTextWidth(fullName(person)) + 12 + estimateTextWidth(life(person)) + 18;
+    const labelWidth = 38 + estimateTextWidth(visibleName(person)) + 12 + estimateTextWidth(life(person)) + 18;
     return { ...entry, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth) };
   });
   // Horizontal relationship segments remain collision obstacles, while their
@@ -2437,6 +2502,12 @@ function renderTimeline() {
   rulerMarks.append(svg('line', { x1: currentYearX, y1: 25, x2: currentYearX, y2: rulerBaseline, class: 'year-tick current-year' }));
   rulerMarks.append(svg('text', { x: currentYearX, y: 22, 'text-anchor': 'middle', class: 'current-year-label' }, String(currentYear)));
   rulerMarks.append(svg('line', { x1: left, y1: rulerBaseline, x2: xForYear(maxYear), y2: rulerBaseline, class: 'ruler-line' }));
+  if (historicalYear != null) {
+    const historicalX = xForYear(historicalYear);
+    rulerMarks.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: 0, width: Math.max(0, xForYear(maxYear) - historicalX), height: rulerHeight }));
+    rulerMarks.append(svg('line', { class: 'year-tick as-of-year', x1: historicalX, y1: 7, x2: historicalX, y2: rulerBaseline }));
+    rulerMarks.append(svg('text', { class: 'as-of-year-label', x: historicalX + 4, y: 12 }, `As of ${historicalYear}`));
+  }
   ruler.append(rulerMarks);
 
   const globalEvents = svg('g', { class: 'global-events' });
@@ -2494,7 +2565,7 @@ function renderTimeline() {
     });
     if (parentYs.length > 1 && Math.max(...parentYs) > Math.min(...parentYs)) {
       const marriageLine = svg('line', { x1: trunkX, y1: Math.min(...parentYs), x2: trunkX, y2: Math.max(...parentYs), class: `timeline-edge family-stem vertical ${marriageClass}`, 'data-family-key': key, 'data-marriage-year': recordedMarriageYear || '' });
-      if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => fullName(state.people[id])).join(' and ')}`));
+      if (isDivorced) marriageLine.append(svg('title', {}, `Divorced marriage: ${parentIds.map(id => visibleName(state.people[id])).join(' and ')}`));
       connectors.append(marriageLine);
     }
     // The continuous stem stays behind the whole tree. Repaint only the two
@@ -2507,7 +2578,7 @@ function renderTimeline() {
           x: trunkX,
           year: recordedMarriageYear,
           className: marriageClass,
-          title: `Married ${fullName(state.people[parentIds.find(id => id !== parentId)])} in ${recordedMarriageYear}`
+          title: `Married ${visibleName(state.people[parentIds.find(id => id !== parentId)])} in ${recordedMarriageYear}`
         });
       });
     }
@@ -2548,7 +2619,7 @@ function renderTimeline() {
         'data-source-family-key': natalFamilyKey,
         'data-transported-id': transportedId
       });
-      transportLine.append(svg('title', {}, `${fullName(state.people[transportedId])} transported from the biological parents’ marriage line to this marriage`));
+      transportLine.append(svg('title', {}, `${visibleName(state.people[transportedId])} transported from the biological parents’ marriage line to this marriage`));
       connectors.append(transportLine);
       if (Math.abs(transportX - trunkX) >= 0.5) {
         connectors.append(svg('path', {
@@ -2595,8 +2666,9 @@ function renderTimeline() {
     const nodeShape = attrs => person.isLiving
       ? svg('path', { ...attrs, d: leftRoundedRectPath(lifespanWidth, rowHeight, cornerRadius) })
       : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: cornerRadius, ry: cornerRadius });
-    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${fullName(person)}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
-    group.append(svg('title', {}, `${fullName(person)} · ${life(person)}`));
+    const historicalDisplayName = visibleName(person);
+    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    group.append(svg('title', {}, `${historicalDisplayName} · ${life(person)}`));
     group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
     const eventClip = svg('clipPath', { id: eventClipId, clipPathUnits: 'userSpaceOnUse' });
@@ -2678,7 +2750,7 @@ function renderTimeline() {
     // rendered elsewhere does not receive one.
     const showBranchControl = !isSpouseNode || (isCollapsed && hasChildren);
     const icon = showBranchControl
-      ? svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${fullName(person)}` : 'No descendants' })
+      ? svg('g', { class: `timeline-expander ${hasChildren ? (isCollapsed ? 'collapsed' : 'expanded') : 'leaf'}`, role: hasChildren ? 'button' : 'img', tabindex: hasChildren ? '0' : '-1', 'aria-label': hasChildren ? `${isCollapsed ? 'Expand' : 'Collapse'} descendants of ${historicalDisplayName}` : 'No descendants' })
       : svg('g', { class: 'timeline-marriage-link', role: 'img', 'aria-label': 'Marriage link' });
     const nodeCenterY = rowHeight / 2;
     if (showBranchControl) {
@@ -2702,7 +2774,7 @@ function renderTimeline() {
     nodeDefs.append(textMask);
     const makeLabel = className => {
       const text = svg('text', { class: className, x: 38, y: nodeCenterY + 1 });
-      text.append(svg('tspan', { class: 'timeline-name' }, fullName(person)));
+      text.append(svg('tspan', { class: 'timeline-name' }, historicalDisplayName));
       text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, life(person)));
       return text;
     };
@@ -2716,6 +2788,13 @@ function renderTimeline() {
     group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') selectPerson(id); });
     canvas.append(group);
   });
+  if (historicalYear != null) {
+    const historicalX = xForYear(historicalYear);
+    const snapshotLayer = svg('g', { class: 'timeline-as-of-layer', 'aria-label': `Historical snapshot at ${historicalYear}` });
+    snapshotLayer.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: eventTop, width: Math.max(0, xForYear(maxYear) - historicalX + TIMELINE_PAN_MARGIN.right), height: eventBottom - eventTop }));
+    snapshotLayer.append(svg('line', { class: 'timeline-as-of-line', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom }));
+    canvas.append(snapshotLayer);
+  }
   canvas.style.transform = `scale(${state.zoom})`;
   if (!timelineViewportInitialized) {
     timelineViewportInitialized = true;
@@ -2779,7 +2858,7 @@ function selectPerson(id, { center = false } = {}) {
 function renderPersonList() {
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const people = Object.values(state.people).filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
-  people.sort((a, b) => fullName(a).localeCompare(fullName(b)));
+  people.sort((a, b) => visibleName(a).localeCompare(visibleName(b)));
   els['people-count'].textContent = people.length;
   els['people-label'].textContent = keywords.length ? (people.length === 1 ? 'match' : 'matches') : (people.length === 1 ? 'profile' : 'profiles');
   els['people-list'].replaceChildren(...people.map(person => {
@@ -2792,10 +2871,22 @@ function renderPersonList() {
     gender.textContent = person.gender === 'male' ? '♂' : person.gender === 'female' ? '♀' : '·';
     const summary = document.createElement('span');
     const name = document.createElement('strong');
-    appendHighlightedName(name, fullName(person), keywords);
+    const displayedName = visibleName(person);
+    appendHighlightedName(name, displayedName, keywords);
     const lifespan = document.createElement('small');
     lifespan.textContent = life(person);
-    summary.append(name, lifespan);
+    const matchedAlias = keywords.length && !keywords.some(keyword => displayedName.toLocaleLowerCase().includes(keyword))
+      ? person.namePeriods.find(period => keywords.some(keyword => period.name.toLocaleLowerCase().includes(keyword)))
+      : null;
+    summary.append(name);
+    if (matchedAlias) {
+      const alias = document.createElement('small');
+      alias.className = 'person-list-alias';
+      alias.append(document.createTextNode('Also known as '));
+      appendHighlightedName(alias, matchedAlias.name, keywords);
+      summary.append(alias);
+    }
+    summary.append(lifespan);
     button.append(gender, summary);
     button.addEventListener('click', () => selectPerson(person.id, { center: true }));
     return button;
@@ -2916,6 +3007,42 @@ function personalEventAgePrefix(person, event) {
   return `Age ${startAge}`;
 }
 
+function formatNamePeriod(period) {
+  const start = period.startYear == null ? 'earlier' : period.startYear;
+  const end = period.endYear == null ? 'later' : period.endYear;
+  return `${start}–${end}`;
+}
+
+function renderNamePeriods(person) {
+  const list = els['name-periods-list'];
+  if (!person?.namePeriods?.length) {
+    const empty = document.createElement('span');
+    empty.className = 'event-editor-empty';
+    empty.textContent = 'No dated names yet; the default name is used.';
+    list.replaceChildren(empty);
+    return;
+  }
+  list.replaceChildren(...person.namePeriods.map((period, index) => {
+    const row = document.createElement('div');
+    row.className = 'name-period-row';
+    const text = period.sourceUrl ? document.createElement('a') : document.createElement('strong');
+    text.textContent = period.name;
+    if (period.sourceUrl) { text.href = period.sourceUrl; text.target = '_blank'; text.rel = 'noreferrer'; }
+    const years = document.createElement('small');
+    years.textContent = formatNamePeriod(period);
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.className = 'event-delete'; remove.textContent = '×';
+    remove.setAttribute('aria-label', `Delete name period ${period.name}`);
+    remove.addEventListener('click', () => {
+      person.namePeriods.splice(index, 1);
+      persist('Historical name deleted');
+      render();
+    });
+    row.append(text, years, remove);
+    return row;
+  }));
+}
+
 function renderPersonalEvents(person) {
   const list = els['personal-events-list'];
   if (!person?.personalEvents?.length) {
@@ -2961,7 +3088,7 @@ function renderRelationshipHouseholds(person) {
   const container = els['relationship-households'];
   if (!person) { container.replaceChildren(); return; }
   const visibility = buildTimelineVisibility();
-  const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || fullName(state.people[firstId]).localeCompare(fullName(state.people[secondId]));
+  const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]));
   const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
     const firstYear = marriageYearFor(person.id, firstId);
     const secondYear = marriageYearFor(person.id, secondId);
@@ -3004,7 +3131,7 @@ function renderRelationshipHouseholds(person) {
     const copy = document.createElement('span');
     copy.className = 'relationship-copy';
     const name = document.createElement('strong');
-    name.textContent = fullName(state.people[targetId]);
+    name.textContent = visibleName(state.people[targetId]);
     const meta = document.createElement('small');
     meta.textContent = detail;
     copy.append(name, meta);
@@ -3076,7 +3203,7 @@ function renderRelationshipHouseholds(person) {
         targetId: group.partnerId,
         kind: 'spouse',
         visible,
-        label: fullName(partner),
+        label: visibleName(partner),
         detail: [formal && year && `Married ${year}`, !formal && year && `Relationship ${year}`, ended].filter(Boolean).join(' · ')
       }));
     } else {
@@ -3104,7 +3231,7 @@ function renderDetails() {
   els['detail-empty'].hidden = !!person;
   els['person-form'].hidden = !person;
   if (!person) return;
-  els['person-heading'].textContent = fullName(person);
+  els['person-heading'].textContent = visibleName(person);
   els['person-life'].textContent = life(person);
   els['person-avatar'].textContent = initials(person);
   els['person-avatar'].style.background = '#fff';
@@ -3130,13 +3257,14 @@ function renderDetails() {
     ? `Imported ${new Date(person.importedAt).toLocaleString()}.`
     : person.sourceUrl ? 'Public source linked to this local profile.' : 'No public source is linked.';
   renderRelationshipHouseholds(person);
+  renderNamePeriods(person);
   renderPersonalEvents(person);
   els['add-relative'].disabled = false;
   els['add-relative'].removeAttribute('title');
   els['ai-family-status'].textContent = `The generated prompt will preserve “${fullName(person)}” as anchor ID ${person.id}.`;
 }
 function renderParentOptions() {
-  const options = ['<option value="">No profile selected</option>', ...Object.values(state.people).sort((a,b) => fullName(a).localeCompare(fullName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(fullName(person))}</option>`)].join('');
+  const options = ['<option value="">No profile selected</option>', ...Object.values(state.people).sort((a,b) => visibleName(a).localeCompare(visibleName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(visibleName(person))}</option>`)].join('');
   els['parent-select'].innerHTML = options;
 }
 function render() {
@@ -3206,6 +3334,17 @@ function syncTimelineSettingControls() {
   };
   sync(TIMELINE_YEAR_WIDTH_OPTIONS, state.timelineYearWidth, els['timeline-scale-value'], els['timeline-scale-down'], els['timeline-scale-up']);
   sync(TIMELINE_NODE_HEIGHT_OPTIONS, state.timelineNodeHeight, els['timeline-height-value'], els['timeline-height-down'], els['timeline-height-up']);
+  els['timeline-as-of-year'].value = state.asOfYear ?? '';
+  els['clear-timeline-as-of'].disabled = state.asOfYear == null;
+}
+
+function applyHistoricalYear() {
+  const year = numericYear(els['timeline-as-of-year'].value);
+  if (year == null) return toast('Enter a year for the historical snapshot.', true);
+  state.asOfYear = year;
+  persist(`Historical snapshot set to ${year}`);
+  render();
+  syncTimelineSettingControls();
 }
 
 function stepTimelineSetting(stateKey, options, direction, message) {
@@ -3230,6 +3369,14 @@ els['global-events-button'].addEventListener('click', () => {
   els['events-dialog'].show();
 });
 els['close-events-dialog'].addEventListener('click', () => els['events-dialog'].close());
+els['set-timeline-as-of'].addEventListener('click', applyHistoricalYear);
+els['timeline-as-of-year'].addEventListener('keydown', event => { if (event.key === 'Enter') applyHistoricalYear(); });
+els['clear-timeline-as-of'].addEventListener('click', () => {
+  state.asOfYear = null;
+  persist('Historical snapshot cleared');
+  render();
+  syncTimelineSettingControls();
+});
 els['timeline-scale-down'].addEventListener('click', () => stepTimelineSetting('timelineYearWidth', TIMELINE_YEAR_WIDTH_OPTIONS, -1, 'Timeline scale updated'));
 els['timeline-scale-up'].addEventListener('click', () => stepTimelineSetting('timelineYearWidth', TIMELINE_YEAR_WIDTH_OPTIONS, 1, 'Timeline scale updated'));
 els['timeline-height-down'].addEventListener('click', () => stepTimelineSetting('timelineNodeHeight', TIMELINE_NODE_HEIGHT_OPTIONS, -1, 'Node height updated'));
@@ -3283,6 +3430,7 @@ els['new-tree-form'].addEventListener('submit', event => {
   state.title = title || 'Untitled family';
   state.people = {};
   state.globalEvents = [];
+  state.asOfYear = null;
   state.rootId = '';
   state.selectedId = '';
   state.editingProfileId = '';
@@ -3361,6 +3509,23 @@ els['edit-person'].addEventListener('click', () => {
 });
 els['cancel-person-edit'].addEventListener('click', () => { state.editingProfileId = ''; render(); });
 els['add-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
+els['add-name-period'].addEventListener('click', () => {
+  const person = state.people[state.selectedId];
+  if (!person) return;
+  const name = clean(els['name-period-name'].value);
+  let startYear = numericYear(els['name-period-start'].value);
+  let endYear = numericYear(els['name-period-end'].value);
+  if (!name) return toast('Enter the historical name or title.', true);
+  if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
+  person.namePeriods = normalizeNamePeriods([...person.namePeriods, {
+    id: uniqueId('name'), name, startYear, endYear, sourceUrl: '', source: 'local'
+  }]);
+  els['name-period-name'].value = '';
+  els['name-period-start'].value = '';
+  els['name-period-end'].value = '';
+  persist('Historical name added');
+  render();
+});
 els['add-personal-event'].addEventListener('click', () => {
   const person = state.people[state.selectedId];
   if (!person) return;

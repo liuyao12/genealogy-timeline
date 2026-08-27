@@ -128,7 +128,12 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-grid .decade-label { fill: #777; }
 .timeline-grid .year-tick.current-year { stroke: #e65100; stroke-width: 2; }
 .timeline-grid .current-year-label { fill: #e65100; font-weight: 700; }
+.timeline-grid .year-tick.as-of-year { stroke: #000; stroke-width: 2; }
+.timeline-grid .as-of-year-label { fill: #000; font-weight: 700; }
 .timeline-current-year-line { fill: none; stroke: #e65100; stroke-width: 1.5; opacity: .9; vector-effect: non-scaling-stroke; pointer-events: none; }
+.timeline-as-of-layer, .timeline-as-of-dim, .timeline-as-of-line { pointer-events: none; }
+.timeline-as-of-dim { fill: #fff; fill-opacity: .68; }
+.timeline-as-of-line { fill: none; stroke: #000; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .timeline-edge { fill: none; stroke: #000; stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-edge.paternal { stroke-width: 2; }
 .timeline-edge.maternal { stroke: #555; stroke-width: 1.25; }
@@ -231,6 +236,13 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .event-editor-row { display: grid; grid-template-columns: minmax(0,1fr) auto 30px 24px; align-items: center; gap: 7px; min-height: 30px; }
 .event-editor-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 600; }
 .event-editor-row small { color: #555; font: 9px Consolas, monospace; }
+.name-period-section { border-top: 1px solid #ddd; }
+.name-period-add-row { display: grid; grid-template-columns: minmax(0,1fr) 48px 48px 30px; align-items: center; gap: 6px; }
+.name-period-add-row input { min-width: 0; padding: 7px 8px; font-size: 10px; }
+.name-period-row { display: grid; grid-template-columns: minmax(0,1fr) auto 24px; align-items: center; gap: 7px; min-height: 30px; }
+.name-period-row strong, .name-period-row a { overflow: hidden; color: #111; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.name-period-row a { text-decoration: underline; text-decoration-color: #aaa; text-underline-offset: 2px; }
+.name-period-row small { color: #555; font: 9px Consolas, monospace; }
 .event-delete { border: 0; background: transparent; color: #555; cursor: pointer; font-size: 18px; }
 .event-add-row { display: grid; align-items: center; gap: 6px; }
 .personal-event-add-row { grid-template-columns: minmax(0,1fr) 52px 52px 30px 30px; }
@@ -250,6 +262,13 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .dialog-intro { margin: -7px 0 17px; color: #666; font-size: 11px; line-height: 1.5; }
 .new-tree-intro { margin: 8px 0 16px; }
 .timeline-display-settings { display: grid; gap: 8px; margin: -5px 0 16px; padding: 10px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; }
+.timeline-as-of-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid #ddd; color: #222; font-size: 11px; font-weight: 600; }
+.timeline-as-of-controls { width: 190px; display: grid; grid-template-columns: 58px 44px 1fr; gap: 4px; }
+.timeline-as-of-controls input, .timeline-as-of-controls button { box-sizing: border-box; height: 30px; border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; font-size: 9px; }
+.timeline-as-of-controls input { min-width: 0; padding: 5px 7px; }
+.timeline-as-of-controls button { padding: 0 6px; cursor: pointer; }
+.timeline-as-of-controls button:hover:not(:disabled) { background: #eee; }
+.timeline-as-of-controls button:disabled { color: #aaa; cursor: default; }
 .timeline-step-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #222; font-size: 11px; font-weight: 600; }
 .timeline-stepper { width: 190px; display: grid; grid-template-columns: 28px minmax(0,1fr) 28px; align-items: center; border: 1px solid #999; border-radius: 7px; overflow: hidden; background: #fff; }
 .timeline-stepper button { width: 28px; height: 30px; padding: 0; border: 0; background: #fff; color: #111; cursor: pointer; font: 18px/1 Georgia, serif; }

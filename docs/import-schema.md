@@ -51,6 +51,15 @@ Never use a bare name as an ID. Every ID mentioned in a relationship array must 
   "marriageYears": { "married-partner-id": "1925" },
   "relationshipEndYears": { "married-partner-id": "1940" },
   "relationshipEndStatuses": { "married-partner-id": "divorced" },
+  "namePeriods": [
+    {
+      "id": "name-stable-id",
+      "name": "The name or title used in this period",
+      "startYear": 1926,
+      "endYear": 1952,
+      "sourceUrl": "https://en.wikipedia.org/wiki/Public_biography"
+    }
+  ],
   "personalEvents": [
     { "id": "event-stable-id", "name": "Reign", "startYear": 1952, "endYear": 2022, "color": "#c62828" }
   ],
@@ -61,6 +70,10 @@ Never use a bare name as an ID. Every ID mentioned in a relationship array must 
 ```
 
 Only `id` and a usable name are essential, but birth years are needed for timeline placement. Use `male`, `female`, or `unknown`. Use `null`, an empty string, or omit a field when the public evidence does not establish it.
+
+`displayName` is the default or present-day label. `namePeriods` records the chronological names, styles, or titles by which the person was publicly known. Periods should be evidence-based, non-overlapping where possible, and ordered by `startYear`; a null boundary means the evidence does not establish that boundary. Give each period a stable ID and a direct public source URL. Wikipedia, Wikidata, official biographies, and other reliable public sources may complement genealogy profiles.
+
+When the app is set to a historical snapshot year, it chooses the matching `namePeriods` entry and dims everything to the right of that year. If no interval exactly covers the year, it uses the latest documented name already reached; `displayName` remains the final fallback.
 
 Formally married people belong in both `partners` and `spouses`. Non-marital relationships belong in `partners` and `nonSpouses`, not `spouses`. Allowed relationship-end statuses are `annulled`, `divorced`, and `ended`.
 
@@ -73,5 +86,6 @@ Parent/child and partner/spouse links should be reciprocal. The importer repairs
 - Existing root, filtering, scale, visibility choices, and local events remain unchanged.
 - Relationship references not found in either the package or current tree are omitted and reported.
 - Source attribution is retained on every imported profile.
+- Dated names merge by their stable period ID without replacing the profile's default display name.
 
 See [`examples/stitch-import.example.json`](../examples/stitch-import.example.json) for a complete package.

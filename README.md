@@ -8,6 +8,8 @@ The shared generational timeline is the interface. It remains a family tree: gen
 
 The timeline receives all space not used by the compact left search column. That column lists only profiles matching the current keyword fragments, highlights every matching name fragment in yellow, and reports the number of matches. Profile details do not reserve a permanent column: selecting a node or search result slides a monochrome editor over the right edge, and closing it immediately restores the unobstructed canvas.
 
+The **Timeline** settings can place a historical snapshot line at any year. Everything beyond the line is veiled, including the future portion of a lifespan, while every visible label changes to the name, style, or title documented for that year. Each profile retains a default display name plus a sourced chronological `namePeriods` list; dated names can be maintained in the profile drawer or supplied by an AI-assisted stitch import.
+
 A fresh visit immediately shows a bundled British royal line from Henry VII, pre-filtered with `king queen`. It does not contact Geni or open authorization. The historical records—including the line's confirmed spouses and Charles III's living descendant families through William and Harry—and their stable public profile IDs ship with the static app. The left-column restore button replaces the working copy with this bundled baseline.
 
 Timeline rows use the mini-program's two-pass bottom-up compaction approach. Branches move upward in half-row steps when their lifespan-plus-label ranges fit, retain a half-row of breathing room, and stay put whenever a node or external connector would be crossed. A final stable-order pass prevents compaction from moving unrelated profiles between a spouse and that union's children, and enforces a six-pixel vertical gutter whenever two complete node ranges overlap horizontally.
@@ -37,10 +39,12 @@ Then open <http://localhost:4173>.
 - Working trees—including the bundled starter after edits or stitched expansion—are stored in the browser's `localStorage`.
 - JSON import accepts this web export format and the mini-program's `{ activeRootId, people }` backup shape.
 - AI research packages use the provider-neutral [`lineage-stitch` schema](docs/import-schema.md). A [complete example](examples/stitch-import.example.json) and [generic prompt](docs/ai-import-prompt.md) are stored in the repository. The app generates a more useful prompt containing current-tree anchor IDs.
+- Research prompts ask the user's preferred AI chatbot to complement genealogy profiles with Wikipedia, Wikidata, official biographies, and other reliable public sources, producing cited chronological names rather than one timeless label.
 - Stitch imports merge by stable public ID. Existing local values win; missing facts, new profiles, and relationship arrays are added. The current root, timeline settings, filters, and visibility choices remain intact.
 - The web app has its own profile model and does not modify or depend on the mini-program runtime.
 - Profiles use the Western `First Last` display order.
 - When a source supplies a display name, the app preserves and shows it in preference to reconstructing a name from separate fields. This keeps titles such as “King of England” searchable and visible on the timeline.
+- `namePeriods` entries contain a stable period ID, dated name, optional open date boundaries, and direct source URL. Snapshot mode uses the exact matching interval, then the latest earlier documented name, with the default display name as fallback.
 - Tree ordering and line weight prioritize paternal descent while retaining maternal relationships with a lighter solid line.
 - Timeline labels keep the name and lifespan on one line. They do not display age.
 - Personal events are edited in the selected profile drawer, where their dates remain visible. Global events are managed from the header's **Events** dialog and appear as bands behind the full timeline. Event years are not printed over the timeline itself. Both kinds use the same twelve-colour palette and retain their selection in local storage and JSON backups. All `Reign` events share one colour across the tree, red by default; changing any reign selector changes them together.

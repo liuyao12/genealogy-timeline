@@ -2593,7 +2593,6 @@ function renderTimeline() {
     handle.append(svg('rect', { class: 'as-of-handle-box', x: -25, y: 2, width: 50, height: 18, rx: 4 }));
     handle.append(svg('text', { class: 'as-of-year-label', x: 0, y: 14, 'text-anchor': 'middle' }, `As of ${historicalYear}`));
     handle.append(svg('path', { class: 'as-of-handle-pointer', d: 'M -5 20 L 5 20 L 0 27 Z' }));
-    handle.append(svg('title', {}, 'Drag left or right one year at a time'));
     handle.addEventListener('pointerdown', beginHistoricalYearSlide);
     handle.addEventListener('mousedown', beginHistoricalYearMouseSlide);
     handle.addEventListener('keydown', event => {
@@ -2907,7 +2906,6 @@ function renderTimeline() {
     const snapshotLayer = svg('g', { class: 'timeline-as-of-layer', 'aria-label': `Historical snapshot at ${historicalYear}` });
     snapshotLayer.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: eventTop, width: Math.max(0, xForYear(maxYear) - historicalX + TIMELINE_PAN_MARGIN.right), height: eventBottom - eventTop }));
     const historicalHitLine = svg('line', { class: 'timeline-as-of-hit', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom });
-    historicalHitLine.append(svg('title', {}, `Drag left or right to change the As of year from ${historicalYear}`));
     historicalHitLine.addEventListener('pointerdown', beginHistoricalYearSlide);
     historicalHitLine.addEventListener('mousedown', beginHistoricalYearMouseSlide);
     snapshotLayer.append(historicalHitLine);

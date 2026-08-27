@@ -11,6 +11,8 @@
   --bronze: #000000;
   --rose: #ffffff;
   --blue: #ffffff;
+  --as-of: #00c853;
+  --as-of-dark: #007a33;
   --shadow: 0 18px 50px rgba(0, 0, 0, .18);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
@@ -137,13 +139,13 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-grid .decade-label { fill: #777; }
 .timeline-grid .year-tick.current-year { stroke: #e65100; stroke-width: 2; }
 .timeline-grid .current-year-label { fill: #e65100; font-weight: 700; }
-.timeline-grid .year-tick.as-of-year { stroke: #000; stroke-width: 2; }
-.timeline-grid .as-of-year-label { fill: #000; font-weight: 700; }
+.timeline-grid .year-tick.as-of-year { stroke: var(--as-of); stroke-width: 2.5; }
+.timeline-grid .as-of-year-label { fill: #fff; font-weight: 700; }
 .timeline-as-of-handle { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='20' viewBox='0 0 18 20'%3E%3Crect x='1' y='1' width='16' height='18' rx='5' fill='white' fill-opacity='.9' stroke='%23888'/%3E%3Cpath d='M7 6v8M11 6v8' stroke='%23111' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") 9 10, grab; pointer-events: all; touch-action: none; }
 .timeline-as-of-handle:focus { outline: none; }
 .timeline-as-of-handle:focus .as-of-handle-box { stroke-width: 2; }
-.timeline-as-of-handle .as-of-handle-box { fill: #fff; stroke: #000; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.timeline-as-of-handle .as-of-handle-pointer { fill: #000; stroke: none; }
+.timeline-as-of-handle .as-of-handle-box { fill: var(--as-of); stroke: var(--as-of-dark); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.timeline-as-of-handle .as-of-handle-pointer { fill: var(--as-of); stroke: none; }
 .timeline-as-of-preview { pointer-events: none; }
 .timeline-grid .year-tick.as-of-year-preview { stroke: #666; stroke-width: 1; stroke-dasharray: 2 2; }
 .timeline-as-of-preview .as-of-preview-box { fill: rgba(255,255,255,.94); stroke: #777; stroke-width: 1; vector-effect: non-scaling-stroke; }
@@ -152,7 +154,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-current-year-line { fill: none; stroke: #e65100; stroke-width: 1.5; opacity: .9; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-as-of-layer, .timeline-as-of-dim, .timeline-as-of-line { pointer-events: none; }
 .timeline-as-of-dim { fill: #fff; fill-opacity: .68; }
-.timeline-as-of-line { fill: none; stroke: #000; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.timeline-as-of-line { fill: none; stroke: var(--as-of); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
 .timeline-as-of-hit { fill: none; stroke: rgba(0,0,0,.001); stroke-width: 14; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='20' viewBox='0 0 18 20'%3E%3Crect x='1' y='1' width='16' height='18' rx='5' fill='white' fill-opacity='.9' stroke='%23888'/%3E%3Cpath d='M7 6v8M11 6v8' stroke='%23111' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") 9 10, grab; pointer-events: stroke; vector-effect: non-scaling-stroke; }
 .timeline-as-of-hit:hover + .timeline-as-of-line { stroke-width: 3; }
 .timeline-snapshot-labels { pointer-events: none; }

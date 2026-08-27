@@ -154,11 +154,15 @@ function life(person) {
 function timelineLifeLabel(person, asOfYear = null) {
   const birthYear = numericYear(person?.birthYear);
   const snapshotYear = numericYear(asOfYear);
-  if (snapshotYear == null || birthYear == null) return life(person);
-  if (snapshotYear < birthYear) return `(b. ${birthYear})`;
   const deathYear = person?.isLiving ? null : numericYear(person?.deathYear);
-  if (deathYear != null && snapshotYear > deathYear) return `(b. ${birthYear}, d. ${deathYear})`;
-  return `(b. ${birthYear}, age ${Math.max(0, snapshotYear - birthYear)})`;
+  const ordinaryRange = `(${clean(person?.birthYear) || '?'}–${person?.isLiving ? 'living' : (clean(person?.deathYear) || '?')})`;
+  if (birthYear == null) return ordinaryRange;
+  const referenceYear = snapshotYear ?? new Date().getFullYear();
+  const intersectsReference = referenceYear >= birthYear
+    && (person?.isLiving || (deathYear != null && referenceYear <= deathYear));
+  return intersectsReference
+    ? `(b. ${birthYear}, age ${Math.max(0, referenceYear - birthYear)})`
+    : ordinaryRange;
 }
 function numericYear(value) {
   const parsed = Number.parseInt(clean(value), 10);

@@ -2622,7 +2622,6 @@ function renderTimeline() {
   rulerMarks.append(svg('line', { x1: left, y1: rulerBaseline, x2: xForYear(maxYear), y2: rulerBaseline, class: 'ruler-line' }));
   if (historicalYear != null) {
     const historicalX = xForYear(historicalYear);
-    rulerMarks.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: 0, width: Math.max(0, xForYear(maxYear) - historicalX), height: rulerHeight }));
     rulerMarks.append(svg('line', { class: 'year-tick as-of-year', x1: historicalX, y1: 7, x2: historicalX, y2: rulerBaseline }));
     const handle = svg('g', {
       class: 'timeline-as-of-handle', transform: `translate(${historicalX} 0)`, role: 'slider', tabindex: '0',

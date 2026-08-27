@@ -73,6 +73,7 @@ const state = {
 let timelineViewportInitialized = false;
 let timelineRulerGeometry = null;
 let timelineAsOfDrag = null;
+let timelineAsOfGripClientY = null;
 let pendingTimelineViewport = null;
 const treeWorkspace = { version: 1, activeTreeId: '', trees: [] };
 
@@ -2331,6 +2332,7 @@ function renderTimeline() {
 
   const currentYear = new Date().getFullYear();
   const historicalYear = numericYear(state.asOfYear);
+  if (historicalYear == null) timelineAsOfGripClientY = null;
   const yearWidth = state.timelineYearWidth;
   const rowHeight = state.timelineNodeHeight;
   const rowStep = rowHeight + 6;
@@ -2943,14 +2945,26 @@ function renderTimeline() {
     const snapshotLayer = svg('g', { class: 'timeline-as-of-layer', 'aria-label': `Historical snapshot at ${historicalYear}` });
     snapshotLayer.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: eventTop, width: Math.max(0, xForYear(maxYear) - historicalX + TIMELINE_PAN_MARGIN.right), height: eventBottom - eventTop }));
     const historicalHitLine = svg('line', { class: 'timeline-as-of-hit', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom });
+    historicalHitLine.addEventListener('pointerenter', event => updateTimelineAsOfGrip(event.clientY));
+    historicalHitLine.addEventListener('pointermove', event => updateTimelineAsOfGrip(event.clientY));
+    historicalHitLine.addEventListener('pointerleave', () => { if (!timelineAsOfDrag) hideTimelineAsOfGrip(); });
     historicalHitLine.addEventListener('pointerdown', beginHistoricalYearSlide);
     historicalHitLine.addEventListener('mousedown', beginHistoricalYearMouseSlide);
     snapshotLayer.append(historicalHitLine);
     snapshotLayer.append(svg('line', { class: 'timeline-as-of-line', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom }));
     canvas.append(snapshotLayer);
     canvas.append(snapshotLabelLayer);
+    const grip = svg('g', {
+      class: 'timeline-as-of-grip', hidden: '', 'aria-hidden': 'true',
+      'data-x': historicalX, 'data-min-y': eventTop + 28, 'data-max-y': eventBottom - 28
+    });
+    grip.append(svg('rect', { class: 'timeline-as-of-grip-box', x: -11, y: -27, width: 22, height: 54, rx: 9 }));
+    grip.append(svg('line', { class: 'timeline-as-of-grip-bar', x1: -2.5, y1: -17, x2: -2.5, y2: 17 }));
+    grip.append(svg('line', { class: 'timeline-as-of-grip-bar', x1: 2.5, y1: -17, x2: 2.5, y2: 17 }));
+    canvas.append(grip);
   }
   canvas.style.transform = `scale(${state.zoom})`;
+  if (historicalYear != null && timelineAsOfGripClientY != null) updateTimelineAsOfGrip(timelineAsOfGripClientY);
   if (pendingTimelineViewport) {
     const destination = pendingTimelineViewport;
     pendingTimelineViewport = null;
@@ -3820,6 +3834,28 @@ function historicalYearRulerX(year) {
   const geometry = timelineRulerGeometry;
   return geometry ? geometry.left + (year - geometry.minYear + 0.5) * geometry.yearWidth : 0;
 }
+function hideTimelineAsOfGrip() {
+  timelineAsOfGripClientY = null;
+  els['timeline-canvas'].querySelector('.timeline-as-of-grip')?.setAttribute('hidden', '');
+}
+function updateTimelineAsOfGrip(clientY) {
+  if (!Number.isFinite(clientY)) return;
+  timelineAsOfGripClientY = clientY;
+  const canvas = els['timeline-canvas'];
+  const grip = canvas.querySelector('.timeline-as-of-grip');
+  const matrix = canvas.getScreenCTM?.();
+  if (!grip || !matrix) return;
+  const screenPoint = canvas.createSVGPoint();
+  screenPoint.x = 0;
+  screenPoint.y = clientY;
+  const point = screenPoint.matrixTransform(matrix.inverse());
+  const x = Number(grip.dataset.x);
+  const minY = Number(grip.dataset.minY);
+  const maxY = Number(grip.dataset.maxY);
+  const y = Math.max(minY, Math.min(maxY, point.y));
+  grip.setAttribute('transform', `translate(${x} ${y}) scale(${1 / state.zoom})`);
+  grip.removeAttribute('hidden');
+}
 function hideHistoricalYearPreview() {
   els['timeline-ruler'].querySelector('.timeline-as-of-preview')?.setAttribute('hidden', '');
 }
@@ -3851,6 +3887,7 @@ els['timeline-ruler'].addEventListener('click', placeHistoricalYearFromRuler);
 els['timeline-ruler'].addEventListener('pointerdown', event => event.stopPropagation());
 function slideHistoricalYear(event) {
   if (!timelineAsOfDrag || timelineAsOfDrag.kind !== 'pointer' || event.pointerId !== timelineAsOfDrag.pointerId) return;
+  updateTimelineAsOfGrip(event.clientY);
   updateHistoricalYearFromRuler(event);
 }
 function updateHistoricalYearFromRuler(event) {
@@ -3862,6 +3899,7 @@ function updateHistoricalYearFromRuler(event) {
 }
 function beginHistoricalYearSlide(event) {
   event.stopPropagation();
+  updateTimelineAsOfGrip(event.clientY);
   // Mouse dragging is handled by the document-level fallback below. Keeping
   // pointer capture for touch and pen avoids losing those drags off the handle.
   if (event.pointerType === 'mouse') return;
@@ -3896,6 +3934,7 @@ function beginHistoricalYearMouseSlide(event) {
 }
 function slideHistoricalYearWithMouse(event) {
   if (timelineAsOfDrag?.kind !== 'mouse') return;
+  updateTimelineAsOfGrip(event.clientY);
   updateHistoricalYearFromRuler(event);
 }
 function finishHistoricalYearMouseSlide(event) {
@@ -3907,6 +3946,9 @@ function finishHistoricalYearMouseSlide(event) {
 }
 document.addEventListener('mousemove', slideHistoricalYearWithMouse);
 document.addEventListener('mouseup', finishHistoricalYearMouseSlide);
+document.addEventListener('pointermove', event => {
+  if (!timelineAsOfDrag && !event.target.closest?.('.timeline-as-of-hit')) hideTimelineAsOfGrip();
+});
 
 function closeDetails() {
   state.selectedId = '';

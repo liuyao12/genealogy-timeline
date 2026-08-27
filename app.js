@@ -3489,7 +3489,7 @@ els['canvas-viewport'].addEventListener('wheel', event => {
 
 let canvasDrag = null;
 els['canvas-viewport'].addEventListener('pointerdown', event => {
-  if (event.button !== 0 || event.target.closest('.timeline-node, button, input, select, textarea, a')) return;
+  if (event.button !== 0 || event.target.closest('.timeline-ruler, .timeline-node, button, input, select, textarea, a')) return;
   const viewport = els['canvas-viewport'];
   canvasDrag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false };
   viewport.setPointerCapture?.(event.pointerId);
@@ -3556,6 +3556,7 @@ function placeHistoricalYearFromRuler(event) {
 els['timeline-ruler'].addEventListener('mousemove', previewHistoricalYear);
 els['timeline-ruler'].addEventListener('mouseleave', hideHistoricalYearPreview);
 els['timeline-ruler'].addEventListener('click', placeHistoricalYearFromRuler);
+els['timeline-ruler'].addEventListener('pointerdown', event => event.stopPropagation());
 function slideHistoricalYear(event) {
   if (!timelineAsOfDrag || timelineAsOfDrag.kind !== 'pointer' || event.pointerId !== timelineAsOfDrag.pointerId) return;
   updateHistoricalYearFromRuler(event);

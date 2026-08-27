@@ -2797,14 +2797,15 @@ function renderTimeline() {
     };
     const halo = makeLabel('timeline-label timeline-label-halo');
     halo.setAttribute('mask', `url(#${textMaskId})`);
-    group.append(halo);
     const label = makeLabel('timeline-label');
-    group.append(label);
     if (snapshotLabelLayer) {
-      const snapshotLabel = svg('g', { transform: `translate(${pos.x} ${pos.y})` });
-      snapshotLabel.append(halo.cloneNode(true), label.cloneNode(true));
+      const snapshotLabel = svg('g', {
+        class: `timeline-snapshot-label ${isSpouseNode ? 'spouse' : ''}`,
+        transform: `translate(${pos.x} ${pos.y})`
+      });
+      snapshotLabel.append(halo, label);
       snapshotLabelLayer.append(snapshotLabel);
-    }
+    } else group.append(halo, label);
     if (person.isLiving) group.append(svg('line', { class: 'current-year-edge', x1: lifespanWidth, y1: 0, x2: lifespanWidth, y2: rowHeight }));
     group.addEventListener('click', () => selectPerson(id));
     group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') selectPerson(id); });

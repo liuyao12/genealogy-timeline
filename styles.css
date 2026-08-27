@@ -181,9 +181,9 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-label { fill: #000; stroke: none; font: 400 14px "Open Sans", Arial, sans-serif; dominant-baseline: central; pointer-events: none; }
 .timeline-label-halo { fill: none; stroke: rgba(255,255,255,.94); stroke-width: 4px; paint-order: stroke; }
 .timeline-label-halo .timeline-life-label { fill: none; stroke: rgba(255,255,255,.94); }
-.timeline-node.spouse .timeline-label { font-style: italic; }
+.timeline-node.spouse .timeline-label, .timeline-snapshot-label.spouse .timeline-label { font-style: italic; }
 .timeline-life-label { fill: #444; font: 400 11px "Open Sans", Arial, sans-serif; }
-.timeline-node.spouse .timeline-life-label { font-style: italic; }
+.timeline-node.spouse .timeline-life-label, .timeline-snapshot-label.spouse .timeline-life-label { font-style: italic; }
 .timeline-node .current-year-edge { stroke: #e65100; stroke-width: 2; vector-effect: non-scaling-stroke; }
 
 .detail-backdrop {

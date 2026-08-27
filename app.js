@@ -281,7 +281,19 @@ function normalizeNamePeriods(periods) {
     };
   }).filter(period => period.name);
   normalized.sort((a, b) => (a.startYear ?? -Infinity) - (b.startYear ?? -Infinity) || (a.endYear ?? Infinity) - (b.endYear ?? Infinity));
-  return [...new Map(normalized.map(period => [period.id, period])).values()];
+  const uniquePeriods = new Map();
+  normalized.forEach(period => {
+    const semanticKey = `${period.name.toLocaleLowerCase()}|${period.startYear ?? 'open'}|${period.endYear ?? 'open'}`;
+    const existing = uniquePeriods.get(semanticKey);
+    if (!existing) {
+      uniquePeriods.set(semanticKey, period);
+      return;
+    }
+    // Older imports and starter upgrades sometimes assigned different row IDs
+    // to the same dated name. Keep one stable row and retain the best source.
+    if (!existing.sourceUrl && period.sourceUrl) existing.sourceUrl = period.sourceUrl;
+  });
+  return [...uniquePeriods.values()];
 }
 
 function normalizeGlobalEvents(events) {

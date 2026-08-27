@@ -102,6 +102,14 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
 .source-footer p { margin: 6px 0 0; color: #666; font-size: 8px; line-height: 1.45; }
 
 .tree-panel { min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; background: #fff; }
+.tree-tab-bar { z-index: 40; display: flex; min-width: 0; height: 38px; flex: 0 0 38px; align-items: end; border-bottom: 1px solid #999; background: #f3f3f3; -webkit-user-select: none; user-select: none; }
+.tree-tabs { display: flex; min-width: 0; flex: 1; height: 100%; align-items: end; gap: 2px; padding: 5px 5px 0; overflow-x: auto; scrollbar-width: thin; }
+.tree-tab { min-width: 90px; max-width: 230px; height: 32px; padding: 0 13px; overflow: hidden; border: 1px solid #bbb; border-bottom: 0; border-radius: 7px 7px 0 0; background: #e5e5e5; color: #555; font: 500 11px/31px Inter, Arial, sans-serif; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.tree-tab:hover { background: #eee; color: #111; }
+.tree-tab[aria-selected="true"] { position: relative; height: 33px; margin-bottom: -1px; border-color: #888; background: #fff; color: #000; }
+.tree-tab:focus-visible, .tree-tab-add:focus-visible { outline: 2px solid #000; outline-offset: -3px; }
+.tree-tab-add { width: 38px; height: 38px; flex: 0 0 38px; border: 0; border-left: 1px solid #ccc; background: #f3f3f3; color: #333; font: 300 22px/38px Inter, Arial, sans-serif; cursor: pointer; }
+.tree-tab-add:hover { background: #fff; color: #000; }
 .canvas-viewport { min-height: 0; flex: 1; position: relative; overflow: auto; cursor: grab; background-color: #fff; background-image: radial-gradient(#d4d4d4 0.7px, transparent 0.7px); background-size: 20px 20px; -webkit-user-select: none; user-select: none; }
 .canvas-viewport.dragging { cursor: grabbing; }
 .canvas-viewport.as-of-dragging { cursor: ew-resize; }

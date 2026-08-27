@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
+const WORKSPACE_STORAGE_KEY = 'lineage-tree-workspace-v1';
 const REPOSITORY_URL = 'https://github.com/liuyao12/genealogy-timeline';
 const STITCH_SCHEMA_URL = `${REPOSITORY_URL}/blob/main/docs/import-schema.md`;
 const STITCH_EXAMPLE_URL = `${REPOSITORY_URL}/blob/main/examples/stitch-import.example.json`;
@@ -72,12 +73,14 @@ const state = {
 let timelineViewportInitialized = false;
 let timelineRulerGeometry = null;
 let timelineAsOfDrag = null;
+let pendingTimelineViewport = null;
+const treeWorkspace = { version: 1, activeTreeId: '', trees: [] };
 
 const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
 
 const els = Object.fromEntries([
   'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'prepare-ai-import',
-  'people-count', 'people-label', 'people-list', 'add-person-button', 'canvas-viewport',
+  'people-count', 'people-label', 'people-list', 'add-person-button', 'tree-tabs', 'add-tree-tab', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog', 'add-dialog-heading',
@@ -876,10 +879,14 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   state.selectedId = '';
   state.ephemeral = false;
   state.relationVisibility = {};
+  state.collapsedIds.clear();
+  state.zoom = 1;
   state.treeFilter = 'king queen';
   state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
   state.manualTree = false;
   state.title = 'The British royal line from Henry VII';
+  pendingTimelineViewport = null;
+  timelineViewportInitialized = false;
   els['tree-filter'].value = state.treeFilter;
   if (persistResult) persist('Bundled royal line restored');
   render();
@@ -968,36 +975,91 @@ function migrateRelationVisibility(rawVisibility) {
   return { relationVisibility, migrated };
 }
 
+function treeSnapshot(id = treeWorkspace.activeTreeId) {
+  const viewport = els['canvas-viewport'];
+  return {
+    id: id || uniqueId('tree'), title: state.title, rootId: state.rootId, people: state.people,
+    globalEvents: state.globalEvents, reignColor: state.reignColor,
+    timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight,
+    asOfYear: state.asOfYear, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
+    starterDataVersion: state.starterDataVersion, manualTree: state.manualTree,
+    collapsedIds: [...state.collapsedIds], zoom: state.zoom,
+    viewportLeft: viewport?.scrollLeft || 0, viewportTop: viewport?.scrollTop || 0
+  };
+}
+
+function saveActiveTreeSnapshot() {
+  if (!treeWorkspace.activeTreeId) treeWorkspace.activeTreeId = uniqueId('tree');
+  const snapshot = treeSnapshot(treeWorkspace.activeTreeId);
+  const index = treeWorkspace.trees.findIndex(tree => tree.id === treeWorkspace.activeTreeId);
+  if (index >= 0) treeWorkspace.trees[index] = snapshot;
+  else treeWorkspace.trees.push(snapshot);
+}
+
+function writeTreeWorkspace() {
+  localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(treeWorkspace));
+}
+
+function applyTreeSnapshot(saved) {
+  const savedRootId = /^profile-/i.test(clean(saved.rootId)) ? canonicalGeniProfileId(saved.rootId) : clean(saved.rootId);
+  const migratedPeople = migrateGeniPeople(saved.people);
+  const migratedVisibility = migrateRelationVisibility(saved.relationVisibility);
+  state.title = clean(saved.title) || 'Untitled family';
+  state.rootId = savedRootId;
+  state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
+  state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
+  state.timelineNodeHeight = timelineNodeHeight(saved.timelineNodeHeight);
+  state.asOfYear = numericYear(saved.asOfYear);
+  state.treeFilter = clean(saved.treeFilter);
+  if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
+  state.relationVisibility = migratedVisibility.relationVisibility;
+  state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
+  state.manualTree = saved.manualTree === true;
+  state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
+  state.people = migratedPeople.people;
+  state.collapsedIds = new Set(array(saved.collapsedIds));
+  state.zoom = Math.min(1.8, Math.max(.45, Number(saved.zoom) || 1));
+  state.selectedId = '';
+  state.editingProfileId = '';
+  state.ephemeral = false;
+  pendingTimelineViewport = Object.hasOwn(saved, 'viewportLeft') || Object.hasOwn(saved, 'viewportTop') ? {
+    left: Math.max(0, Number(saved.viewportLeft) || 0),
+    top: Math.max(0, Number(saved.viewportTop) || 0)
+  } : null;
+  timelineViewportInitialized = false;
+  return migratedPeople.migrated || migratedVisibility.migrated || savedRootId !== clean(saved.rootId);
+}
+
 function restore() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY));
+    const workspaceSaved = JSON.parse(localStorage.getItem(WORKSPACE_STORAGE_KEY) || 'null');
+    if (workspaceSaved?.version === 1 && Array.isArray(workspaceSaved.trees) && workspaceSaved.trees.length) {
+      treeWorkspace.trees = workspaceSaved.trees.filter(tree => tree && typeof tree === 'object').map(tree => ({ ...tree, id: clean(tree.id) || uniqueId('tree') }));
+      treeWorkspace.activeTreeId = treeWorkspace.trees.some(tree => tree.id === workspaceSaved.activeTreeId)
+        ? workspaceSaved.activeTreeId : treeWorkspace.trees[0].id;
+      return applyTreeSnapshot(treeWorkspace.trees.find(tree => tree.id === treeWorkspace.activeTreeId));
+    }
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || 'null');
+    treeWorkspace.activeTreeId = uniqueId('tree');
     if (!saved || typeof saved !== 'object') return false;
-    const savedRootId = /^profile-/i.test(clean(saved.rootId)) ? canonicalGeniProfileId(saved.rootId) : clean(saved.rootId);
-    const migratedPeople = migrateGeniPeople(saved.people);
-    const migratedVisibility = migrateRelationVisibility(saved.relationVisibility);
-    state.title = clean(saved.title) || state.title;
-    state.rootId = savedRootId;
-    state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
-    state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
-    state.timelineNodeHeight = timelineNodeHeight(saved.timelineNodeHeight);
-    state.asOfYear = numericYear(saved.asOfYear);
-    state.treeFilter = clean(saved.treeFilter);
-    if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
-    state.relationVisibility = migratedVisibility.relationVisibility;
-    state.starterDataVersion = Number.parseInt(saved.starterDataVersion, 10) || 0;
-    state.manualTree = saved.manualTree === true;
-    state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
-    state.people = migratedPeople.people;
-    return migratedPeople.migrated || migratedVisibility.migrated || savedRootId !== clean(saved.rootId);
-  } catch { return false; /* A malformed local cache should not prevent the app from opening. */ }
+    treeWorkspace.trees = [{ ...saved, id: treeWorkspace.activeTreeId }];
+    applyTreeSnapshot(saved);
+    return true; // Persist the legacy single-tree cache as a tabbed workspace.
+  } catch {
+    treeWorkspace.activeTreeId ||= uniqueId('tree');
+    return false; /* A malformed local cache should not prevent the app from opening. */
+  }
 }
+
 function persist(message = 'All changes saved locally') {
   if (state.ephemeral) {
     els['save-status'].textContent = message || 'Live Geni data · not saved';
     window.setTimeout(() => { els['save-status'].textContent = 'Live Geni data · not saved'; }, 1600);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: state.title, rootId: state.rootId, people: state.people, globalEvents: state.globalEvents, reignColor: state.reignColor, timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight, asOfYear: state.asOfYear, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility, starterDataVersion: state.starterDataVersion, manualTree: state.manualTree }));
+  saveActiveTreeSnapshot();
+  writeTreeWorkspace();
+  renderTreeTabs();
   els['save-status'].textContent = message;
   window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1600);
 }
@@ -2830,7 +2892,15 @@ function renderTimeline() {
     canvas.append(snapshotLabelLayer);
   }
   canvas.style.transform = `scale(${state.zoom})`;
-  if (!timelineViewportInitialized) {
+  if (pendingTimelineViewport) {
+    const destination = pendingTimelineViewport;
+    pendingTimelineViewport = null;
+    timelineViewportInitialized = true;
+    requestAnimationFrame(() => {
+      els['canvas-viewport'].scrollLeft = destination.left;
+      els['canvas-viewport'].scrollTop = destination.top;
+    });
+  } else if (!timelineViewportInitialized) {
     timelineViewportInitialized = true;
     requestAnimationFrame(() => {
       els['canvas-viewport'].scrollLeft = TIMELINE_PAN_MARGIN.left * state.zoom;
@@ -3301,6 +3371,44 @@ function renderParentOptions() {
   const options = ['<option value="">No profile selected</option>', ...Object.values(state.people).sort((a,b) => visibleName(a).localeCompare(visibleName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(visibleName(person))}</option>`)].join('');
   els['parent-select'].innerHTML = options;
 }
+
+function renderTreeTabs() {
+  if (!els['tree-tabs']) return;
+  els['tree-tabs'].replaceChildren(...treeWorkspace.trees.map(tree => {
+    const active = tree.id === treeWorkspace.activeTreeId;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tree-tab';
+    button.dataset.treeId = tree.id;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+    button.textContent = clean(tree.title) || 'Untitled family';
+    button.title = button.textContent;
+    return button;
+  }));
+  requestAnimationFrame(() => els['tree-tabs'].querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+}
+
+function switchTree(treeId) {
+  if (!treeId || treeId === treeWorkspace.activeTreeId) return;
+  if (!state.ephemeral) saveActiveTreeSnapshot();
+  const nextTree = treeWorkspace.trees.find(tree => tree.id === treeId);
+  if (!nextTree) return;
+  treeWorkspace.activeTreeId = treeId;
+  applyTreeSnapshot(nextTree);
+  els['tree-filter'].value = state.treeFilter;
+  writeTreeWorkspace();
+  render();
+  els['save-status'].textContent = 'Tree switched';
+  window.setTimeout(() => { els['save-status'].textContent = 'All changes saved locally'; }, 1200);
+}
+
+function beginNewTree() {
+  els['new-tree-form'].elements.title.value = '';
+  els['new-tree-dialog'].showModal();
+}
+
 function render() {
   const count = Object.keys(state.people).length;
   els['tree-title'].textContent = state.title;
@@ -3310,7 +3418,7 @@ function render() {
   // SVG elements do not implement HTMLElement.hidden consistently; toggle the attribute explicitly.
   els['timeline-canvas'].toggleAttribute('hidden', !count);
   els['timeline-ruler'].toggleAttribute('hidden', !count);
-  renderPersonList(); renderTimeline(); renderDetails(); renderParentOptions(); renderGlobalEventsEditor();
+  renderTreeTabs(); renderPersonList(); renderTimeline(); renderDetails(); renderParentOptions(); renderGlobalEventsEditor();
 }
 
 function openAiImport(anchorId = '') {
@@ -3452,15 +3560,24 @@ els['empty-add-person-button'].addEventListener('click', () => openAddPersonDial
 els['relation-type'].addEventListener('change', () => {
   els['parent-select'].disabled = els['relation-type'].value === 'none';
 });
-els['new-tree-button'].addEventListener('click', () => {
-  els['new-tree-form'].elements.title.value = '';
-  els['new-tree-dialog'].showModal();
+els['new-tree-button'].addEventListener('click', beginNewTree);
+els['add-tree-tab'].addEventListener('click', beginNewTree);
+els['tree-tabs'].addEventListener('click', event => switchTree(event.target.closest('.tree-tab')?.dataset.treeId));
+els['tree-tabs'].addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || treeWorkspace.trees.length < 2) return;
+  event.preventDefault();
+  const currentIndex = treeWorkspace.trees.findIndex(tree => tree.id === treeWorkspace.activeTreeId);
+  const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? treeWorkspace.trees.length - 1
+    : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + treeWorkspace.trees.length) % treeWorkspace.trees.length;
+  switchTree(treeWorkspace.trees[nextIndex].id);
+  requestAnimationFrame(() => els['tree-tabs'].querySelector('[aria-selected="true"]')?.focus());
 });
 els['new-tree-form'].addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault();
-  if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with a new blank tree? Export first if you want to keep it.')) return;
   const title = clean(new FormData(event.currentTarget).get('title'));
+  if (!state.ephemeral) saveActiveTreeSnapshot();
+  treeWorkspace.activeTreeId = uniqueId('tree');
   state.title = title || 'Untitled family';
   state.people = {};
   state.globalEvents = [];
@@ -3473,14 +3590,29 @@ els['new-tree-form'].addEventListener('submit', event => {
   state.starterDataVersion = 0;
   state.manualTree = true;
   state.collapsedIds.clear();
+  state.zoom = 1;
+  pendingTimelineViewport = null;
+  timelineViewportInitialized = false;
   els['tree-filter'].value = '';
   els['new-tree-dialog'].close();
-  persist('New local tree started');
+  persist('New tree tab created');
   render();
   openAddPersonDialog();
 });
 els['royal-example-button'].addEventListener('click', () => {
-  if (Object.keys(state.people).length && !window.confirm('Replace the current local tree with the British royal example? Export first if you want to keep it.')) return;
+  const starterRootId = profileIdFromInput(HENRY_VII_GENI_URL);
+  const existing = treeWorkspace.trees.find(tree => tree.rootId === starterRootId && tree.id !== treeWorkspace.activeTreeId);
+  if (existing) {
+    switchTree(existing.id);
+    toast('British royal line opened in its tab.');
+    return;
+  }
+  if (state.rootId === starterRootId) {
+    if (!window.confirm('Restore the bundled British royal line in this tab? Local changes to this tree will be replaced.')) return;
+  } else {
+    if (!state.ephemeral) saveActiveTreeSnapshot();
+    treeWorkspace.activeTreeId = uniqueId('tree');
+  }
   loadBritishRoyalExample();
 });
 els['tree-filter'].addEventListener('input', () => {

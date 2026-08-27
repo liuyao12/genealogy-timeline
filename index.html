@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=51">
+  <link rel="stylesheet" href="./styles.css?v=52">
 </head>
 <body>
   <div class="app-shell">
@@ -77,6 +77,10 @@
       </aside>
 
       <main class="tree-panel">
+        <nav class="tree-tab-bar" aria-label="Family trees">
+          <div class="tree-tabs" id="tree-tabs" role="tablist"></div>
+          <button class="tree-tab-add" id="add-tree-tab" type="button" aria-label="Create another tree" title="Create another tree">+</button>
+        </nav>
         <div class="canvas-viewport" id="canvas-viewport">
           <div class="empty-state" id="empty-state">
             <div class="empty-emblem">◇</div>
@@ -276,6 +280,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=87"></script>
+  <script type="module" src="./app.js?v=88"></script>
 </body>
 </html>

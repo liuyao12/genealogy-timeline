@@ -129,6 +129,8 @@ function nameAtYear(person, year) {
   const targetYear = numericYear(year);
   const periods = person?.namePeriods || [];
   if (targetYear == null || !periods.length) return fullName(person);
+  const personBirthYear = numericYear(person?.birthYear);
+  if (personBirthYear != null && targetYear < personBirthYear) return fullName(person);
   const exact = periods.filter(period =>
     (period.startYear == null || period.startYear <= targetYear)
     && (period.endYear == null || period.endYear >= targetYear)

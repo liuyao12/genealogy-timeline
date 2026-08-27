@@ -2473,6 +2473,7 @@ function renderTimeline() {
   const positions = new Map(layoutNodes.map(node => [node.key, { x: node.x, y: top + node.y }]));
 
   const rulerMarks = svg('g');
+  ruler.append(svg('title', {}, 'Hover to preview a year; click to place the As of line'));
   rulerMarks.append(svg('rect', { x: -TIMELINE_PAN_MARGIN.left, y: 0, width, height: rulerHeight, class: 'ruler-band' }));
   for (let year = minYear; year <= maxYear; year += 5) {
     const x = xForYear(year);
@@ -2512,6 +2513,12 @@ function renderTimeline() {
     });
     rulerMarks.append(handle);
   }
+  const rulerPreview = svg('g', { class: 'timeline-as-of-preview', hidden: '' });
+  rulerPreview.append(svg('line', { class: 'year-tick as-of-year-preview', x1: 0, y1: 7, x2: 0, y2: rulerBaseline }));
+  rulerPreview.append(svg('rect', { class: 'as-of-preview-box', x: -42, y: 2, width: 84, height: 18, rx: 4 }));
+  rulerPreview.append(svg('text', { class: 'as-of-preview-label', x: 0, y: 14, 'text-anchor': 'middle' }, 'Set As of'));
+  rulerPreview.append(svg('path', { class: 'as-of-preview-pointer', d: 'M -5 20 L 5 20 L 0 27 Z' }));
+  rulerMarks.append(rulerPreview);
   ruler.append(rulerMarks);
 
   const globalEvents = svg('g', { class: 'global-events' });
@@ -3513,6 +3520,38 @@ function historicalYearFromRulerPointer(event) {
   const year = Math.round(geometry.minYear + (svgX - geometry.left) / geometry.yearWidth - 0.5);
   return Math.max(geometry.minYear, Math.min(geometry.maxYear, year));
 }
+function historicalYearRulerX(year) {
+  const geometry = timelineRulerGeometry;
+  return geometry ? geometry.left + (year - geometry.minYear + 0.5) * geometry.yearWidth : 0;
+}
+function hideHistoricalYearPreview() {
+  els['timeline-ruler'].querySelector('.timeline-as-of-preview')?.setAttribute('hidden', '');
+}
+function previewHistoricalYear(event) {
+  const preview = els['timeline-ruler'].querySelector('.timeline-as-of-preview');
+  if (!preview || timelineAsOfDrag || event.target.closest?.('.timeline-as-of-handle')) {
+    hideHistoricalYearPreview();
+    return;
+  }
+  const year = historicalYearFromRulerPointer(event);
+  if (year == null) return;
+  preview.removeAttribute('hidden');
+  preview.setAttribute('transform', `translate(${historicalYearRulerX(year)} 0)`);
+  const label = preview.querySelector('.as-of-preview-label');
+  if (label) label.textContent = `Set As of ${year}`;
+}
+function placeHistoricalYearFromRuler(event) {
+  if (event.target.closest?.('.timeline-as-of-handle')) return;
+  const year = historicalYearFromRulerPointer(event);
+  if (year == null) return;
+  state.asOfYear = year;
+  els['timeline-as-of-year'].value = year;
+  persist(`Historical snapshot set to ${year}`);
+  render();
+}
+els['timeline-ruler'].addEventListener('mousemove', previewHistoricalYear);
+els['timeline-ruler'].addEventListener('mouseleave', hideHistoricalYearPreview);
+els['timeline-ruler'].addEventListener('click', placeHistoricalYearFromRuler);
 function slideHistoricalYear(event) {
   if (!timelineAsOfDrag || timelineAsOfDrag.kind !== 'pointer' || event.pointerId !== timelineAsOfDrag.pointerId) return;
   updateHistoricalYearFromRuler(event);

@@ -25,7 +25,6 @@ Use this format when adding researched profiles to an existing Lineage tree. A s
 Every person needs a durable, source-derived ID. Reuse an existing anchor ID exactly when the prompt supplies one. Recommended forms include:
 
 - `profile-g6000000003760873898` for a Geni public GUID
-- `wikitree-Clemens-1` for a WikiTree profile
 - `wikidata-Q9682` for a Wikidata entity
 
 Never use a bare name as an ID. Every ID mentioned in a relationship array must have a record in `people`, unless it is one of the existing anchors supplied in the prompt.

@@ -174,11 +174,6 @@ function validGeniUrl(value) {
   if (!href) return '';
   return /(^|\.)geni\.com$/i.test(new URL(href).hostname) ? href : '';
 }
-function validWikiTreeUrl(value) {
-  const href = validPublicUrl(value);
-  if (!href) return '';
-  return /(^|\.)wikitree\.com$/i.test(new URL(href).hostname) ? href : '';
-}
 function canonicalGeniProfileId(value) {
   const raw = clean(value);
   const explicit = raw.match(/^profile-(g?)(\d+)$/i);
@@ -215,28 +210,16 @@ function optionalGeniLink(input) {
     sourceProvider: 'geni'
   } : null;
 }
-function wikiTreeIdFromInput(input) {
-  const raw = clean(input);
-  if (!raw) return '';
-  if (/^[^\s/]+-\d+$/.test(raw)) return raw;
-  try {
-    const url = new URL(/^https?:/i.test(raw) ? raw : `https://${raw}`);
-    if (!/(^|\.)wikitree\.com$/i.test(url.hostname)) return '';
-    return clean(url.pathname.match(/\/wiki\/([^/?#]+)/i)?.[1]);
-  } catch { return ''; }
-}
 function sourceProviderFromUrl(url) {
   const href = validPublicUrl(url);
   if (!href) return '';
   const host = new URL(href).hostname.toLowerCase();
   if (/(^|\.)geni\.com$/.test(host)) return 'geni';
-  if (/(^|\.)wikitree\.com$/.test(host)) return 'wikitree';
   return 'web';
 }
 function sourceMeta(person) {
   const provider = person.sourceProvider || sourceProviderFromUrl(person.sourceUrl);
   if (provider === 'geni') return { name: 'Geni public profile', mark: 'G' };
-  if (provider === 'wikitree') return { name: 'WikiTree public profile', mark: 'W' };
   if (provider === 'gedcom') return { name: 'GEDCOM import', mark: 'F' };
   if (provider === 'json') return { name: 'Tree backup', mark: 'F' };
   if (provider === 'royal') return { name: 'The Royal Family historical profile', mark: 'R' };
@@ -1460,86 +1443,6 @@ async function runGeniFamilyImport(profileId, scope) {
   }
 }
 
-function wikiTreePerson(raw, importedAt) {
-  const numericId = clean(raw.Id || raw.id);
-  const wikiId = clean(raw.Name || raw.name);
-  const id = `wikitree-${numericId || wikiId}`;
-  const dateYear = value => clean(value).match(/^-?\d{1,4}/)?.[0] || '';
-  const gender = clean(raw.Gender).toLowerCase();
-  return normalizePerson({
-    id,
-    firstName: [clean(raw.FirstName), clean(raw.MiddleName)].filter(Boolean).join(' '),
-    lastName: clean(raw.LastNameAtBirth || raw.LastNameCurrent),
-    nameOrder: 'western',
-    gender: gender === 'male' || gender === 'female' ? gender : 'unknown',
-    birthYear: dateYear(raw.BirthDate),
-    deathYear: dateYear(raw.DeathDate),
-    isLiving: raw.IsLiving === 1 || raw.IsLiving === '1',
-    place: clean(raw.BirthLocation || raw.DeathLocation),
-    parents: [raw.Father, raw.Mother].filter(Boolean).map(value => `wikitree-${value}`),
-    sourceUrl: wikiId ? `https://www.wikitree.com/wiki/${encodeURIComponent(wikiId)}` : '',
-    sourceId: wikiId,
-    sourceProvider: 'wikitree',
-    importedAt
-  }, id);
-}
-
-async function importFromWikiTree(input) {
-  const wikiId = wikiTreeIdFromInput(input);
-  if (!wikiId) throw new Error('Enter a valid WikiTree public profile URL or WikiTree ID such as Clemens-1.');
-  const params = new URLSearchParams({
-    action: 'getRelatives', keys: wikiId, appId: 'LineageTimeline',
-    fields: 'Id,Name,FirstName,MiddleName,LastNameAtBirth,LastNameCurrent,Gender,BirthDate,BirthLocation,DeathDate,DeathLocation,Father,Mother,IsLiving,Privacy',
-    getParents: '1', getChildren: '1', getSpouses: '1', getSiblings: '0'
-  });
-  const endpoint = `https://api.wikitree.com/api.php?${params}`;
-  els['source-download-link'].href = endpoint;
-  els['source-download-link'].hidden = false;
-  let response;
-  try { response = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'omit' }); }
-  catch { throw new Error('WikiTree blocks cross-origin API calls from GitHub Pages. Open its official API JSON below, save it, then use Import file.'); }
-  if (!response.ok) throw new Error(`WikiTree returned ${response.status}.`);
-  return applyWikiTreePayload(await response.json(), wikiId);
-}
-
-function applyWikiTreePayload(payload, requestedWikiId = '') {
-  const envelope = Array.isArray(payload) ? payload[0] : payload;
-  if (envelope?.status && envelope.status !== 0) throw new Error(String(envelope.status));
-  const item = envelope?.items?.[0];
-  if (!item?.person) throw new Error('WikiTree did not return that public profile.');
-  const importedAt = new Date().toISOString();
-  const rawPeople = [item.person, ...Object.values(item.person.Parents || {}), ...Object.values(item.person.Children || {}), ...Object.values(item.person.Spouses || {})];
-  const imported = {};
-  rawPeople.forEach(raw => {
-    const person = wikiTreePerson(raw, importedAt);
-    imported[person.id] = { ...state.people[person.id], ...person };
-  });
-  const focusId = `wikitree-${clean(item.person.Id) || requestedWikiId}`;
-  const focus = imported[focusId];
-  if (!focus) throw new Error('WikiTree returned an unsupported profile response.');
-  focus.children = Object.values(item.person.Children || {}).map(child => `wikitree-${child.Id}`);
-  focus.partners = Object.values(item.person.Spouses || {}).map(spouse => `wikitree-${spouse.Id}`);
-  focus.spouses = [...focus.partners];
-  Object.values(item.person.Children || {}).forEach(child => {
-    const childId = `wikitree-${child.Id}`;
-    if (imported[childId]) imported[childId].parents = [child.Father, child.Mother].filter(Boolean).map(value => `wikitree-${value}`);
-  });
-  Object.values(item.person.Spouses || {}).forEach(spouse => {
-    const spouseId = `wikitree-${spouse.Id}`;
-    if (imported[spouseId]) {
-      imported[spouseId].partners = unique([...imported[spouseId].partners, focusId]);
-      imported[spouseId].spouses = unique([...imported[spouseId].spouses, focusId]);
-    }
-  });
-  Object.assign(state.people, imported);
-  state.rootId = state.rootId || focusId;
-  state.selectedId = focusId;
-  if (state.title === 'Untitled family') state.title = `${fullName(focus)} family`;
-  persist(`Imported from WikiTree · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
-  render();
-  toast(`Imported ${Object.keys(imported).length} public profiles from WikiTree.`);
-}
-
 function importGedcom(text, fileName = 'GEDCOM tree') {
   const records = new Map();
   let current = null;
@@ -1608,15 +1511,6 @@ function importGedcom(text, fileName = 'GEDCOM tree') {
   toast(`Imported ${Object.keys(people).length} profiles from GEDCOM.`);
 }
 
-async function importFromSource(input, provider = 'auto', depth = 2) {
-  const detected = validGeniUrl(input) || /^profile-/i.test(clean(input)) ? 'geni'
-    : validWikiTreeUrl(input) || /^[^\s/]+-\d+$/.test(clean(input)) ? 'wikitree' : '';
-  const selected = provider === 'auto' ? detected : provider;
-  if (selected === 'geni') return importFromGeni(input, depth);
-  if (selected === 'wikitree') return importFromWikiTree(input);
-  throw new Error('Choose a supported public source, or import a JSON/GEDCOM file exported by that service.');
-}
-
 function stitchPrompt(anchorId = '') {
   const anchorIds = unique([anchorId, state.rootId]).filter(id => state.people[id]);
   const anchors = anchorIds.map(id => {
@@ -1649,7 +1543,7 @@ Requirements:
 - Use public, attributable sources only. Do not infer uncertain relationships as facts.
 - Include every person referenced by a parent, child, partner, or spouse ID.
 - Preserve the exact IDs of matching anchors below so the web app can stitch new records into its existing tree.
-- For other people, use a durable public identifier prefixed by its provider, such as "profile-g…", "wikitree-Clemens-1", or "wikidata-Q…". Never use a bare name as an ID.
+- For other people, use a durable public identifier prefixed by its provider, such as "profile-g…" or "wikidata-Q…". Never use a bare name as an ID.
 - Put formally married people in both "partners" and "spouses". Put non-marital partners in "partners" and "nonSpouses", never in "spouses".
 - Make parent/child and partner/spouse relationships reciprocal. Group children under the correct two parents.
 - Give marriage years in "marriageYears" keyed by spouse ID. Use relationshipEndStatuses values "annulled", "divorced", or "ended" when supported.
@@ -1738,8 +1632,6 @@ function stitchImport(payload) {
 
 function importBackup(payload) {
   if (payload?.schema === 'lineage-stitch') return stitchImport(payload);
-  const wikiEnvelope = Array.isArray(payload) ? payload[0] : payload;
-  if (wikiEnvelope?.items?.[0]?.person) return applyWikiTreePayload(payload);
   const rawPeople = payload.people || payload.db?.people;
   if (!rawPeople || typeof rawPeople !== 'object') throw new Error('This file does not contain a supported people collection.');
   state.reignColor = paletteColor(payload.reignColor || payload.db?.reignColor, DEFAULT_REIGN_EVENT_COLOR);

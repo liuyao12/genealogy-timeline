@@ -973,6 +973,8 @@ function migrateGeniPeople(rawPeople) {
   const remapMap = value => Object.fromEntries(Object.entries(value || {}).map(([id, detail]) => [remap(id), detail]));
   Object.entries(rawPeople || {}).forEach(([key, source]) => {
     const normalized = normalizePerson(source, key);
+    const rawNamePeriods = source?.namePeriods || source?.historicalNames || source?.names;
+    if (Array.isArray(rawNamePeriods) && normalized.namePeriods.length < rawNamePeriods.filter(Boolean).length) migrated = true;
     const oldId = normalized.id;
     normalized.id = remap(oldId);
     normalized.sourceId = remap(normalized.sourceId);

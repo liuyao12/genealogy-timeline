@@ -104,6 +104,7 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
 .tree-panel { min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; background: #fff; }
 .canvas-viewport { min-height: 0; flex: 1; position: relative; overflow: auto; cursor: grab; background-color: #fff; background-image: radial-gradient(#d4d4d4 0.7px, transparent 0.7px); background-size: 20px 20px; -webkit-user-select: none; user-select: none; }
 .canvas-viewport.dragging { cursor: grabbing; }
+.canvas-viewport.as-of-dragging { cursor: ew-resize; }
 .filter-empty-label { fill: var(--ink); font: 650 18px Georgia, serif; }
 .filter-empty-hint { fill: var(--muted); font: 10px Inter, sans-serif; }
 .empty-state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 40px; text-align: center; }
@@ -144,6 +145,8 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-as-of-layer, .timeline-as-of-dim, .timeline-as-of-line { pointer-events: none; }
 .timeline-as-of-dim { fill: #fff; fill-opacity: .68; }
 .timeline-as-of-line { fill: none; stroke: #000; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.timeline-as-of-hit { fill: none; stroke: rgba(0,0,0,.001); stroke-width: 14; cursor: ew-resize; pointer-events: stroke; vector-effect: non-scaling-stroke; }
+.timeline-as-of-hit:hover + .timeline-as-of-line { stroke-width: 3; }
 .timeline-snapshot-labels { pointer-events: none; }
 .timeline-edge { fill: none; stroke: #000; stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-edge.paternal { stroke-width: 2; }

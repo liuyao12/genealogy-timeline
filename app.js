@@ -2817,6 +2817,11 @@ function renderTimeline() {
     const historicalX = xForYear(historicalYear);
     const snapshotLayer = svg('g', { class: 'timeline-as-of-layer', 'aria-label': `Historical snapshot at ${historicalYear}` });
     snapshotLayer.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: eventTop, width: Math.max(0, xForYear(maxYear) - historicalX + TIMELINE_PAN_MARGIN.right), height: eventBottom - eventTop }));
+    const historicalHitLine = svg('line', { class: 'timeline-as-of-hit', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom });
+    historicalHitLine.append(svg('title', {}, `Drag left or right to change the As of year from ${historicalYear}`));
+    historicalHitLine.addEventListener('pointerdown', beginHistoricalYearSlide);
+    historicalHitLine.addEventListener('mousedown', beginHistoricalYearMouseSlide);
+    snapshotLayer.append(historicalHitLine);
     snapshotLayer.append(svg('line', { class: 'timeline-as-of-line', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom }));
     canvas.append(snapshotLayer);
     canvas.append(snapshotLabelLayer);
@@ -3492,7 +3497,7 @@ els['canvas-viewport'].addEventListener('wheel', event => {
 
 let canvasDrag = null;
 els['canvas-viewport'].addEventListener('pointerdown', event => {
-  if (event.button !== 0 || event.target.closest('.timeline-ruler, .timeline-node, button, input, select, textarea, a')) return;
+  if (event.button !== 0 || event.target.closest('.timeline-ruler, .timeline-as-of-hit, .timeline-node, button, input, select, textarea, a')) return;
   const viewport = els['canvas-viewport'];
   canvasDrag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false };
   viewport.setPointerCapture?.(event.pointerId);
@@ -3572,28 +3577,37 @@ function updateHistoricalYearFromRuler(event) {
   render();
 }
 function beginHistoricalYearSlide(event) {
+  event.stopPropagation();
   // Mouse dragging is handled by the document-level fallback below. Keeping
   // pointer capture for touch and pen avoids losing those drags off the handle.
   if (event.pointerType === 'mouse') return;
   event.preventDefault();
-  timelineAsOfDrag = { kind: 'pointer', pointerId: event.pointerId };
-  els['timeline-ruler'].setPointerCapture?.(event.pointerId);
+  const surface = event.target.closest?.('.timeline-as-of-hit') ? els['timeline-canvas'] : els['timeline-ruler'];
+  timelineAsOfDrag = { kind: 'pointer', pointerId: event.pointerId, surface };
+  els['canvas-viewport'].classList.add('as-of-dragging');
+  surface.setPointerCapture?.(event.pointerId);
   slideHistoricalYear(event);
 }
 els['timeline-ruler'].addEventListener('pointermove', slideHistoricalYear);
+els['timeline-canvas'].addEventListener('pointermove', slideHistoricalYear);
 function finishHistoricalYearSlide(event) {
   if (!timelineAsOfDrag || timelineAsOfDrag.kind !== 'pointer' || event.pointerId !== timelineAsOfDrag.pointerId) return;
   slideHistoricalYear(event);
-  els['timeline-ruler'].releasePointerCapture?.(event.pointerId);
+  timelineAsOfDrag.surface?.releasePointerCapture?.(event.pointerId);
   timelineAsOfDrag = null;
+  els['canvas-viewport'].classList.remove('as-of-dragging');
   persist(`Historical snapshot set to ${state.asOfYear}`);
 }
 els['timeline-ruler'].addEventListener('pointerup', finishHistoricalYearSlide);
 els['timeline-ruler'].addEventListener('pointercancel', finishHistoricalYearSlide);
+els['timeline-canvas'].addEventListener('pointerup', finishHistoricalYearSlide);
+els['timeline-canvas'].addEventListener('pointercancel', finishHistoricalYearSlide);
 function beginHistoricalYearMouseSlide(event) {
   if (timelineAsOfDrag) return;
   event.preventDefault();
+  event.stopPropagation();
   timelineAsOfDrag = { kind: 'mouse' };
+  els['canvas-viewport'].classList.add('as-of-dragging');
   updateHistoricalYearFromRuler(event);
 }
 function slideHistoricalYearWithMouse(event) {
@@ -3604,6 +3618,7 @@ function finishHistoricalYearMouseSlide(event) {
   if (timelineAsOfDrag?.kind !== 'mouse') return;
   updateHistoricalYearFromRuler(event);
   timelineAsOfDrag = null;
+  els['canvas-viewport'].classList.remove('as-of-dragging');
   persist(`Historical snapshot set to ${state.asOfYear}`);
 }
 document.addEventListener('mousemove', slideHistoricalYearWithMouse);

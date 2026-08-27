@@ -117,7 +117,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 
 .timeline-canvas { display: block; min-width: 100%; transform-origin: 0 0; overflow: visible; }
 .timeline-canvas[hidden], .timeline-ruler[hidden] { display: none; }
-.timeline-ruler { position: sticky; top: 0; z-index: 5; display: block; height: 60px; min-width: 100%; margin-bottom: -60px; overflow: visible; pointer-events: none; transform-origin: 0 0; }
+.timeline-ruler { position: sticky; top: 0; z-index: 31; display: block; height: 60px; min-width: 100%; margin-bottom: -60px; overflow: visible; pointer-events: none; transform-origin: 0 0; }
 .timeline-grid .ruler-band { fill: rgba(255, 255, 255, .84); stroke: none; }
 .timeline-grid .ruler-line { stroke: #555; stroke-width: 1.2; }
 .timeline-grid .year-tick { stroke: #777; stroke-width: 1; }
@@ -130,10 +130,16 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-grid .current-year-label { fill: #e65100; font-weight: 700; }
 .timeline-grid .year-tick.as-of-year { stroke: #000; stroke-width: 2; }
 .timeline-grid .as-of-year-label { fill: #000; font-weight: 700; }
+.timeline-as-of-handle { cursor: ew-resize; pointer-events: all; touch-action: none; }
+.timeline-as-of-handle:focus { outline: none; }
+.timeline-as-of-handle:focus .as-of-handle-box { stroke-width: 2; }
+.timeline-as-of-handle .as-of-handle-box { fill: #fff; stroke: #000; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.timeline-as-of-handle .as-of-handle-pointer { fill: #000; stroke: none; }
 .timeline-current-year-line { fill: none; stroke: #e65100; stroke-width: 1.5; opacity: .9; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-as-of-layer, .timeline-as-of-dim, .timeline-as-of-line { pointer-events: none; }
 .timeline-as-of-dim { fill: #fff; fill-opacity: .68; }
 .timeline-as-of-line { fill: none; stroke: #000; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.timeline-snapshot-labels { pointer-events: none; }
 .timeline-edge { fill: none; stroke: #000; stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-edge.paternal { stroke-width: 2; }
 .timeline-edge.maternal { stroke: #555; stroke-width: 1.25; }
@@ -176,11 +182,11 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node .current-year-edge { stroke: #e65100; stroke-width: 2; vector-effect: non-scaling-stroke; }
 
 .detail-backdrop {
-  position: fixed; z-index: 29; inset: 0; background: transparent; cursor: default;
+  position: fixed; z-index: 29; inset: 136px 0 0; background: transparent; cursor: default;
 }
 .detail-backdrop[hidden] { display: none; }
 .detail-sidebar {
-  position: fixed; z-index: 30; top: 76px; right: 0; bottom: 0; width: 380px; max-width: calc(100vw - 300px);
+  position: fixed; z-index: 32; top: 76px; right: 0; bottom: 0; width: 380px; max-width: calc(100vw - 300px);
   border-left: 1px solid #000; overflow-y: auto; box-shadow: -16px 0 40px rgba(0,0,0,.16);
   transform: translateX(calc(100% + 20px)); visibility: hidden; pointer-events: none;
   transition: transform .24s ease, visibility 0s linear .24s;

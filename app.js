@@ -70,6 +70,8 @@ const state = {
   editingProfileId: ''
 };
 let timelineViewportInitialized = false;
+let timelineRulerGeometry = null;
+let timelineAsOfDrag = null;
 
 const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
 
@@ -148,6 +150,15 @@ function life(person) {
   const start = clean(person.birthYear) || '?';
   const end = person.isLiving ? 'living' : (clean(person.deathYear) || '?');
   return `${start}–${end}`;
+}
+function timelineLifeLabel(person, asOfYear = null) {
+  const birthYear = numericYear(person?.birthYear);
+  const snapshotYear = numericYear(asOfYear);
+  if (snapshotYear == null || birthYear == null) return life(person);
+  if (snapshotYear < birthYear) return `(b. ${birthYear})`;
+  const deathYear = person?.isLiving ? null : numericYear(person?.deathYear);
+  if (deathYear != null && snapshotYear > deathYear) return `(b. ${birthYear}, d. ${deathYear})`;
+  return `(b. ${birthYear}, age ${Math.max(0, snapshotYear - birthYear)})`;
 }
 function numericYear(value) {
   const parsed = Number.parseInt(clean(value), 10);
@@ -2137,6 +2148,7 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
 function renderTimeline() {
   const canvas = els['timeline-canvas'];
   const ruler = els['timeline-ruler'];
+  timelineRulerGeometry = null;
   canvas.replaceChildren();
   ruler.replaceChildren();
   const visibility = buildTimelineVisibility();
@@ -2389,7 +2401,7 @@ function renderTimeline() {
   const layoutNodes = layoutEntries.map((entry, index) => {
     const person = state.people[entry.id];
     const lifespanWidth = lifespanWidthFor(person);
-    const labelWidth = 38 + estimateTextWidth(visibleName(person)) + 12 + estimateTextWidth(life(person)) + 18;
+    const labelWidth = 38 + estimateTextWidth(visibleName(person)) + 12 + estimateTextWidth(timelineLifeLabel(person, historicalYear)) + 18;
     return { ...entry, x: xForYear(birthYear(person)), y: index * rowStep, occupancyWidth: Math.max(lifespanWidth, labelWidth) };
   });
   // Horizontal relationship segments remain collision obstacles, while their
@@ -2457,6 +2469,7 @@ function renderTimeline() {
   ruler.toggleAttribute('hidden', false);
   ruler.setAttribute('width', width); ruler.setAttribute('height', rulerHeight); ruler.setAttribute('viewBox', `${-TIMELINE_PAN_MARGIN.left} 0 ${width} ${rulerHeight}`);
   ruler.style.transform = `scaleX(${state.zoom})`;
+  timelineRulerGeometry = { minYear, maxYear, left, yearWidth, viewBoxX: -TIMELINE_PAN_MARGIN.left, viewBoxWidth: width };
   const positions = new Map(layoutNodes.map(node => [node.key, { x: node.x, y: top + node.y }]));
 
   const rulerMarks = svg('g');
@@ -2476,7 +2489,28 @@ function renderTimeline() {
     const historicalX = xForYear(historicalYear);
     rulerMarks.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: 0, width: Math.max(0, xForYear(maxYear) - historicalX), height: rulerHeight }));
     rulerMarks.append(svg('line', { class: 'year-tick as-of-year', x1: historicalX, y1: 7, x2: historicalX, y2: rulerBaseline }));
-    rulerMarks.append(svg('text', { class: 'as-of-year-label', x: historicalX + 4, y: 12 }, `As of ${historicalYear}`));
+    const handle = svg('g', {
+      class: 'timeline-as-of-handle', transform: `translate(${historicalX} 0)`, role: 'slider', tabindex: '0',
+      'aria-label': 'Historical snapshot year', 'aria-valuemin': minYear, 'aria-valuemax': maxYear, 'aria-valuenow': historicalYear,
+      'aria-valuetext': `As of ${historicalYear}`
+    });
+    handle.append(svg('rect', { class: 'as-of-handle-box', x: -25, y: 2, width: 50, height: 18, rx: 4 }));
+    handle.append(svg('text', { class: 'as-of-year-label', x: 0, y: 14, 'text-anchor': 'middle' }, `As of ${historicalYear}`));
+    handle.append(svg('path', { class: 'as-of-handle-pointer', d: 'M -5 20 L 5 20 L 0 27 Z' }));
+    handle.append(svg('title', {}, 'Drag left or right one year at a time'));
+    handle.addEventListener('pointerdown', beginHistoricalYearSlide);
+    handle.addEventListener('mousedown', beginHistoricalYearMouseSlide);
+    handle.addEventListener('keydown', event => {
+      const delta = event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1
+        : event.key === 'ArrowRight' || event.key === 'ArrowUp' ? 1
+          : event.key === 'PageDown' ? -10 : event.key === 'PageUp' ? 10 : 0;
+      if (!delta) return;
+      event.preventDefault();
+      state.asOfYear = Math.max(minYear, Math.min(maxYear, historicalYear + delta));
+      persist(`Historical snapshot set to ${state.asOfYear}`);
+      render();
+    });
+    rulerMarks.append(handle);
   }
   ruler.append(rulerMarks);
 
@@ -2624,6 +2658,7 @@ function renderTimeline() {
     return `url(#${gradientId})`;
   };
   canvas.append(nodeDefs);
+  const snapshotLabelLayer = historicalYear == null ? null : svg('g', { class: 'timeline-snapshot-labels' });
 
   layoutNodes.forEach((layoutNode, nodeIndex) => {
     const { id, key: nodeKey } = layoutNode;
@@ -2637,8 +2672,9 @@ function renderTimeline() {
       ? svg('path', { ...attrs, d: leftRoundedRectPath(lifespanWidth, rowHeight, cornerRadius) })
       : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: cornerRadius, ry: cornerRadius });
     const historicalDisplayName = visibleName(person);
-    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${life(person)}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
-    group.append(svg('title', {}, `${historicalDisplayName} · ${life(person)}`));
+    const historicalLifeLabel = timelineLifeLabel(person, historicalYear);
+    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${historicalLifeLabel}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    group.append(svg('title', {}, `${historicalDisplayName} · ${historicalLifeLabel}`));
     group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
     const eventClip = svg('clipPath', { id: eventClipId, clipPathUnits: 'userSpaceOnUse' });
@@ -2745,7 +2781,7 @@ function renderTimeline() {
     const makeLabel = className => {
       const text = svg('text', { class: className, x: 38, y: nodeCenterY + 1 });
       text.append(svg('tspan', { class: 'timeline-name' }, historicalDisplayName));
-      text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, life(person)));
+      text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, historicalLifeLabel));
       return text;
     };
     const halo = makeLabel('timeline-label timeline-label-halo');
@@ -2753,6 +2789,11 @@ function renderTimeline() {
     group.append(halo);
     const label = makeLabel('timeline-label');
     group.append(label);
+    if (snapshotLabelLayer) {
+      const snapshotLabel = svg('g', { transform: `translate(${pos.x} ${pos.y})` });
+      snapshotLabel.append(halo.cloneNode(true), label.cloneNode(true));
+      snapshotLabelLayer.append(snapshotLabel);
+    }
     if (person.isLiving) group.append(svg('line', { class: 'current-year-edge', x1: lifespanWidth, y1: 0, x2: lifespanWidth, y2: rowHeight }));
     group.addEventListener('click', () => selectPerson(id));
     group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') selectPerson(id); });
@@ -2764,6 +2805,7 @@ function renderTimeline() {
     snapshotLayer.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: eventTop, width: Math.max(0, xForYear(maxYear) - historicalX + TIMELINE_PAN_MARGIN.right), height: eventBottom - eventTop }));
     snapshotLayer.append(svg('line', { class: 'timeline-as-of-line', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom }));
     canvas.append(snapshotLayer);
+    canvas.append(snapshotLabelLayer);
   }
   canvas.style.transform = `scale(${state.zoom})`;
   if (!timelineViewportInitialized) {
@@ -3462,6 +3504,63 @@ function endCanvasDrag(event) {
 els['canvas-viewport'].addEventListener('pointerup', endCanvasDrag);
 els['canvas-viewport'].addEventListener('pointercancel', endCanvasDrag);
 els['canvas-viewport'].addEventListener('dragstart', event => event.preventDefault());
+
+function historicalYearFromRulerPointer(event) {
+  const geometry = timelineRulerGeometry;
+  const rect = els['timeline-ruler'].getBoundingClientRect();
+  if (!geometry || rect.width <= 0) return null;
+  const svgX = geometry.viewBoxX + ((event.clientX - rect.left) / rect.width) * geometry.viewBoxWidth;
+  const year = Math.round(geometry.minYear + (svgX - geometry.left) / geometry.yearWidth - 0.5);
+  return Math.max(geometry.minYear, Math.min(geometry.maxYear, year));
+}
+function slideHistoricalYear(event) {
+  if (!timelineAsOfDrag || timelineAsOfDrag.kind !== 'pointer' || event.pointerId !== timelineAsOfDrag.pointerId) return;
+  updateHistoricalYearFromRuler(event);
+}
+function updateHistoricalYearFromRuler(event) {
+  const year = historicalYearFromRulerPointer(event);
+  if (year == null || year === state.asOfYear) return;
+  state.asOfYear = year;
+  els['timeline-as-of-year'].value = year;
+  render();
+}
+function beginHistoricalYearSlide(event) {
+  // Mouse dragging is handled by the document-level fallback below. Keeping
+  // pointer capture for touch and pen avoids losing those drags off the handle.
+  if (event.pointerType === 'mouse') return;
+  event.preventDefault();
+  timelineAsOfDrag = { kind: 'pointer', pointerId: event.pointerId };
+  els['timeline-ruler'].setPointerCapture?.(event.pointerId);
+  slideHistoricalYear(event);
+}
+els['timeline-ruler'].addEventListener('pointermove', slideHistoricalYear);
+function finishHistoricalYearSlide(event) {
+  if (!timelineAsOfDrag || timelineAsOfDrag.kind !== 'pointer' || event.pointerId !== timelineAsOfDrag.pointerId) return;
+  slideHistoricalYear(event);
+  els['timeline-ruler'].releasePointerCapture?.(event.pointerId);
+  timelineAsOfDrag = null;
+  persist(`Historical snapshot set to ${state.asOfYear}`);
+}
+els['timeline-ruler'].addEventListener('pointerup', finishHistoricalYearSlide);
+els['timeline-ruler'].addEventListener('pointercancel', finishHistoricalYearSlide);
+function beginHistoricalYearMouseSlide(event) {
+  if (timelineAsOfDrag) return;
+  event.preventDefault();
+  timelineAsOfDrag = { kind: 'mouse' };
+  updateHistoricalYearFromRuler(event);
+}
+function slideHistoricalYearWithMouse(event) {
+  if (timelineAsOfDrag?.kind !== 'mouse') return;
+  updateHistoricalYearFromRuler(event);
+}
+function finishHistoricalYearMouseSlide(event) {
+  if (timelineAsOfDrag?.kind !== 'mouse') return;
+  updateHistoricalYearFromRuler(event);
+  timelineAsOfDrag = null;
+  persist(`Historical snapshot set to ${state.asOfYear}`);
+}
+document.addEventListener('mousemove', slideHistoricalYearWithMouse);
+document.addEventListener('mouseup', finishHistoricalYearMouseSlide);
 
 function closeDetails() {
   state.selectedId = '';

@@ -28,7 +28,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 12;
+const BRITISH_ROYAL_STARTER_VERSION = 13;
 
 function sessionValue(key, value) {
   try {
@@ -436,7 +436,7 @@ function createBritishRoyalSample() {
     ['frederick-wales', 'Frederick', 'Prince of Wales', '1707', '1751', 'male', 'Heir apparent who predeceased George II', historyUrl],
     ['george-iii', 'George', 'III', '1738', '1820', 'male', 'King of Great Britain and Ireland; later United Kingdom', historyUrl],
     ['edward-kent', 'Edward', 'Duke of Kent', '1767', '1820', 'male', 'Fourth son of George III; father of Victoria', historyUrl],
-    ['victoria', 'Victoria', '', '1819', '1901', 'female', 'Queen of the United Kingdom, 1837–1901', 'https://www.royal.uk/encyclopedia/victoria-r-1837-1901'],
+    ['victoria', 'Victoria', '', '1819', '1901', 'female', 'Queen of the United Kingdom, 1837–1901; Empress of India, 1876–1901', 'https://www.nationalgallery.org.uk/people/victoria-queen-of-the-united-kingdom-of-great-britain-and-ireland-and-empress-of-india'],
     ['albert', 'Albert', 'Prince Consort', '1819', '1861', 'male', 'Consort of Queen Victoria', historyUrl],
     ['edward-vii', 'Edward', 'VII', '1841', '1910', 'male', 'King of the United Kingdom, 1901–1910', historyUrl],
     ['george-v', 'George', 'V', '1865', '1936', 'male', 'King of the United Kingdom, 1910–1936', 'https://www.royal.uk/george-v'],
@@ -633,6 +633,7 @@ function createBritishRoyalSample() {
   const people = {};
   const displayNameOverrides = {
     'henry-vii': 'Henry VII, King of England',
+    victoria: 'Victoria, Queen of the United Kingdom and Empress of India',
     'wallis-simpson': 'Wallis, Duchess of Windsor',
     'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',
     'harry-sussex': 'Harry, Duke of Sussex', 'meghan-sussex': 'Meghan, Duchess of Sussex',
@@ -763,7 +764,7 @@ function createBritishRoyalSample() {
   });
   const nameSources = {
     'henry-vii': 'https://www.royal.uk/henry-vii',
-    victoria: 'https://www.royal.uk/encyclopedia/victoria-r-1837-1901',
+    victoria: 'https://www.nationalgallery.org.uk/people/victoria-queen-of-the-united-kingdom-of-great-britain-and-ireland-and-empress-of-india',
     'george-v': 'https://www.royal.uk/george-v',
     'elizabeth-ii': 'https://www.royal.uk/her-majesty-queen-elizabeth-ii',
     philip: 'https://www.royal.uk/the-duke-of-edinburgh',
@@ -783,7 +784,7 @@ function createBritishRoyalSample() {
     'charles-i': 'Charles I of England', 'charles-ii': 'Charles II of England', 'james-ii-vii': 'James II of England',
     'mary-ii': 'Mary II', anne: 'Anne, Queen of Great Britain', 'george-i': 'George I of Great Britain',
     'george-ii': 'George II of Great Britain', 'frederick-wales': 'Frederick, Prince of Wales', 'george-iii': 'George III',
-    'george-iv': 'George IV', 'william-iv': 'William IV', victoria: 'Queen Victoria', 'albert': 'Prince Albert of Saxe-Coburg and Gotha',
+    'george-iv': 'George IV', 'william-iv': 'William IV', albert: 'Prince Albert of Saxe-Coburg and Gotha',
     'edward-vii': 'Edward VII', 'george-v': 'George V', 'mary-teck': 'Mary of Teck', 'edward-viii': 'Edward VIII',
     'george-vi': 'George VI', 'queen-mother': 'Queen Elizabeth The Queen Mother', philip: 'Prince Philip, Duke of Edinburgh',
     'wallis-simpson': 'Wallis Simpson',
@@ -817,7 +818,7 @@ function createBritishRoyalSample() {
     'george-iii': [[1738, 'Prince George'], [1751, 'George, Prince of Wales'], [1760, 'George III, King of Great Britain and Ireland']],
     'george-iv': [[1762, 'George, Prince of Wales'], [1811, 'George, Prince Regent'], [1820, 'George IV, King of the United Kingdom']],
     'william-iv': [[1765, 'Prince William Henry'], [1789, 'William, Duke of Clarence and St Andrews'], [1830, 'William IV, King of the United Kingdom']],
-    victoria: [[1819, 'Princess Alexandrina Victoria of Kent'], [1837, 'Victoria, Queen of the United Kingdom']],
+    victoria: [[1819, 'Princess Alexandrina Victoria of Kent'], [1837, 'Victoria, Queen of the United Kingdom'], [1876, 'Victoria, Queen of the United Kingdom and Empress of India']],
     albert: [[1819, 'Prince Albert of Saxe-Coburg and Gotha'], [1857, 'Albert, Prince Consort']],
     'edward-vii': [[1841, 'Albert Edward, Prince of Wales'], [1901, 'Edward VII, King of the United Kingdom']],
     'george-v': [[1865, 'Prince George of Wales'], [1892, 'George, Duke of York'], [1901, 'George, Prince of Wales'], [1910, 'George V, King of the United Kingdom']],
@@ -924,6 +925,15 @@ function upgradeBundledBritishRoyalLine() {
     if (id === CAMILLA_GENI_PROFILE_ID) {
       merged.isLiving = true;
       merged.deathYear = '';
+    }
+    if (id === canonicalGeniProfileId('6000000008852088113')) {
+      merged.namePeriods = normalizeNamePeriods(merged.namePeriods.map(period => (
+        period.id === 'victoria-name-1837'
+          && period.name === 'Victoria, Queen of the United Kingdom'
+          && numericYear(period.endYear) === 1901
+          ? { ...period, endYear: 1876 }
+          : period
+      )));
     }
     merged.marriageYears = { ...bundled.marriageYears, ...saved.marriageYears };
     merged.personalEvents = normalizePersonalEvents([...bundled.personalEvents, ...saved.personalEvents]);

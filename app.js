@@ -28,7 +28,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 13;
+const BRITISH_ROYAL_STARTER_VERSION = 14;
 
 function sessionValue(key, value) {
   try {
@@ -125,8 +125,11 @@ function initials(person) {
     : [person.firstName, person.lastName].filter(Boolean);
   return (parts.map(part => Array.from(part)[0]).join('') || '?').slice(0, 2).toUpperCase();
 }
+function defaultNamePeriod(person) {
+  return person?.namePeriods?.find(period => period.id === person.defaultNamePeriodId) || null;
+}
 function fullName(person) {
-  return clean(person.displayName) || [person.firstName, person.lastName].filter(Boolean).join(' ') || 'Unnamed profile';
+  return clean(defaultNamePeriod(person)?.name) || clean(person.displayName) || [person.firstName, person.lastName].filter(Boolean).join(' ') || 'Unnamed profile';
 }
 function nameAtYear(person, year) {
   const targetYear = numericYear(year);
@@ -134,6 +137,8 @@ function nameAtYear(person, year) {
   if (targetYear == null || !periods.length) return fullName(person);
   const personBirthYear = numericYear(person?.birthYear);
   if (personBirthYear != null && targetYear < personBirthYear) return fullName(person);
+  const personDeathYear = person?.isLiving ? null : numericYear(person?.deathYear);
+  if (personDeathYear != null && targetYear > personDeathYear) return fullName(person);
   const exact = periods.filter(period =>
     (period.startYear == null || period.startYear <= targetYear)
     && (period.endYear == null || period.endYear >= targetYear)
@@ -386,11 +391,22 @@ function normalizePerson(source, fallbackId) {
   const relationshipEndStatuses = Object.fromEntries(Object.entries(source.relationshipEndStatuses || {}).map(([partnerId, status]) => [refId(partnerId), clean(status).toLowerCase()]).filter(([partnerId, status]) => partnerId && ['annulled', 'divorced', 'ended'].includes(status)));
   const partners = uniqueRefs(source.partners || source.spouses);
   const rawGender = clean(source.gender).toLowerCase();
+  const rawNamePeriods = source.namePeriods || source.historicalNames || source.names;
+  const namePeriods = normalizeNamePeriods(rawNamePeriods);
+  const requestedDefaultPeriodId = clean(source.defaultNamePeriodId || source.default_name_period_id);
+  const rawDefaultPeriod = (Array.isArray(rawNamePeriods) ? rawNamePeriods : []).find(period => clean(period?.id) === requestedDefaultPeriodId);
+  const normalizedRawDefaultName = clean(rawDefaultPeriod?.name || rawDefaultPeriod?.displayName || rawDefaultPeriod?.display_name || rawDefaultPeriod?.label)
+    .replace(/^(?:(?:H\.?R\.?H\.?|H\.?M\.?)|(?:His|Her) Royal Highness|(?:His|Her) Majesty)\s+/i, '');
+  const displayName = clean(source.displayName || source.display_name || (typeof source.name === 'string' ? source.name : ''));
+  const defaultNamePeriodId = namePeriods.find(period => period.id === requestedDefaultPeriodId)?.id
+    || namePeriods.find(period => normalizedRawDefaultName && period.name === normalizedRawDefaultName)?.id
+    || namePeriods.find(period => displayName && period.name.toLocaleLowerCase() === displayName.toLocaleLowerCase())?.id
+    || '';
   return {
     id,
     firstName: clean(source.firstName || source.firstname || source.first_name),
     lastName: clean(source.lastName || source.surname || source.last_name || source.maiden_name),
-    displayName: clean(source.displayName || source.display_name || (typeof source.name === 'string' ? source.name : '')),
+    displayName,
     title: clean(source.title || source.display_title || source.occupation),
     nameOrder: 'western',
     gender: rawGender === 'm' ? 'male' : rawGender === 'f' ? 'female' : ['male', 'female'].includes(rawGender) ? rawGender : 'unknown',
@@ -411,7 +427,8 @@ function normalizePerson(source, fallbackId) {
     marriageYears,
     relationshipEndYears,
     relationshipEndStatuses,
-    namePeriods: normalizeNamePeriods(source.namePeriods || source.historicalNames || source.names),
+    namePeriods,
+    defaultNamePeriodId,
     personalEvents: normalizePersonalEvents([...(Array.isArray(source.personalEvents) ? source.personalEvents : []), ...extractGeniReignFacts(source)]),
     sourceUrl,
     sourceId: clean(source.sourceId || (/^profile-/i.test(id) ? id : '')),
@@ -858,6 +875,11 @@ function createBritishRoyalSample() {
     'archie-sussex': [[2019, 'Archie Mountbatten-Windsor'], [2023, 'Prince Archie of Sussex']],
     'lilibet-sussex': [[2021, 'Lilibet Mountbatten-Windsor'], [2023, 'Princess Lilibet of Sussex']]
   };
+  const defaultNameStartYears = {
+    // A lasting identity need not be the person's final chronological title.
+    'margaret-tudor': 1503,
+    'edward-viii': 1936
+  };
   Object.entries(historicalNameTransitions).forEach(([slug, transitions]) => {
     const person = people[id(slug)];
     if (!person) return;
@@ -871,6 +893,11 @@ function createBritishRoyalSample() {
       endYear: transitions[index + 1]?.[0] ?? numericYear(person.deathYear),
       sourceUrl
     })));
+    const preferredStartYear = defaultNameStartYears[slug];
+    const preferredPeriod = person.namePeriods.find(period => preferredStartYear != null && period.startYear === preferredStartYear)
+      || person.namePeriods.find(period => period.name.toLocaleLowerCase() === clean(person.displayName).toLocaleLowerCase())
+      || person.namePeriods.at(-1);
+    person.defaultNamePeriodId = preferredPeriod?.id || '';
   });
   return people;
 }
@@ -975,6 +1002,7 @@ function migrateGeniPeople(rawPeople) {
     const normalized = normalizePerson(source, key);
     const rawNamePeriods = source?.namePeriods || source?.historicalNames || source?.names;
     if (Array.isArray(rawNamePeriods) && normalized.namePeriods.length < rawNamePeriods.filter(Boolean).length) migrated = true;
+    if (!clean(source?.defaultNamePeriodId || source?.default_name_period_id) && normalized.defaultNamePeriodId) migrated = true;
     const oldId = normalized.id;
     normalized.id = remap(oldId);
     normalized.sourceId = remap(normalized.sourceId);
@@ -1446,6 +1474,9 @@ function mergePersonRecords(existing, incoming) {
   ['firstName', 'lastName', 'displayName', 'title', 'birthYear', 'deathYear', 'place', 'note'].forEach(field => {
     if (!clean(existing[field]) && clean(incoming[field])) preferred[field] = incoming[field];
   });
+  if (!clean(existing.defaultNamePeriodId) && clean(incoming.defaultNamePeriodId)) {
+    preferred.defaultNamePeriodId = incoming.defaultNamePeriodId;
+  }
   // A placeholder such as "?" is missing data, not a local edit that should
   // prevent Geni from filling a real year on an existing profile.
   if (numericYear(existing.birthYear) == null && numericYear(incoming.birthYear) != null) preferred.birthYear = incoming.birthYear;
@@ -1463,6 +1494,10 @@ function mergePersonRecords(existing, incoming) {
   merged.relationshipEndYears = { ...incoming.relationshipEndYears, ...existing.relationshipEndYears };
   merged.relationshipEndStatuses = { ...incoming.relationshipEndStatuses, ...existing.relationshipEndStatuses };
   merged.namePeriods = normalizeNamePeriods([...incoming.namePeriods, ...existing.namePeriods]);
+  if (!merged.namePeriods.some(period => period.id === merged.defaultNamePeriodId)) {
+    const formerDefaultName = defaultNamePeriod(existing)?.name || defaultNamePeriod(incoming)?.name;
+    merged.defaultNamePeriodId = merged.namePeriods.find(period => formerDefaultName && period.name === formerDefaultName)?.id || '';
+  }
   merged.personalEvents = normalizePersonalEvents([...incoming.personalEvents, ...existing.personalEvents]);
   merged.sourceUrl = incoming.sourceUrl || existing.sourceUrl;
   merged.sourceId = incoming.sourceId || existing.sourceId;
@@ -1706,6 +1741,7 @@ function stitchPrompt(anchorId = '') {
       sourceUrl: person.sourceUrl || null,
       sourceId: person.sourceId || null,
       sourceProvider: person.sourceProvider || null,
+      defaultNamePeriodId: person.defaultNamePeriodId || null,
       namePeriods: person.namePeriods
     };
   });
@@ -1734,6 +1770,7 @@ Requirements:
 - For royal and noble profiles, use Wikipedia's "Titles and styles" chronology where available, checking important transitions against official or other reliable sources.
 - Store readable names and substantive titles only. Omit honorific style prefixes such as HM, HRH, His or Her Majesty, and His or Her Royal Highness.
 - Put those chronological labels in "namePeriods" as objects with id, name, startYear, endYear, and sourceUrl. Use open null boundaries when necessary, avoid overlapping periods, and do not invent unsupported titles.
+- Set "defaultNamePeriodId" to the one dated name by which the person is best known. It need not be the final title; do not choose a temporary widowhood, dowager, abdication, or retirement title merely because it came last.
 - Include sourceUrl, sourceId, and sourceProvider for every researched profile.
 - Set focusId to the main person researched. Do not include global events unless I explicitly ask for them.
 
@@ -3188,11 +3225,15 @@ function renderNamePeriods(person) {
   list.replaceChildren(...person.namePeriods.map((period, index) => {
     const row = document.createElement('div');
     row.className = 'name-period-row';
+    const isDefault = period.id === person.defaultNamePeriodId;
     const text = period.sourceUrl ? document.createElement('a') : document.createElement('strong');
     text.textContent = period.name;
     if (period.sourceUrl) { text.href = period.sourceUrl; text.target = '_blank'; text.rel = 'noreferrer'; }
     const years = document.createElement('small');
     years.textContent = formatNamePeriod(period);
+    const defaultMarker = document.createElement('span');
+    defaultMarker.className = 'name-period-default';
+    defaultMarker.textContent = isDefault ? 'default' : '';
     const edit = rowActionButton('row-edit', '✎', `Edit name period ${period.name}`, () => {
       row.classList.add('editing');
       const nameInput = document.createElement('input');
@@ -3201,6 +3242,13 @@ function renderNamePeriods(person) {
       nameInput.setAttribute('aria-label', 'Historical name');
       const startInput = inlineYearInput(period.startYear, 'From year');
       const endInput = inlineYearInput(period.endYear, 'To year');
+      let makeDefault = isDefault;
+      const defaultControl = rowActionButton('row-default', makeDefault ? '★' : '☆', `Use ${period.name} as the default name`, () => {
+        makeDefault = true;
+        defaultControl.textContent = '★';
+        defaultControl.setAttribute('aria-pressed', 'true');
+      });
+      defaultControl.setAttribute('aria-pressed', String(makeDefault));
       const save = rowActionButton('row-save', '✓', `Save name period ${period.name}`, () => {
         const nextName = clean(nameInput.value);
         let startYear = numericYear(startInput.value);
@@ -3209,19 +3257,25 @@ function renderNamePeriods(person) {
         if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
         person.namePeriods[index] = { ...period, name: nextName, startYear, endYear };
         person.namePeriods = normalizeNamePeriods(person.namePeriods);
+        if (makeDefault) person.defaultNamePeriodId = period.id;
         persist('Historical name saved');
         render();
       });
       const remove = rowActionButton('row-delete', '×', `Delete name period ${period.name}`, () => {
         person.namePeriods.splice(index, 1);
+        person.namePeriods = normalizeNamePeriods(person.namePeriods);
+        if (isDefault) {
+          person.defaultNamePeriodId = person.namePeriods.find(candidate => candidate.name.toLocaleLowerCase() === clean(person.displayName).toLocaleLowerCase())?.id
+            || person.namePeriods.at(-1)?.id || '';
+        }
         persist('Historical name deleted');
         render();
       });
-      row.replaceChildren(nameInput, startInput, endInput, save, remove);
+      row.replaceChildren(nameInput, startInput, endInput, defaultControl, save, remove);
       nameInput.focus();
       nameInput.select();
     });
-    row.append(text, years, edit);
+    row.append(text, years, defaultMarker, edit);
     return row;
   }));
 }
@@ -3878,9 +3932,11 @@ els['add-name-period'].addEventListener('click', () => {
   let endYear = numericYear(els['name-period-end'].value);
   if (!name) return toast('Enter the historical name or title.', true);
   if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
+  const newPeriodId = uniqueId('name');
   person.namePeriods = normalizeNamePeriods([...person.namePeriods, {
-    id: uniqueId('name'), name, startYear, endYear, sourceUrl: '', source: 'local'
+    id: newPeriodId, name, startYear, endYear, sourceUrl: '', source: 'local'
   }]);
+  if (!person.defaultNamePeriodId) person.defaultNamePeriodId = person.namePeriods.find(period => period.id === newPeriodId)?.id || '';
   els['name-period-name'].value = '';
   els['name-period-start'].value = '';
   els['name-period-end'].value = '';
@@ -3934,6 +3990,8 @@ els['person-form'].addEventListener('submit', event => {
   const geniLink = optionalGeniLink(geniInput);
   if (geniInput && !geniLink) return toast('Enter a Geni public ID such as g600000… or a Geni profile URL.', true);
   person.displayName = displayName;
+  const selectedDefaultPeriod = defaultNamePeriod(person);
+  if (selectedDefaultPeriod) selectedDefaultPeriod.name = displayName;
   person.birthYear = clean(data.get('birthYear'));
   person.deathYear = clean(data.get('deathYear'));
   if (person.deathYear) person.isLiving = false;

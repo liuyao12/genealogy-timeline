@@ -46,7 +46,7 @@ Then open <http://localhost:4173>.
 - The web app has its own profile model and does not modify or depend on the mini-program runtime.
 - Profiles use the Western `First Last` display order.
 - When a source supplies a display name, the app preserves and shows it in preference to reconstructing a name from separate fields. This keeps titles such as “King of England” searchable and visible on the timeline.
-- `namePeriods` entries contain a stable period ID, dated name, optional open date boundaries, and direct source URL. Snapshot mode uses the exact matching interval, then the latest earlier documented name, with the default display name as fallback.
+- `namePeriods` entries contain a stable period ID, dated name, optional open date boundaries, and direct source URL. One period is explicitly marked as the default lasting identity; it is used outside the person's lifespan and need not be their final chronological title.
 - Tree ordering and line weight prioritize paternal descent while retaining maternal relationships with a lighter solid line.
 - Timeline labels keep the name and lifespan on one line. They do not display age.
 - Personal events are edited in the selected profile drawer, where their dates remain visible. Global events are managed from the header's **Events** dialog and appear as bands behind the full timeline. Event years are not printed over the timeline itself. Both kinds use the same twelve-colour palette and retain their selection in local storage and JSON backups. All `Reign` events share one colour across the tree, red by default; changing any reign selector changes them together.

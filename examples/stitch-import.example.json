@@ -17,6 +17,7 @@
         { "id": "henry-vii-before-accession", "name": "Henry Tudor", "startYear": 1457, "endYear": 1485, "sourceUrl": "https://www.royal.uk/henry-vii" },
         { "id": "henry-vii-reign-name", "name": "Henry VII, King of England", "startYear": 1485, "endYear": 1509, "sourceUrl": "https://www.royal.uk/henry-vii" }
       ],
+      "defaultNamePeriodId": "henry-vii-reign-name",
       "sourceUrl": "https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898",
       "sourceId": "g6000000003760873898",
       "sourceProvider": "geni"
@@ -35,6 +36,7 @@
         { "id": "elizabeth-york-princess", "name": "Elizabeth of York", "startYear": 1466, "endYear": 1486, "sourceUrl": "https://en.wikipedia.org/wiki/Elizabeth_of_York" },
         { "id": "elizabeth-york-queen", "name": "Elizabeth of York, Queen consort of England", "startYear": 1486, "endYear": 1503, "sourceUrl": "https://en.wikipedia.org/wiki/Elizabeth_of_York" }
       ],
+      "defaultNamePeriodId": "elizabeth-york-queen",
       "sourceUrl": "https://www.geni.com/profile/index/5111879481690102566",
       "sourceId": "g5111879481690102566",
       "sourceProvider": "geni"
@@ -53,6 +55,7 @@
         { "id": "arthur-tudor-child", "name": "Arthur Tudor", "startYear": 1486, "endYear": 1489, "sourceUrl": "https://en.wikipedia.org/wiki/Arthur,_Prince_of_Wales" },
         { "id": "arthur-prince-of-wales", "name": "Arthur Tudor, Prince of Wales", "startYear": 1489, "endYear": 1502, "sourceUrl": "https://en.wikipedia.org/wiki/Arthur,_Prince_of_Wales" }
       ],
+      "defaultNamePeriodId": "arthur-prince-of-wales",
       "sourceUrl": "https://www.geni.com/profile/index/6000000003409427757",
       "sourceId": "g6000000003409427757",
       "sourceProvider": "geni"

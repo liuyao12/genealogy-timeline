@@ -59,6 +59,7 @@ Never use a bare name as an ID. Every ID mentioned in a relationship array must 
       "sourceUrl": "https://en.wikipedia.org/wiki/Public_biography"
     }
   ],
+  "defaultNamePeriodId": "name-stable-id",
   "personalEvents": [
     { "id": "event-stable-id", "name": "Reign", "startYear": 1952, "endYear": 2022, "color": "#c62828" }
   ],
@@ -70,9 +71,9 @@ Never use a bare name as an ID. Every ID mentioned in a relationship array must 
 
 Only `id` and a usable name are essential, but birth years are needed for timeline placement. Use `male`, `female`, or `unknown`. Use `null`, an empty string, or omit a field when the public evidence does not establish it.
 
-`displayName` is the default or present-day label. `namePeriods` records the chronological names, styles, or titles by which the person was publicly known. Periods should be evidence-based, non-overlapping where possible, and ordered by `startYear`; a null boundary means the evidence does not establish that boundary. Give each period a stable ID and a direct public source URL. Wikipedia, Wikidata, official biographies, and other reliable public sources may complement genealogy profiles. For royal and noble people, Wikipedia's “Titles and styles” section is often the best chronology to begin with. Store readable names and substantive titles, but omit ceremonial prefixes such as `HM`, `HRH`, “His/Her Majesty”, and “His/Her Royal Highness”; the importer strips those prefixes if supplied.
+`displayName` is the source's general display label. `namePeriods` records the chronological names, styles, or titles by which the person was publicly known. Set `defaultNamePeriodId` to the period containing the lasting identity by which the person is best known; it need not be the last period. In particular, do not automatically prefer a temporary dowager, widowhood, post-abdication, or retirement title. Periods should be evidence-based, non-overlapping where possible, and ordered by `startYear`; a null boundary means the evidence does not establish that boundary. Give each period a stable ID and a direct public source URL. Wikipedia, Wikidata, official biographies, and other reliable public sources may complement genealogy profiles. For royal and noble people, Wikipedia's “Titles and styles” section is often the best chronology to begin with. Store readable names and substantive titles, but omit ceremonial prefixes such as `HM`, `HRH`, “His/Her Majesty”, and “His/Her Royal Highness”; the importer strips those prefixes if supplied.
 
-When the app is set to a historical snapshot year, it chooses the matching `namePeriods` entry and dims everything to the right of that year. If no interval exactly covers the year, it uses the latest documented name already reached; `displayName` remains the final fallback.
+When the app is set to a historical snapshot year, it chooses the matching `namePeriods` entry and dims everything to the right of that year. Before birth and after death it uses the period identified by `defaultNamePeriodId`. Within the lifespan, if no interval exactly covers the year, it uses the latest documented name already reached; `displayName` remains the final fallback.
 
 Formally married people belong in both `partners` and `spouses`. Non-marital relationships belong in `partners` and `nonSpouses`, not `spouses`. Allowed relationship-end statuses are `annulled`, `divorced`, and `ended`.
 
@@ -85,6 +86,6 @@ Parent/child and partner/spouse links should be reciprocal. The importer repairs
 - Existing root, filtering, scale, visibility choices, and local events remain unchanged.
 - Relationship references not found in either the package or current tree are omitted and reported.
 - Source attribution is retained on every imported profile.
-- Dated names merge by their stable period ID without replacing the profile's default display name.
+- Dated names merge by their stable period ID, and `defaultNamePeriodId` selects the canonical one without changing its historical dates.
 
 See [`examples/stitch-import.example.json`](../examples/stitch-import.example.json) for a complete package.

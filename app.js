@@ -27,7 +27,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 11;
+const BRITISH_ROYAL_STARTER_VERSION = 12;
 
 function sessionValue(key, value) {
   try {
@@ -630,6 +630,7 @@ function createBritishRoyalSample() {
   const people = {};
   const displayNameOverrides = {
     'henry-vii': 'Henry VII, King of England',
+    'wallis-simpson': 'Wallis, Duchess of Windsor',
     'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',
     'harry-sussex': 'Harry, Duke of Sussex', 'meghan-sussex': 'Meghan, Duchess of Sussex',
     'george-wales': 'Prince George of Wales', 'charlotte-wales': 'Princess Charlotte of Wales',
@@ -782,6 +783,7 @@ function createBritishRoyalSample() {
     'george-iv': 'George IV', 'william-iv': 'William IV', victoria: 'Queen Victoria', 'albert': 'Prince Albert of Saxe-Coburg and Gotha',
     'edward-vii': 'Edward VII', 'george-v': 'George V', 'mary-teck': 'Mary of Teck', 'edward-viii': 'Edward VIII',
     'george-vi': 'George VI', 'queen-mother': 'Queen Elizabeth The Queen Mother', philip: 'Prince Philip, Duke of Edinburgh',
+    'wallis-simpson': 'Wallis Simpson',
     'elizabeth-ii': 'Elizabeth II', 'margaret-snowdon': 'Princess Margaret, Countess of Snowdon', 'charles-iii': 'Charles III',
     camilla: 'Queen Camilla', 'anne-royal': 'Anne, Princess Royal', 'andrew-york': 'Prince Andrew, Duke of York',
     'edward-edinburgh': 'Prince Edward, Duke of Edinburgh', diana: 'Diana, Princess of Wales',
@@ -820,6 +822,7 @@ function createBritishRoyalSample() {
     'edward-viii': [[1894, 'Prince Edward of York'], [1901, 'Prince Edward of Wales'], [1910, 'Edward, Prince of Wales'], [1936, 'Edward VIII, King of the United Kingdom'], [1937, 'Edward, Duke of Windsor']],
     'george-vi': [[1895, 'Prince Albert of York'], [1901, 'Prince Albert of Wales'], [1910, 'Prince Albert'], [1920, 'Albert, Duke of York'], [1936, 'George VI, King of the United Kingdom']],
     'queen-mother': [[1900, 'Elizabeth Bowes-Lyon'], [1923, 'Elizabeth, Duchess of York'], [1936, 'Elizabeth, Queen of the United Kingdom'], [1952, 'Elizabeth, the Queen Mother']],
+    'wallis-simpson': [[1896, 'Bessie Wallis Warfield'], [1916, 'Wallis Spencer'], [1928, 'Wallis Simpson'], [1937, 'Wallis, Duchess of Windsor']],
     philip: [[1921, 'Prince Philip of Greece and Denmark'], [1947, 'Philip, Duke of Edinburgh']],
     'elizabeth-ii': [[1926, 'Princess Elizabeth of York'], [1936, 'The Princess Elizabeth'], [1947, 'The Princess Elizabeth, Duchess of Edinburgh'], [1952, 'Elizabeth II, Queen of the United Kingdom']],
     'margaret-snowdon': [[1930, 'Princess Margaret Rose of York'], [1936, 'The Princess Margaret'], [1960, 'Margaret, Countess of Snowdon']],

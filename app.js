@@ -27,7 +27,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 10;
+const BRITISH_ROYAL_STARTER_VERSION = 11;
 
 function sessionValue(key, value) {
   try {
@@ -247,7 +247,8 @@ function normalizePersonalEvents(events) {
 
 function normalizeNamePeriods(periods) {
   const normalized = (Array.isArray(periods) ? periods : []).map(period => {
-    const name = clean(period?.name || period?.displayName || period?.display_name || period?.label);
+    const name = clean(period?.name || period?.displayName || period?.display_name || period?.label)
+      .replace(/^(?:(?:H\.?R\.?H\.?|H\.?M\.?)|(?:His|Her) Royal Highness|(?:His|Her) Majesty)\s+/i, '');
     let startYear = numericYear(period?.startYear ?? period?.start_year ?? period?.fromYear ?? period?.from);
     let endYear = numericYear(period?.endYear ?? period?.end_year ?? period?.toYear ?? period?.to);
     if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
@@ -739,26 +740,101 @@ function createBritishRoyalSample() {
     if (!people[id(slug)]) return;
     people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal', color: state.reignColor }));
   });
-  const historicalNames = {
-    'henry-vii': [
-      { id: 'henry-vii-before-accession', name: 'Henry Tudor', startYear: 1457, endYear: 1485, sourceUrl: 'https://www.royal.uk/henry-vii' },
-      { id: 'henry-vii-reign-name', name: 'Henry VII, King of England', startYear: 1485, endYear: 1509, sourceUrl: 'https://www.royal.uk/henry-vii' }
-    ],
-    'elizabeth-ii': [
-      { id: 'elizabeth-ii-york', name: 'Princess Elizabeth of York', startYear: 1926, endYear: 1936, sourceUrl: historyUrl },
-      { id: 'elizabeth-ii-princess', name: 'The Princess Elizabeth', startYear: 1936, endYear: 1947, sourceUrl: historyUrl },
-      { id: 'elizabeth-ii-edinburgh', name: 'The Princess Elizabeth, Duchess of Edinburgh', startYear: 1947, endYear: 1952, sourceUrl: historyUrl },
-      { id: 'elizabeth-ii-reign-name', name: 'Elizabeth II, Queen of the United Kingdom', startYear: 1952, endYear: 2022, sourceUrl: historyUrl }
-    ],
-    'charles-iii': [
-      { id: 'charles-iii-edinburgh', name: 'Prince Charles of Edinburgh', startYear: 1948, endYear: 1952, sourceUrl: historyUrl },
-      { id: 'charles-iii-cornwall', name: 'Charles, Duke of Cornwall', startYear: 1952, endYear: 1958, sourceUrl: historyUrl },
-      { id: 'charles-iii-prince', name: 'Charles, Prince of Wales', startYear: 1958, endYear: 2022, sourceUrl: historyUrl },
-      { id: 'charles-iii-reign-name', name: 'Charles III, King of the United Kingdom', startYear: 2022, endYear: null, sourceUrl: historyUrl }
-    ]
+  const nameSources = {
+    'henry-vii': 'https://www.royal.uk/henry-vii',
+    victoria: 'https://www.royal.uk/encyclopedia/victoria-r-1837-1901',
+    'george-v': 'https://www.royal.uk/george-v',
+    'elizabeth-ii': 'https://www.royal.uk/her-majesty-queen-elizabeth-ii',
+    philip: 'https://www.royal.uk/the-duke-of-edinburgh',
+    'charles-iii': 'https://www.royal.uk/the-king',
+    camilla: 'https://www.royal.uk/the-queen',
+    'anne-royal': 'https://www.royal.uk/the-princess-royal',
+    'edward-edinburgh': 'https://www.royal.uk/duke/edinburgh',
+    'william-wales': 'https://www.royal.uk/the-prince-of-wales-0',
+    'catherine-wales': 'https://www.royal.uk/the-princess-of-wales',
+    'harry-sussex': 'https://www.royal.uk/sussex',
+    'meghan-sussex': 'https://www.royal.uk/sussex'
   };
-  Object.entries(historicalNames).forEach(([slug, periods]) => {
-    if (people[id(slug)]) people[id(slug)].namePeriods = normalizeNamePeriods(periods);
+  const wikipediaNameArticles = {
+    'henry-vii': 'Henry VII of England', 'elizabeth-york': 'Elizabeth of York', 'arthur-tudor': 'Arthur, Prince of Wales',
+    'henry-viii': 'Henry VIII', 'margaret-tudor': 'Margaret Tudor', 'mary-tudor': 'Mary Tudor, Queen of France',
+    'mary-i': 'Mary I of England', 'elizabeth-i': 'Elizabeth I', 'edward-vi': 'Edward VI', 'james-vi-i': 'James VI and I',
+    'charles-i': 'Charles I of England', 'charles-ii': 'Charles II of England', 'james-ii-vii': 'James II of England',
+    'mary-ii': 'Mary II', anne: 'Anne, Queen of Great Britain', 'george-i': 'George I of Great Britain',
+    'george-ii': 'George II of Great Britain', 'frederick-wales': 'Frederick, Prince of Wales', 'george-iii': 'George III',
+    'george-iv': 'George IV', 'william-iv': 'William IV', victoria: 'Queen Victoria', 'albert': 'Prince Albert of Saxe-Coburg and Gotha',
+    'edward-vii': 'Edward VII', 'george-v': 'George V', 'mary-teck': 'Mary of Teck', 'edward-viii': 'Edward VIII',
+    'george-vi': 'George VI', 'queen-mother': 'Queen Elizabeth The Queen Mother', philip: 'Prince Philip, Duke of Edinburgh',
+    'elizabeth-ii': 'Elizabeth II', 'margaret-snowdon': 'Princess Margaret, Countess of Snowdon', 'charles-iii': 'Charles III',
+    camilla: 'Queen Camilla', 'anne-royal': 'Anne, Princess Royal', 'andrew-york': 'Prince Andrew, Duke of York',
+    'edward-edinburgh': 'Prince Edward, Duke of Edinburgh', diana: 'Diana, Princess of Wales',
+    'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',
+    'harry-sussex': 'Prince Harry, Duke of Sussex', 'meghan-sussex': 'Meghan, Duchess of Sussex',
+    'george-wales': 'Prince George of Wales', 'charlotte-wales': 'Princess Charlotte of Wales',
+    'louis-wales': 'Prince Louis of Wales', 'archie-sussex': 'Prince Archie of Sussex', 'lilibet-sussex': 'Princess Lilibet of Sussex'
+  };
+  const historicalNameTransitions = {
+    'henry-vii': [[1457, 'Henry Tudor'], [1485, 'Henry VII, King of England']],
+    'elizabeth-york': [[1466, 'Elizabeth of York'], [1486, 'Elizabeth of York, Queen consort of England']],
+    'arthur-tudor': [[1486, 'Arthur Tudor'], [1489, 'Arthur, Prince of Wales']],
+    'henry-viii': [[1491, 'Prince Henry Tudor'], [1494, 'Henry, Duke of York'], [1502, 'Henry, Prince of Wales'], [1509, 'Henry VIII, King of England']],
+    'margaret-tudor': [[1489, 'Princess Margaret Tudor'], [1503, 'Margaret Tudor, Queen of Scots'], [1513, 'Margaret Tudor, Queen dowager of Scots']],
+    'mary-tudor': [[1496, 'Princess Mary Tudor'], [1514, 'Mary Tudor, Queen of France'], [1515, 'Mary Tudor, Duchess of Suffolk']],
+    'mary-i': [[1516, 'Princess Mary Tudor'], [1533, 'Lady Mary Tudor'], [1553, 'Mary I, Queen of England and Ireland']],
+    'elizabeth-i': [[1533, 'Princess Elizabeth Tudor'], [1536, 'Lady Elizabeth Tudor'], [1558, 'Elizabeth I, Queen of England and Ireland']],
+    'edward-vi': [[1537, 'Prince Edward Tudor'], [1547, 'Edward VI, King of England and Ireland']],
+    'james-vi-i': [[1566, 'Prince James Stuart'], [1567, 'James VI, King of Scots'], [1603, 'James VI & I, King of Scots, England and Ireland']],
+    'charles-i': [[1600, 'Prince Charles Stuart'], [1605, 'Charles, Duke of York'], [1616, 'Charles, Prince of Wales'], [1625, 'Charles I, King of England, Scotland and Ireland']],
+    'charles-ii': [[1630, 'Prince Charles Stuart'], [1649, 'Charles II, King of England, Scotland and Ireland']],
+    'james-ii-vii': [[1633, 'Prince James Stuart'], [1644, 'James, Duke of York'], [1685, 'James II & VII, King of England, Scotland and Ireland']],
+    'mary-ii': [[1662, 'Princess Mary Stuart'], [1689, 'Mary II, Queen of England, Scotland and Ireland']],
+    anne: [[1665, 'Princess Anne Stuart'], [1702, 'Anne, Queen of Great Britain and Ireland']],
+    'george-i': [[1660, 'Georg Ludwig of Hanover'], [1698, 'Georg Ludwig, Elector of Hanover'], [1714, 'George I, King of Great Britain and Ireland']],
+    'george-ii': [[1683, 'Prince George Augustus of Hanover'], [1706, 'George, Duke of Cambridge'], [1714, 'George, Prince of Wales'], [1727, 'George II, King of Great Britain and Ireland']],
+    'frederick-wales': [[1707, 'Prince Frederick of Hanover'], [1726, 'Frederick, Duke of Edinburgh'], [1729, 'Frederick, Prince of Wales']],
+    'george-iii': [[1738, 'Prince George'], [1751, 'George, Prince of Wales'], [1760, 'George III, King of Great Britain and Ireland']],
+    'george-iv': [[1762, 'George, Prince of Wales'], [1811, 'George, Prince Regent'], [1820, 'George IV, King of the United Kingdom']],
+    'william-iv': [[1765, 'Prince William Henry'], [1789, 'William, Duke of Clarence and St Andrews'], [1830, 'William IV, King of the United Kingdom']],
+    victoria: [[1819, 'Princess Alexandrina Victoria of Kent'], [1837, 'Victoria, Queen of the United Kingdom']],
+    albert: [[1819, 'Prince Albert of Saxe-Coburg and Gotha'], [1857, 'Albert, Prince Consort']],
+    'edward-vii': [[1841, 'Albert Edward, Prince of Wales'], [1901, 'Edward VII, King of the United Kingdom']],
+    'george-v': [[1865, 'Prince George of Wales'], [1892, 'George, Duke of York'], [1901, 'George, Prince of Wales'], [1910, 'George V, King of the United Kingdom']],
+    'mary-teck': [[1867, 'Princess Victoria Mary of Teck'], [1893, 'Mary, Duchess of York'], [1901, 'Mary, Princess of Wales'], [1910, 'Mary, Queen of the United Kingdom'], [1936, 'Queen Mary']],
+    'edward-viii': [[1894, 'Prince Edward of York'], [1901, 'Prince Edward of Wales'], [1910, 'Edward, Prince of Wales'], [1936, 'Edward VIII, King of the United Kingdom'], [1937, 'Edward, Duke of Windsor']],
+    'george-vi': [[1895, 'Prince Albert of York'], [1901, 'Prince Albert of Wales'], [1910, 'Prince Albert'], [1920, 'Albert, Duke of York'], [1936, 'George VI, King of the United Kingdom']],
+    'queen-mother': [[1900, 'Elizabeth Bowes-Lyon'], [1923, 'Elizabeth, Duchess of York'], [1936, 'Elizabeth, Queen of the United Kingdom'], [1952, 'Elizabeth, the Queen Mother']],
+    philip: [[1921, 'Prince Philip of Greece and Denmark'], [1947, 'Philip, Duke of Edinburgh']],
+    'elizabeth-ii': [[1926, 'Princess Elizabeth of York'], [1936, 'The Princess Elizabeth'], [1947, 'The Princess Elizabeth, Duchess of Edinburgh'], [1952, 'Elizabeth II, Queen of the United Kingdom']],
+    'margaret-snowdon': [[1930, 'Princess Margaret Rose of York'], [1936, 'The Princess Margaret'], [1960, 'Margaret, Countess of Snowdon']],
+    'charles-iii': [[1948, 'Prince Charles of Edinburgh'], [1952, 'Charles, Duke of Cornwall'], [1958, 'Charles, Prince of Wales'], [2022, 'Charles III, King of the United Kingdom']],
+    camilla: [[1947, 'Camilla Shand'], [1973, 'Camilla Parker Bowles'], [2005, 'Camilla, Duchess of Cornwall'], [2022, 'Camilla, Queen Consort'], [2023, 'Camilla, Queen of the United Kingdom']],
+    'anne-royal': [[1950, 'Princess Anne of Edinburgh'], [1952, 'The Princess Anne'], [1987, 'Anne, Princess Royal']],
+    'andrew-york': [[1960, 'Prince Andrew'], [1986, 'Andrew, Duke of York']],
+    'edward-edinburgh': [[1964, 'Prince Edward'], [1999, 'Edward, Earl of Wessex'], [2023, 'Edward, Duke of Edinburgh']],
+    diana: [[1961, 'Diana Spencer'], [1975, 'Lady Diana Spencer'], [1981, 'Diana, Princess of Wales']],
+    'william-wales': [[1982, 'Prince William of Wales'], [2011, 'William, Duke of Cambridge'], [2022, 'William, Prince of Wales']],
+    'catherine-wales': [[1982, 'Catherine Middleton'], [2011, 'Catherine, Duchess of Cambridge'], [2022, 'Catherine, Princess of Wales']],
+    'harry-sussex': [[1984, 'Prince Harry of Wales'], [2018, 'Harry, Duke of Sussex']],
+    'meghan-sussex': [[1981, 'Meghan Markle'], [2018, 'Meghan, Duchess of Sussex']],
+    'george-wales': [[2013, 'Prince George of Cambridge'], [2022, 'Prince George of Wales']],
+    'charlotte-wales': [[2015, 'Princess Charlotte of Cambridge'], [2022, 'Princess Charlotte of Wales']],
+    'louis-wales': [[2018, 'Prince Louis of Cambridge'], [2022, 'Prince Louis of Wales']],
+    'archie-sussex': [[2019, 'Archie Mountbatten-Windsor'], [2023, 'Prince Archie of Sussex']],
+    'lilibet-sussex': [[2021, 'Lilibet Mountbatten-Windsor'], [2023, 'Princess Lilibet of Sussex']]
+  };
+  Object.entries(historicalNameTransitions).forEach(([slug, transitions]) => {
+    const person = people[id(slug)];
+    if (!person) return;
+    const sourceUrl = wikipediaNameArticles[slug]
+      ? `https://en.wikipedia.org/wiki/${encodeURIComponent(wikipediaNameArticles[slug].replaceAll(' ', '_'))}`
+      : nameSources[slug] || person.sourceUrl || historyUrl;
+    person.namePeriods = normalizeNamePeriods(transitions.map(([startYear, name], index) => ({
+      id: `${slug}-name-${startYear}`,
+      name,
+      startYear,
+      endYear: transitions[index + 1]?.[0] ?? numericYear(person.deathYear),
+      sourceUrl
+    })));
   });
   return people;
 }
@@ -1549,6 +1625,8 @@ Requirements:
 - Give marriage years in "marriageYears" keyed by spouse ID. Use relationshipEndStatuses values "annulled", "divorced", or "ended" when supported.
 - Prefer displayName as publicly displayed, including titles useful for searching. Use four-digit years where known; use null or omit fields when unknown.
 - Research the names and titles by which each person was known during different periods of life. Consult Wikipedia and other reliable public biographical or official sources in addition to genealogy profiles.
+- For royal and noble profiles, use Wikipedia's "Titles and styles" chronology where available, checking important transitions against official or other reliable sources.
+- Store readable names and substantive titles only. Omit honorific style prefixes such as HM, HRH, His or Her Majesty, and His or Her Royal Highness.
 - Put those chronological labels in "namePeriods" as objects with id, name, startYear, endYear, and sourceUrl. Use open null boundaries when necessary, avoid overlapping periods, and do not invent unsupported titles.
 - Include sourceUrl, sourceId, and sourceProvider for every researched profile.
 - Set focusId to the main person researched. Do not include global events unless I explicitly ask for them.

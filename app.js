@@ -28,7 +28,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 14;
+const BRITISH_ROYAL_STARTER_VERSION = 15;
 
 function sessionValue(key, value) {
   try {
@@ -700,7 +700,7 @@ function createBritishRoyalSample() {
     'sophia-hanover': ['frederick-v', 'elizabeth-stuart'], 'george-i': ['ernest-augustus', 'sophia-hanover'],
     'george-ii': ['george-i', 'sophia-dorothea-celle'], 'frederick-wales': ['george-ii', 'caroline-ansbach'], 'george-iii': ['frederick-wales', 'augusta-saxe-gotha'],
     'george-iv': ['george-iii'], 'william-iv': ['george-iii'], 'edward-kent': ['george-iii'],
-    'ernest-cumberland': ['george-iii'], 'adolphus-cambridge': ['george-iii'], 'mary-adelaide': ['adolphus-cambridge'],
+    'ernest-cumberland': ['george-iii'], 'adolphus-cambridge': ['george-iii'], 'mary-adelaide': ['adolphus-cambridge', 'augusta-hesse-kassel'],
     'mary-teck': ['mary-adelaide', 'francis-teck'], 'victoria': ['edward-kent', 'victoria-saxe-coburg'],
     'victoria-royal': ['albert', 'victoria'], 'edward-vii': ['albert', 'victoria'], 'alice-uk': ['albert', 'victoria'],
     'alfred-saxe': ['albert', 'victoria'], 'helena-uk': ['albert', 'victoria'], 'louise-uk': ['albert', 'victoria'],

@@ -1742,17 +1742,22 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         branch.indexes.forEach(index => { preferredY[index] += shift; });
       });
       // Keep the next sibling below the preceding sibling's immediate
-      // household (the sibling, spouses, and their children). Deeper dynastic
-      // descendants may still use empty timeline space, so long lines remain
-      // compact without mixing two adjacent sibling households.
+      // household. A spouse root is different: it begins an ordered marriage
+      // group, so its complete descendant block must finish before the next
+      // spouse group starts. Otherwise contour compaction can put one wife's
+      // child among another wife's branch.
       for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
         const precedingRoot = branches[branchIndex - 1].rootIndex;
+        const followingRoot = branches[branchIndex].rootIndex;
         const precedingHousehold = [precedingRoot];
         childrenByIndex.get(precedingRoot).forEach(childIndex => {
           precedingHousehold.push(childIndex);
           if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
         });
-        const uniquePrecedingHousehold = unique(precedingHousehold);
+        const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
+        const uniquePrecedingHousehold = protectsMarriageOrder
+          ? branches[branchIndex - 1].indexes
+          : unique(precedingHousehold);
         const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
         const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
         const householdShift = Math.max(0, householdBottom + rowStep - followingTop);
@@ -1763,9 +1768,26 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         });
       }
   });
-  const spatialOrder = nodes.map((_, index) => index).sort((first, second) =>
+  const preferredSpatialOrder = nodes.map((_, index) => index).sort((first, second) =>
     preferredY[first] - preferredY[second] || first - second
   );
+  // Respect household predecessors while retaining preferred spatial order
+  // everywhere else. In particular, place every node in an earlier marriage
+  // group before attempting to place any node in the following group.
+  const spatialOrder = [];
+  const pendingOrder = [...preferredSpatialOrder];
+  const orderedSet = new Set();
+  while (pendingOrder.length) {
+    let nextPosition = pendingOrder.findIndex(index =>
+      (siblingHouseholdConstraints.get(index) || []).every(precedingIndexes =>
+        precedingIndexes.every(precedingIndex => orderedSet.has(precedingIndex))
+      )
+    );
+    if (nextPosition < 0) nextPosition = 0;
+    const [nextIndex] = pendingOrder.splice(nextPosition, 1);
+    spatialOrder.push(nextIndex);
+    orderedSet.add(nextIndex);
+  }
   const placed = [];
   const placedSet = new Set();
 
@@ -2011,14 +2033,21 @@ function renderTimeline() {
     renderedPartnerIds(id).filter(partnerId => datedIds.has(partnerId)).forEach(partnerId => {
       if (!groups.has(partnerId)) groups.set(partnerId, []);
     });
-    const orderedGroups = [...groups.entries()].map(([partnerId, childIds]) => ({
+    const partnerOrder = new Map(renderedPartnerIds(id).map((partnerId, index) => [partnerId, index]));
+    const orderedGroups = [...groups.entries()].map(([partnerId, childIds], sourceOrder) => ({
       partnerId,
       childIds: childIds.sort(byBirth),
       marriageYear: partnerId ? marriageYearFor(id, partnerId) : null,
-      firstBirth: childIds.length ? Math.min(...childIds.map(childId => birthYear(state.people[childId]))) : Number.POSITIVE_INFINITY
+      firstBirth: childIds.length ? Math.min(...childIds.map(childId => birthYear(state.people[childId]))) : Number.POSITIVE_INFINITY,
+      sourceOrder: partnerOrder.get(partnerId) ?? sourceOrder
     })).sort((a, b) => {
-      if (a.marriageYear != null || b.marriageYear != null) return (a.marriageYear ?? Number.POSITIVE_INFINITY) - (b.marriageYear ?? Number.POSITIVE_INFINITY);
-      return a.firstBirth - b.firstBirth || byBirth(a.partnerId || a.childIds[0], b.partnerId || b.childIds[0]);
+      if (a.marriageYear != null || b.marriageYear != null) {
+        const yearOrder = (a.marriageYear ?? Number.POSITIVE_INFINITY) - (b.marriageYear ?? Number.POSITIVE_INFINITY);
+        if (yearOrder) return yearOrder;
+      }
+      return a.firstBirth - b.firstBirth
+        || a.sourceOrder - b.sourceOrder
+        || byBirth(a.partnerId || a.childIds[0], b.partnerId || b.childIds[0]);
     });
 
     const groupedPartners = new Set();

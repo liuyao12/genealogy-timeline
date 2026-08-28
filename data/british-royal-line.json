@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 20,
+  "version": 21,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -3727,15 +3727,15 @@
       "id": "profile-g6000000000697437319",
       "firstName": "Victoria",
       "lastName": "of Saxe-Coburg-Saalfeld",
-      "displayName": "Victoria of Saxe-Coburg-Saalfeld",
-      "title": "",
+      "displayName": "Victoria, Duchess of Kent and Strathearn",
+      "title": "Duchess of Kent and Strathearn",
       "nameOrder": "western",
       "gender": "female",
       "birthYear": "1786",
       "deathYear": "1861",
       "isLiving": false,
       "place": "",
-      "note": "Duchess of Kent; wife of Prince Edward",
+      "note": "Duchess of Kent and Strathearn; mother of Queen Victoria",
       "parents": [],
       "children": [
         "profile-g6000000008852088113"
@@ -3756,8 +3756,37 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "victoria-kent-name-1786",
+          "name": "Princess Victoria of Saxe-Coburg-Saalfeld",
+          "startYear": 1786,
+          "endYear": 1803,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Victoria_of_Saxe-Coburg-Saalfeld"
+        },
+        {
+          "id": "victoria-kent-name-1803",
+          "name": "Victoria, Princess of Leiningen",
+          "startYear": 1803,
+          "endYear": 1814,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Victoria_of_Saxe-Coburg-Saalfeld"
+        },
+        {
+          "id": "victoria-kent-name-1814",
+          "name": "Victoria, Dowager Princess of Leiningen",
+          "startYear": 1814,
+          "endYear": 1818,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Victoria_of_Saxe-Coburg-Saalfeld"
+        },
+        {
+          "id": "victoria-kent-name-1818",
+          "name": "Victoria, Duchess of Kent and Strathearn",
+          "startYear": 1818,
+          "endYear": 1861,
+          "sourceUrl": "https://www.nationalgalleries.org/art-and-artists/2922/hrh-victoria-mary-louisa-duchess-kent-1786-1861-mother-queen-victoria"
+        }
+      ],
+      "defaultNamePeriodId": "victoria-kent-name-1818",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000000697437319",
       "sourceId": "profile-g6000000000697437319",

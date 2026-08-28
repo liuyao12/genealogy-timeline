@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 18,
+  "version": 19,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -662,8 +662,16 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "mary-scots-name-1542",
+          "name": "Mary, Queen of Scots",
+          "startYear": 1542,
+          "endYear": 1587,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary,_Queen_of_Scots"
+        }
+      ],
+      "defaultNamePeriodId": "mary-scots-name-1542",
       "personalEvents": [
         {
           "name": "Reign",
@@ -2234,8 +2242,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "jane-grey-name-1537",
+          "name": "Lady Jane Grey",
+          "startYear": 1537,
+          "endYear": 1553,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Lady_Jane_Grey"
+        },
+        {
+          "id": "jane-grey-name-1553",
+          "name": "Jane Grey, Queen of England",
+          "startYear": 1553,
+          "endYear": 1553,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Lady_Jane_Grey"
+        },
+        {
+          "id": "jane-grey-name-1554",
+          "name": "Lady Jane Dudley",
+          "startYear": 1554,
+          "endYear": 1554,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Lady_Jane_Grey"
+        }
+      ],
+      "defaultNamePeriodId": "jane-grey-name-1537",
       "personalEvents": [
         {
           "name": "Reign",
@@ -3797,8 +3827,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "caroline-brunswick-name-1768",
+          "name": "Caroline of Brunswick",
+          "startYear": 1768,
+          "endYear": 1795,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Brunswick"
+        },
+        {
+          "id": "caroline-brunswick-name-1795",
+          "name": "Caroline, Princess of Wales",
+          "startYear": 1795,
+          "endYear": 1820,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Brunswick"
+        },
+        {
+          "id": "caroline-brunswick-name-1820",
+          "name": "Caroline, Queen of the United Kingdom and Hanover",
+          "startYear": 1820,
+          "endYear": 1821,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Brunswick"
+        }
+      ],
+      "defaultNamePeriodId": "caroline-brunswick-name-1768",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/4138652783200125692",
       "sourceId": "profile-g4138652783200125692",
@@ -3837,8 +3889,37 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "adelaide-name-1792",
+          "name": "Adelaide of Saxe-Meiningen",
+          "startYear": 1792,
+          "endYear": 1818,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Adelaide_of_Saxe-Meiningen"
+        },
+        {
+          "id": "adelaide-name-1818",
+          "name": "Adelaide, Duchess of Clarence",
+          "startYear": 1818,
+          "endYear": 1830,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Adelaide_of_Saxe-Meiningen"
+        },
+        {
+          "id": "adelaide-name-1830",
+          "name": "Adelaide, Queen of the United Kingdom and Hanover",
+          "startYear": 1830,
+          "endYear": 1837,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Adelaide_of_Saxe-Meiningen"
+        },
+        {
+          "id": "adelaide-name-1837",
+          "name": "Queen Adelaide",
+          "startYear": 1837,
+          "endYear": 1849,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Adelaide_of_Saxe-Meiningen"
+        }
+      ],
+      "defaultNamePeriodId": "adelaide-name-1792",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/4138662614410074729",
       "sourceId": "profile-g4138662614410074729",
@@ -3881,8 +3962,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "henrietta-maria-name-1609",
+          "name": "Henrietta Maria of France",
+          "startYear": 1609,
+          "endYear": 1625,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henrietta_Maria_of_France"
+        },
+        {
+          "id": "henrietta-maria-name-1625",
+          "name": "Henrietta Maria, Queen of England, Scotland and Ireland",
+          "startYear": 1625,
+          "endYear": 1649,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henrietta_Maria_of_France"
+        },
+        {
+          "id": "henrietta-maria-name-1649",
+          "name": "Henrietta Maria, Queen dowager of England",
+          "startYear": 1649,
+          "endYear": 1669,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henrietta_Maria_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "henrietta-maria-name-1609",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000000851678345",
       "sourceId": "profile-g6000000000851678345",
@@ -3923,8 +4026,37 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "caroline-ansbach-name-1683",
+          "name": "Caroline of Ansbach",
+          "startYear": 1683,
+          "endYear": 1705,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Ansbach"
+        },
+        {
+          "id": "caroline-ansbach-name-1705",
+          "name": "Caroline, Electoral Princess of Hanover",
+          "startYear": 1705,
+          "endYear": 1714,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Ansbach"
+        },
+        {
+          "id": "caroline-ansbach-name-1714",
+          "name": "Caroline, Princess of Wales",
+          "startYear": 1714,
+          "endYear": 1727,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Ansbach"
+        },
+        {
+          "id": "caroline-ansbach-name-1727",
+          "name": "Caroline, Queen of Great Britain and Ireland",
+          "startYear": 1727,
+          "endYear": 1737,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Ansbach"
+        }
+      ],
+      "defaultNamePeriodId": "caroline-ansbach-name-1683",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/4555944",
       "sourceId": "profile-4555944",
@@ -4350,8 +4482,37 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "alexandra-name-1844",
+          "name": "Princess Alexandra of Denmark",
+          "startYear": 1844,
+          "endYear": 1863,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Alexandra_of_Denmark"
+        },
+        {
+          "id": "alexandra-name-1863",
+          "name": "Alexandra, Princess of Wales",
+          "startYear": 1863,
+          "endYear": 1901,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Alexandra_of_Denmark"
+        },
+        {
+          "id": "alexandra-name-1901",
+          "name": "Alexandra, Queen of the United Kingdom and Empress of India",
+          "startYear": 1901,
+          "endYear": 1910,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Alexandra_of_Denmark"
+        },
+        {
+          "id": "alexandra-name-1910",
+          "name": "Queen Alexandra",
+          "startYear": 1910,
+          "endYear": 1925,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Alexandra_of_Denmark"
+        }
+      ],
+      "defaultNamePeriodId": "alexandra-name-1844",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000003070981015",
       "sourceId": "profile-g6000000003070981015",
@@ -4390,8 +4551,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "catherine-braganza-name-1638",
+          "name": "Catherine of Braganza",
+          "startYear": 1638,
+          "endYear": 1662,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Braganza"
+        },
+        {
+          "id": "catherine-braganza-name-1662",
+          "name": "Catherine, Queen of England, Scotland and Ireland",
+          "startYear": 1662,
+          "endYear": 1685,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Braganza"
+        },
+        {
+          "id": "catherine-braganza-name-1685",
+          "name": "Catherine, Queen dowager of England",
+          "startYear": 1685,
+          "endYear": 1705,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Braganza"
+        }
+      ],
+      "defaultNamePeriodId": "catherine-braganza-name-1638",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001566391625",
       "sourceId": "profile-g6000000001566391625",
@@ -4624,8 +4807,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "charlotte-mecklenburg-name-1744",
+          "name": "Charlotte of Mecklenburg-Strelitz",
+          "startYear": 1744,
+          "endYear": 1761,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charlotte_of_Mecklenburg-Strelitz"
+        },
+        {
+          "id": "charlotte-mecklenburg-name-1761",
+          "name": "Charlotte, Queen of Great Britain and Ireland",
+          "startYear": 1761,
+          "endYear": 1801,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charlotte_of_Mecklenburg-Strelitz"
+        },
+        {
+          "id": "charlotte-mecklenburg-name-1801",
+          "name": "Charlotte, Queen of the United Kingdom",
+          "startYear": 1801,
+          "endYear": 1818,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charlotte_of_Mecklenburg-Strelitz"
+        }
+      ],
+      "defaultNamePeriodId": "charlotte-mecklenburg-name-1744",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000003891728922",
       "sourceId": "profile-g6000000003891728922",
@@ -4711,8 +4916,37 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "mary-guise-name-1515",
+          "name": "Mary of Guise",
+          "startYear": 1515,
+          "endYear": 1534,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Guise"
+        },
+        {
+          "id": "mary-guise-name-1534",
+          "name": "Mary, Duchess of Longueville",
+          "startYear": 1534,
+          "endYear": 1537,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Guise"
+        },
+        {
+          "id": "mary-guise-name-1538",
+          "name": "Mary of Guise, Queen of Scots",
+          "startYear": 1538,
+          "endYear": 1542,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Guise"
+        },
+        {
+          "id": "mary-guise-name-1542",
+          "name": "Mary of Guise, Queen dowager and Regent of Scotland",
+          "startYear": 1542,
+          "endYear": 1560,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Guise"
+        }
+      ],
+      "defaultNamePeriodId": "mary-guise-name-1515",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001323878378",
       "sourceId": "profile-g6000000001323878378",
@@ -4751,8 +4985,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "madeleine-valois-name-1520",
+          "name": "Princess Madeleine of France",
+          "startYear": 1520,
+          "endYear": 1537,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Madeleine_of_Valois"
+        },
+        {
+          "id": "madeleine-valois-name-1537",
+          "name": "Madeleine of Valois, Queen of Scots",
+          "startYear": 1537,
+          "endYear": 1537,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Madeleine_of_Valois"
+        }
+      ],
+      "defaultNamePeriodId": "madeleine-valois-name-1520",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000002322323932",
       "sourceId": "profile-g6000000002322323932",
@@ -5146,8 +5395,44 @@
       "relationshipEndStatuses": {
         "profile-g6000000007442241030": "annulled"
       },
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "catherine-aragon-name-1485",
+          "name": "Catherine of Aragon",
+          "startYear": 1485,
+          "endYear": 1501,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Aragon"
+        },
+        {
+          "id": "catherine-aragon-name-1501",
+          "name": "Catherine, Princess of Wales",
+          "startYear": 1501,
+          "endYear": 1502,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Aragon"
+        },
+        {
+          "id": "catherine-aragon-name-1502",
+          "name": "Catherine, Dowager Princess of Wales",
+          "startYear": 1502,
+          "endYear": 1509,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Aragon"
+        },
+        {
+          "id": "catherine-aragon-name-1509",
+          "name": "Catherine of Aragon, Queen of England",
+          "startYear": 1509,
+          "endYear": 1533,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Aragon"
+        },
+        {
+          "id": "catherine-aragon-name-1533",
+          "name": "Catherine, Dowager Princess of Wales",
+          "startYear": 1533,
+          "endYear": 1536,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Aragon"
+        }
+      ],
+      "defaultNamePeriodId": "catherine-aragon-name-1485",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/4475169",
       "sourceId": "profile-4475169",
@@ -5194,8 +5479,30 @@
       "relationshipEndStatuses": {
         "profile-g6000000007442241030": "annulled"
       },
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "anne-boleyn-name-1501",
+          "name": "Anne Boleyn",
+          "startYear": 1501,
+          "endYear": 1532,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_Boleyn"
+        },
+        {
+          "id": "anne-boleyn-name-1532",
+          "name": "Anne Boleyn, Marquess of Pembroke",
+          "startYear": 1532,
+          "endYear": 1533,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_Boleyn"
+        },
+        {
+          "id": "anne-boleyn-name-1533",
+          "name": "Anne Boleyn, Queen of England",
+          "startYear": 1533,
+          "endYear": 1536,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_Boleyn"
+        }
+      ],
+      "defaultNamePeriodId": "anne-boleyn-name-1501",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000003702650070",
       "sourceId": "profile-g6000000003702650070",
@@ -5236,8 +5543,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "jane-seymour-name-1508",
+          "name": "Jane Seymour",
+          "startYear": 1508,
+          "endYear": 1536,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Jane_Seymour"
+        },
+        {
+          "id": "jane-seymour-name-1536",
+          "name": "Jane Seymour, Queen of England",
+          "startYear": 1536,
+          "endYear": 1537,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Jane_Seymour"
+        }
+      ],
+      "defaultNamePeriodId": "jane-seymour-name-1508",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001465721422",
       "sourceId": "profile-g6000000001465721422",
@@ -5282,8 +5604,30 @@
       "relationshipEndStatuses": {
         "profile-g6000000007442241030": "annulled"
       },
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "anne-cleves-name-1515",
+          "name": "Anne of Cleves",
+          "startYear": 1515,
+          "endYear": 1539,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_of_Cleves"
+        },
+        {
+          "id": "anne-cleves-name-1540",
+          "name": "Anne of Cleves, Queen of England",
+          "startYear": 1540,
+          "endYear": 1540,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_of_Cleves"
+        },
+        {
+          "id": "anne-cleves-name-1541",
+          "name": "Anne of Cleves, the King's Beloved Sister",
+          "startYear": 1541,
+          "endYear": 1557,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_of_Cleves"
+        }
+      ],
+      "defaultNamePeriodId": "anne-cleves-name-1515",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/4475232",
       "sourceId": "profile-4475232",
@@ -5322,8 +5666,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "catherine-howard-name-1523",
+          "name": "Catherine Howard",
+          "startYear": 1523,
+          "endYear": 1539,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Howard"
+        },
+        {
+          "id": "catherine-howard-name-1540",
+          "name": "Catherine Howard, Queen of England",
+          "startYear": 1540,
+          "endYear": 1541,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Howard"
+        },
+        {
+          "id": "catherine-howard-name-1542",
+          "name": "Lady Catherine Howard",
+          "startYear": 1542,
+          "endYear": 1542,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Howard"
+        }
+      ],
+      "defaultNamePeriodId": "catherine-howard-name-1523",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001465827019",
       "sourceId": "profile-g6000000001465827019",
@@ -5371,8 +5737,44 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "catherine-parr-name-1512",
+          "name": "Catherine Parr",
+          "startYear": 1512,
+          "endYear": 1529,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Parr"
+        },
+        {
+          "id": "catherine-parr-name-1529",
+          "name": "Catherine Burgh",
+          "startYear": 1529,
+          "endYear": 1533,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Parr"
+        },
+        {
+          "id": "catherine-parr-name-1534",
+          "name": "Catherine, Lady Latimer",
+          "startYear": 1534,
+          "endYear": 1543,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Parr"
+        },
+        {
+          "id": "catherine-parr-name-1543",
+          "name": "Catherine Parr, Queen of England and Ireland",
+          "startYear": 1543,
+          "endYear": 1547,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Parr"
+        },
+        {
+          "id": "catherine-parr-name-1547",
+          "name": "Catherine Parr, Queen dowager of England and Ireland",
+          "startYear": 1547,
+          "endYear": 1548,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_Parr"
+        }
+      ],
+      "defaultNamePeriodId": "catherine-parr-name-1512",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001465762273",
       "sourceId": "profile-g6000000001465762273",
@@ -5454,8 +5856,37 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "mary-modena-name-1658",
+          "name": "Mary of Modena",
+          "startYear": 1658,
+          "endYear": 1673,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Modena"
+        },
+        {
+          "id": "mary-modena-name-1673",
+          "name": "Mary, Duchess of York",
+          "startYear": 1673,
+          "endYear": 1685,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Modena"
+        },
+        {
+          "id": "mary-modena-name-1685",
+          "name": "Mary of Modena, Queen of England, Scotland and Ireland",
+          "startYear": 1685,
+          "endYear": 1688,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Modena"
+        },
+        {
+          "id": "mary-modena-name-1689",
+          "name": "Mary of Modena",
+          "startYear": 1689,
+          "endYear": 1718,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Modena"
+        }
+      ],
+      "defaultNamePeriodId": "mary-modena-name-1658",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001573653856",
       "sourceId": "profile-g6000000001573653856",
@@ -5497,8 +5928,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "anne-denmark-name-1574",
+          "name": "Princess Anne of Denmark",
+          "startYear": 1574,
+          "endYear": 1589,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_of_Denmark"
+        },
+        {
+          "id": "anne-denmark-name-1589",
+          "name": "Anne of Denmark, Queen of Scots",
+          "startYear": 1589,
+          "endYear": 1603,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_of_Denmark"
+        },
+        {
+          "id": "anne-denmark-name-1603",
+          "name": "Anne of Denmark, Queen of England, Scotland and Ireland",
+          "startYear": 1603,
+          "endYear": 1619,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_of_Denmark"
+        }
+      ],
+      "defaultNamePeriodId": "anne-denmark-name-1574",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/4104662",
       "sourceId": "profile-4104662",
@@ -6229,8 +6682,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "anna-austria-name-1549",
+          "name": "Archduchess Anna of Austria",
+          "startYear": 1549,
+          "endYear": 1570,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anna_of_Austria,_Queen_of_Spain"
+        },
+        {
+          "id": "anna-austria-name-1570",
+          "name": "Anna of Austria, Queen of Spain",
+          "startYear": 1570,
+          "endYear": 1580,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anna_of_Austria,_Queen_of_Spain"
+        }
+      ],
+      "defaultNamePeriodId": "anna-austria-name-1549",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001142154909",
       "sourceId": "profile-g6000000001142154909",

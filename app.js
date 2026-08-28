@@ -28,8 +28,6 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 18;
-
 function sessionValue(key, value) {
   try {
     if (value === null) sessionStorage.removeItem(key);
@@ -442,496 +440,64 @@ function normalizePerson(source, fallbackId) {
   };
 }
 
-function createBritishRoyalSample() {
-  const historyUrl = 'https://www.royal.uk/kings-and-queens-1066';
-  const rows = [
-    ['henry-vii', 'Henry', 'VII', '1457', '1509', 'male', 'Founder of the Tudor dynasty', 'https://www.royal.uk/henry-vii'],
-    ['elizabeth-york', 'Elizabeth', 'of York', '1466', '1503', 'female', 'Queen consort of England', historyUrl],
-    ['henry-viii', 'Henry', 'VIII', '1491', '1547', 'male', 'King of England, 1509–1547', 'https://www.royal.uk/henry-viii'],
-    ['margaret-tudor', 'Margaret', 'Tudor', '1489', '1541', 'female', 'Queen of Scots; elder sister of Henry VIII', historyUrl],
-    ['mary-i', 'Mary', 'I', '1516', '1558', 'female', 'Queen of England and Ireland, 1553–1558', historyUrl],
-    ['elizabeth-i', 'Elizabeth', 'I', '1533', '1603', 'female', 'Queen of England and Ireland, 1558–1603', historyUrl],
-    ['edward-vi', 'Edward', 'VI', '1537', '1553', 'male', 'King of England and Ireland, 1547–1553', historyUrl],
-    ['james-iv', 'James', 'IV', '1473', '1513', 'male', 'King of Scots, 1488–1513', 'https://www.royal.uk/james-iv-r1488-1513'],
-    ['james-v', 'James', 'V', '1512', '1542', 'male', 'King of Scots, 1513–1542', historyUrl],
-    ['mary-scots', 'Mary', 'Queen of Scots', '1542', '1587', 'female', 'Queen of Scots, 1542–1567', historyUrl],
-    ['darnley', 'Henry Stuart', 'Lord Darnley', '1545', '1567', 'male', 'King consort of Scots', historyUrl],
-    ['james-vi-i', 'James', 'VI & I', '1566', '1625', 'male', 'King of Scots and later England and Ireland', historyUrl],
-    ['elizabeth-stuart', 'Elizabeth', 'Stuart', '1596', '1662', 'female', 'Electress Palatine; daughter of James VI and I', historyUrl],
-    ['frederick-v', 'Frederick', 'V', '1596', '1632', 'male', 'Elector Palatine', historyUrl],
-    ['sophia-hanover', 'Sophia', 'of Hanover', '1630', '1714', 'female', 'Heiress presumptive under the Act of Settlement', historyUrl],
-    ['ernest-augustus', 'Ernest Augustus', 'of Hanover', '1629', '1698', 'male', 'Elector of Hanover', historyUrl],
-    ['george-i', 'George', 'I', '1660', '1727', 'male', 'King of Great Britain and Ireland, 1714–1727', historyUrl],
-    ['george-ii', 'George', 'II', '1683', '1760', 'male', 'King of Great Britain and Ireland, 1727–1760', historyUrl],
-    ['frederick-wales', 'Frederick', 'Prince of Wales', '1707', '1751', 'male', 'Heir apparent who predeceased George II', historyUrl],
-    ['george-iii', 'George', 'III', '1738', '1820', 'male', 'King of Great Britain and Ireland; later United Kingdom', historyUrl],
-    ['edward-kent', 'Edward', 'Duke of Kent', '1767', '1820', 'male', 'Fourth son of George III; father of Victoria', historyUrl],
-    ['victoria', 'Victoria', '', '1819', '1901', 'female', 'Queen of the United Kingdom, 1837–1901; Empress of India, 1876–1901', 'https://www.nationalgallery.org.uk/people/victoria-queen-of-the-united-kingdom-of-great-britain-and-ireland-and-empress-of-india'],
-    ['albert', 'Albert', 'Prince Consort', '1819', '1861', 'male', 'Consort of Queen Victoria', historyUrl],
-    ['edward-vii', 'Edward', 'VII', '1841', '1910', 'male', 'King of the United Kingdom, 1901–1910', historyUrl],
-    ['george-v', 'George', 'V', '1865', '1936', 'male', 'King of the United Kingdom, 1910–1936', 'https://www.royal.uk/george-v'],
-    ['edward-viii', 'Edward', 'VIII', '1894', '1972', 'male', 'King of the United Kingdom in 1936; abdicated', historyUrl],
-    ['george-vi', 'George', 'VI', '1895', '1952', 'male', 'King of the United Kingdom, 1936–1952', historyUrl],
-    ['elizabeth-ii', 'Elizabeth', 'II', '1926', '2022', 'female', 'Queen of the United Kingdom, 1952–2022', 'https://www.royal.uk/her-majesty-queen-elizabeth-ii'],
-    ['philip', 'Philip', 'Duke of Edinburgh', '1921', '2021', 'male', 'Consort of Elizabeth II', 'https://www.royal.uk/the-duke-of-edinburgh'],
-    ['charles-iii', 'Charles', 'III', '1948', '', 'male', 'Present King of the United Kingdom', 'https://www.royal.uk/the-king']
-  ];
-  rows.push(
-    ['arthur-tudor', 'Arthur', 'Tudor', '1486', '1502', 'male', 'Prince of Wales; eldest son of Henry VII', historyUrl],
-    ['mary-tudor', 'Mary', 'Tudor', '1496', '1533', 'female', 'Queen consort of France; daughter of Henry VII', historyUrl],
-    ['frances-brandon', 'Frances', 'Brandon', '1517', '1559', 'female', 'Duchess of Suffolk; granddaughter of Henry VII', historyUrl],
-    ['jane-grey', 'Jane', 'Grey', '1537', '1554', 'female', 'Queen of England in 1553; great-granddaughter of Henry VII', historyUrl],
-    ['charles-i', 'Charles', 'I', '1600', '1649', 'male', 'King of England, Scotland and Ireland, 1625–1649', historyUrl],
-    ['charles-ii', 'Charles', 'II', '1630', '1685', 'male', 'King of England, Scotland and Ireland, 1660–1685', historyUrl],
-    ['james-ii-vii', 'James', 'II & VII', '1633', '1701', 'male', 'King of England, Scotland and Ireland, 1685–1688', historyUrl],
-    ['mary-princess-royal', 'Mary', 'Stuart', '1631', '1660', 'female', 'Princess Royal; daughter of Charles I', historyUrl],
-    ['william-iii', 'William', 'III', '1650', '1702', 'male', 'King of England, Scotland and Ireland, 1689–1702', historyUrl],
-    ['mary-ii', 'Mary', 'II', '1662', '1694', 'female', 'Queen of England, Scotland and Ireland, 1689–1694', historyUrl],
-    ['anne', 'Anne', 'Stuart', '1665', '1714', 'female', 'Queen of Great Britain and Ireland, 1702–1714', historyUrl],
-    ['george-iv', 'George', 'IV', '1762', '1830', 'male', 'King of the United Kingdom, 1820–1830', historyUrl],
-    ['william-iv', 'William', 'IV', '1765', '1837', 'male', 'King of the United Kingdom, 1830–1837', historyUrl],
-    ['ernest-cumberland', 'Ernest Augustus', 'of Cumberland', '1771', '1851', 'male', 'King of Hanover, 1837–1851', historyUrl],
-    ['adolphus-cambridge', 'Adolphus', 'of Cambridge', '1774', '1850', 'male', 'Duke of Cambridge; son of George III', historyUrl],
-    ['mary-adelaide', 'Mary Adelaide', 'of Cambridge', '1833', '1897', 'female', 'Duchess of Teck; granddaughter of George III', historyUrl],
-    ['mary-teck', 'Mary', 'of Teck', '1867', '1953', 'female', 'Queen consort of the United Kingdom; great-granddaughter of George III', historyUrl],
-    ['victoria-royal', 'Victoria', 'Princess Royal', '1840', '1901', 'female', 'German Empress and Queen of Prussia; daughter of Victoria', historyUrl],
-    ['alice-uk', 'Alice', 'of the United Kingdom', '1843', '1878', 'female', 'Grand Duchess of Hesse; daughter of Victoria', historyUrl],
-    ['alfred-saxe', 'Alfred', 'of Saxe-Coburg and Gotha', '1844', '1900', 'male', 'Duke of Edinburgh; son of Victoria', historyUrl],
-    ['helena-uk', 'Helena', 'of the United Kingdom', '1846', '1923', 'female', 'Princess Christian; daughter of Victoria', historyUrl],
-    ['louise-uk', 'Louise', 'of the United Kingdom', '1848', '1939', 'female', 'Duchess of Argyll; daughter of Victoria', historyUrl],
-    ['arthur-connaught', 'Arthur', 'of Connaught', '1850', '1942', 'male', 'Duke of Connaught; son of Victoria', historyUrl],
-    ['leopold-albany', 'Leopold', 'of Albany', '1853', '1884', 'male', 'Duke of Albany; son of Victoria', historyUrl],
-    ['beatrice-uk', 'Beatrice', 'of the United Kingdom', '1857', '1944', 'female', 'Princess of Battenberg; daughter of Victoria', historyUrl],
-    ['victoria-hesse', 'Victoria', 'of Hesse', '1863', '1950', 'female', 'Marchioness of Milford Haven; granddaughter of Victoria', historyUrl],
-    ['alice-battenberg', 'Alice', 'of Battenberg', '1885', '1969', 'female', 'Princess of Greece and Denmark; great-granddaughter of Victoria', historyUrl],
-    ['maud-norway', 'Maud', 'of Wales', '1869', '1938', 'female', 'Queen of Norway; daughter of Edward VII', historyUrl],
-    ['olav-v', 'Olav', 'V', '1903', '1991', 'male', 'King of Norway, 1957–1991', historyUrl],
-    ['harald-v', 'Harald', 'V', '1937', '', 'male', 'King of Norway since 1991', historyUrl],
-    ['margaret-snowdon', 'Margaret', 'Snowdon', '1930', '2002', 'female', 'Princess; daughter of George VI', historyUrl],
-    ['anne-royal', 'Anne', 'Princess Royal', '1950', '', 'female', 'Princess Royal; daughter of Elizabeth II', historyUrl],
-    ['andrew-york', 'Andrew', 'of York', '1960', '', 'male', 'Duke of York; son of Elizabeth II', historyUrl],
-    ['edward-edinburgh', 'Edward', 'of Edinburgh', '1964', '', 'male', 'Duke of Edinburgh; son of Elizabeth II', historyUrl],
-    ['william-wales', 'William', 'of Wales', '1982', '', 'male', 'Prince of Wales; son of Charles III', historyUrl],
-    ['harry-sussex', 'Harry', 'of Sussex', '1984', '', 'male', 'Duke of Sussex; son of Charles III', historyUrl],
-    ['george-wales', 'George', 'of Wales', '2013', '', 'male', 'Prince; grandson of Charles III', historyUrl],
-    ['charlotte-wales', 'Charlotte', 'of Wales', '2015', '', 'female', 'Princess; granddaughter of Charles III', historyUrl],
-    ['louis-wales', 'Louis', 'of Wales', '2018', '', 'male', 'Prince; grandson of Charles III', historyUrl],
-    ['catherine-wales', 'Catherine', 'Princess of Wales', '1982', '', 'female', 'Wife of William, Prince of Wales', historyUrl],
-    ['meghan-sussex', 'Meghan', 'Duchess of Sussex', '1981', '', 'female', 'Wife of Harry, Duke of Sussex', historyUrl],
-    ['archie-sussex', 'Prince Archie Harrison', 'Mountbatten-Windsor', '2019', '', 'male', 'Son of Harry, Duke of Sussex and Meghan, Duchess of Sussex', historyUrl],
-    ['lilibet-sussex', 'Princess Lilibet Diana', 'Mountbatten-Windsor', '2021', '', 'female', 'Daughter of Harry, Duke of Sussex and Meghan, Duchess of Sussex', historyUrl]
-  );
-  // Public Geni-linked spouses of the bundled line. Unmarried partners and
-  // mistresses are deliberately not part of the starter data.
-  rows.push(
-    ['victoria-saxe-coburg', 'Victoria', 'of Saxe-Coburg-Saalfeld', '1786', '1861', 'female', 'Duchess of Kent; wife of Prince Edward', historyUrl],
-    ['maria-fitzherbert', 'Maria', 'Fitzherbert', '1756', '1837', 'female', 'Wife of George IV in a marriage not recognized under English law', historyUrl],
-    ['caroline-brunswick', 'Caroline', 'of Brunswick', '1768', '1821', 'female', 'Queen consort; wife of George IV', historyUrl],
-    ['adelaide-saxe-meiningen', 'Adelaide', 'of Saxe-Meiningen', '1792', '1849', 'female', 'Queen consort; wife of William IV', historyUrl],
-    ['henrietta-maria', 'Henrietta Maria', 'of France', '1609', '1669', 'female', 'Queen consort; wife of Charles I', historyUrl],
-    ['caroline-ansbach', 'Caroline', 'of Ansbach', '1683', '1737', 'female', 'Queen consort; wife of George II', historyUrl],
-    ['philip-ii-spain', 'Philip', 'II of Spain', '1527', '1598', 'male', 'King consort of England; husband of Mary I', historyUrl],
-    ['wallis-simpson', 'Wallis', 'Simpson', '1896', '1986', 'female', 'Duchess of Windsor; wife of Edward VIII', historyUrl],
-    ['augusta-hesse-kassel', 'Augusta', 'of Hesse-Kassel', '1797', '1889', 'female', 'Duchess of Cambridge; wife of Adolphus', historyUrl],
-    ['louis-xii-france', 'Louis', 'XII of France', '1462', '1515', 'male', 'King of France; first husband of Mary Tudor', historyUrl],
-    ['charles-brandon', 'Charles Brandon', 'Duke of Suffolk', '1484', '1545', 'male', 'Second husband of Mary Tudor', historyUrl],
-    ['louis-iv-hesse', 'Louis', 'IV of Hesse', '1837', '1892', 'male', 'Grand Duke of Hesse; husband of Princess Alice', historyUrl],
-    ['queen-mother', 'Elizabeth', 'the Queen Mother', '1900', '2002', 'female', 'Queen consort; wife of George VI', historyUrl],
-    ['alexandra-denmark', 'Alexandra', 'of Denmark', '1844', '1925', 'female', 'Queen consort; wife of Edward VII', historyUrl],
-    ['catherine-braganza', 'Catherine', 'of Braganza', '1638', '1705', 'female', 'Queen consort; wife of Charles II', historyUrl],
-    ['camilla', 'Camilla', 'Queen of the United Kingdom', '1947', '', 'female', 'Queen consort; wife of Charles III', historyUrl],
-    ['diana', 'Diana', 'Princess of Wales', '1961', '1997', 'female', 'First wife of Charles III', historyUrl],
-    ['andrew-greece', 'Andrew', 'of Greece and Denmark', '1882', '1944', 'male', 'Prince; husband of Alice of Battenberg', historyUrl],
-    ['charlotte-mecklenburg', 'Charlotte', 'of Mecklenburg-Strelitz', '1744', '1818', 'female', 'Queen consort; wife of George III', historyUrl],
-    ['louis-battenberg', 'Louis', 'of Battenberg', '1854', '1921', 'male', 'Marquess of Milford Haven; husband of Victoria of Hesse', historyUrl],
-    ['mary-lorraine', 'Mary', 'of Guise', '1515', '1560', 'female', 'Queen consort; wife of James V', historyUrl],
-    ['madeleine-valois', 'Madeleine', 'of Valois', '1520', '1537', 'female', 'Queen consort; first wife of James V', historyUrl],
-    ['james-hepburn', 'James Hepburn', 'Earl of Bothwell', '1534', '1578', 'male', 'Third husband of Mary, Queen of Scots', historyUrl],
-    ['francis-ii-france', 'Francis', 'II of France', '1544', '1560', 'male', 'King of France; first husband of Mary, Queen of Scots', historyUrl],
-    ['francis-teck', 'Francis', 'Duke of Teck', '1837', '1900', 'male', 'Husband of Mary Adelaide of Cambridge', historyUrl],
-    ['george-cumberland', 'George', 'of Denmark', '1653', '1708', 'male', 'Prince consort; husband of Queen Anne', historyUrl],
-    ['henry-grey', 'Henry Grey', 'Duke of Suffolk', '1517', '1554', 'male', 'Husband of Frances Brandon', historyUrl],
-    ['archibald-douglas', 'Archibald Douglas', 'Earl of Angus', '1489', '1557', 'male', 'Second husband of Margaret Tudor', historyUrl],
-    ['william-ii-orange', 'William', 'II of Orange', '1626', '1650', 'male', 'Prince of Orange; husband of Mary Stuart', historyUrl],
-    ['augusta-saxe-gotha', 'Augusta', 'of Saxe-Gotha', '1719', '1772', 'female', 'Princess of Wales; wife of Frederick', historyUrl],
-    ['catherine-aragon', 'Catherine', 'of Aragon', '1485', '1536', 'female', 'Queen consort; first wife of Henry VIII', historyUrl],
-    ['anne-boleyn', 'Anne', 'Boleyn', '1501', '1536', 'female', 'Queen consort; second wife of Henry VIII', historyUrl],
-    ['jane-seymour', 'Jane', 'Seymour', '1508', '1537', 'female', 'Queen consort; third wife of Henry VIII', historyUrl],
-    ['anne-cleves', 'Anne', 'of Cleves', '1515', '1557', 'female', 'Queen consort; fourth wife of Henry VIII', historyUrl],
-    ['catherine-howard', 'Catherine', 'Howard', '1523', '1542', 'female', 'Queen consort; fifth wife of Henry VIII', historyUrl],
-    ['catherine-parr', 'Catherine', 'Parr', '1512', '1548', 'female', 'Queen consort; sixth wife of Henry VIII', historyUrl],
-    ['anne-hyde', 'Anne', 'Hyde', '1637', '1671', 'female', 'Duchess of York; first wife of James II', historyUrl],
-    ['mary-modena', 'Mary', 'of Modena', '1658', '1718', 'female', 'Queen consort; second wife of James II', historyUrl],
-    ['anne-denmark', 'Anne', 'of Denmark', '1574', '1619', 'female', 'Queen consort; wife of James VI and I', historyUrl],
-    ['sophia-dorothea-celle', 'Sophia Dorothea', 'of Celle', '1666', '1726', 'female', 'Wife of George I', historyUrl],
-    ['guildford-dudley', 'Guildford', 'Dudley', '1535', '1554', 'male', 'Husband of Lady Jane Grey', historyUrl],
-    ['henry-methven', 'Henry Stewart', 'Lord Methven', '1495', '1552', 'male', 'Third husband of Margaret Tudor', historyUrl],
-    ['adrian-stokes', 'Adrian', 'Stokes, MP', '1519', '1585', 'male', 'Second husband of Frances Brandon', historyUrl],
-    ['jeanne-france', 'Jeanne', 'of France', '1464', '1505', 'female', 'First wife of Louis XII of France', historyUrl],
-    ['anne-brittany', 'Anne', 'of Brittany', '1477', '1514', 'female', 'Second wife of Louis XII of France', historyUrl],
-    ['anne-browne', 'Anne', 'Browne Brandon', '1489', '1511', 'female', 'Wife of Charles Brandon', historyUrl],
-    ['margaret-neville', 'Margaret', 'Neville', '1466', '1528', 'female', 'Wife of Charles Brandon', historyUrl],
-    ['katherine-willoughby', 'Katherine', 'Willoughby', '1519', '1580', 'female', 'Duchess of Suffolk; wife of Charles Brandon', historyUrl],
-    ['jean-gordon', 'Jean', 'Gordon', '1546', '1629', 'female', 'First wife of James Hepburn', historyUrl],
-    ['louis-longueville', 'Louis II', 'of Longueville', '1510', '1537', 'male', 'First husband of Mary of Guise', historyUrl],
-    ['edward-burgh', 'Edward', 'Burgh', '1508', '1533', 'male', 'First husband of Catherine Parr', historyUrl],
-    ['john-neville-latimer', 'John Neville', 'Baron Latimer', '1493', '1543', 'male', 'Second husband of Catherine Parr', historyUrl],
-    ['thomas-seymour', 'Thomas Seymour', 'Baron Sudeley', '1508', '1549', 'male', 'Fourth husband of Catherine Parr', historyUrl],
-    ['thomas-fitzherbert', 'Thomas', 'FitzHerbert', '1746', '1781', 'male', 'Second husband of Maria Fitzherbert', historyUrl],
-    ['edward-weld', 'Edward', 'Weld', '1741', '1775', 'male', 'First husband of Maria Fitzherbert', historyUrl],
-    ['emich-carl-leiningen', 'Emich Carl', 'Prince of Leiningen', '1763', '1814', 'male', 'First husband of Victoria of Saxe-Coburg-Saalfeld', historyUrl],
-    ['anna-austria-spain', 'Anna of Austria', 'Queen of Spain', '1549', '1580', 'female', 'Fourth wife of Philip II of Spain', historyUrl],
-    ['elisabeth-valois', 'Elisabeth', 'of Valois', '1545', '1568', 'female', 'Third wife of Philip II of Spain', historyUrl],
-    ['maria-manuela', 'Maria Manuela', 'Princess of Portugal', '1527', '1545', 'female', 'First wife of Philip II of Spain', historyUrl],
-    ['andrew-parker-bowles', 'Andrew', 'Parker Bowles', '1939', '', 'male', 'First husband of Camilla, Queen of the United Kingdom', historyUrl],
-    ['alexandrine-hutten', 'Alexandrine', 'von Hutten-Czapska', '1854', '1941', 'female', 'Second wife of Louis IV, Grand Duke of Hesse', historyUrl],
-    ['earl-winfield-spencer', 'Earl Winfield', 'Spencer Jr.', '1888', '1950', 'male', 'First husband of Wallis Simpson', historyUrl],
-    ['ernest-aldrich-simpson', 'Ernest Aldrich', 'Simpson', '1897', '1958', 'male', 'Second husband of Wallis Simpson', historyUrl],
-    ['margaret-hepburn', 'Margaret', 'Hepburn', '1491', '1513', 'female', 'First wife of Archibald Douglas; born after 1490', historyUrl],
-    ['jane-stewart-douglas', 'Jane Stewart', 'Douglas', '1496', '', 'female', 'Wife of Archibald Douglas', historyUrl],
-    ['margaret-maxwell', 'Margaret', 'Maxwell', '1520', '1593', 'female', 'Wife of Archibald Douglas', historyUrl],
-    ['janet-stewart-sutherland', 'Janet Stewart', 'Countess of Sutherland', '1505', '1580', 'female', 'Wife of Henry Stewart, Lord Methven', historyUrl],
-    ['lady-leslie', 'Lady', 'Leslie', '1495', '', 'female', 'Wife of Henry Stewart, Lord Methven; birth year estimated within Geni range', historyUrl]
-  );
-  // Geni IDs are bundled so the starter timeline works without authorization.
-  // They are also the merge keys used when an authorized visitor refreshes a profile.
-  const geniIds = {
-    'henry-vii': '6000000003760873898', 'elizabeth-york': '5111879481690102566', 'arthur-tudor': '6000000003409427757',
-    'henry-viii': '6000000007442241030', 'margaret-tudor': '6000000003858820967',
-    'mary-i': '5027356653020040914', 'elizabeth-i': '4476035', 'edward-vi': '6000000008813849008',
-    'james-iv': '4229916861440069622', 'james-v': '6000000003233882803',
-    'mary-scots': '6000000003234018546', 'darnley': '6000000003876051113',
-    'james-vi-i': '6000000028418914022', 'elizabeth-stuart': '304430340510004215',
-    'frederick-v': '304433105310001815', 'sophia-hanover': '6000000003879438150',
-    'ernest-augustus': '6000000003890906681',
-    'george-i': '6000000017824487111', 'george-ii': '4555899',
-    'frederick-wales': '6000000003891739213', 'george-iii': '6000000003091034586',
-    'edward-kent': '4087038607800049893', 'victoria': '6000000008852088113',
-    'albert': '6000000000697518124', 'edward-vii': '6000000001651648070',
-    'george-v': '6000000000701511040', 'edward-viii': '5031922362950130285',
-    'george-vi': '6000000001217955606', 'elizabeth-ii': '6000000003075071669',
-    'philip': '6000000003075171096', 'charles-iii': '6000000003075030887',
-    'william-wales': '6000000003075211030', 'harry-sussex': '6000000003075017807',
-    'george-wales': '6000000021632971183', 'charlotte-wales': '6000000033295530573',
-    'louis-wales': '6000000077977622390', 'catherine-wales': '6000000013407238004',
-    'meghan-sussex': '6000000049003958965', 'archie-sussex': '6000000092563363034',
-    'lilibet-sussex': '6000000176167113885',
-    'mary-tudor': '6000000000307250674', 'frances-brandon': '6000000003760910764',
-    'jane-grey': '368988617700011508', 'charles-i': '4498828',
-    'charles-ii': '6000000002529545042', 'james-ii-vii': '6000000013038690528',
-    'mary-princess-royal': '6000000003885198846', 'william-iii': '6000000003285553237',
-    'mary-ii': '6000000003285472970', 'anne': '6000000003285572645',
-    'george-iv': '4137986493320052463', 'william-iv': '4137989648200126749',
-    'adolphus-cambridge': '6000000000307240333', 'mary-adelaide': '6000000003245250586',
-    'mary-teck': '6000000001324056123', 'alice-uk': '6000000000703284437',
-    'victoria-hesse': '6000000003221554850', 'alice-battenberg': '6000000003075330310',
-    'victoria-saxe-coburg': '6000000000697437319', 'maria-fitzherbert': '6000000000769944531',
-    'caroline-brunswick': '4138652783200125692', 'adelaide-saxe-meiningen': '4138662614410074729',
-    'henrietta-maria': '6000000000851678345', 'caroline-ansbach': '4555944',
-    'philip-ii-spain': '6000000001600060051', 'wallis-simpson': '6000000000701830018',
-    'augusta-hesse-kassel': '6000000001260403655', 'louis-xii-france': '6000000000440363134',
-    'charles-brandon': '6000000003572141177', 'louis-iv-hesse': '6000000000703378021',
-    'queen-mother': '3940609086280075061', 'alexandra-denmark': '6000000003070981015',
-    'catherine-braganza': '6000000001566391625', 'camilla': '6000000003081589893',
-    'diana': '6000000013313514628', 'andrew-greece': '5495575341940116659',
-    'charlotte-mecklenburg': '6000000003891728922', 'louis-battenberg': '6000000003221640265',
-    'mary-lorraine': '6000000001323878378', 'madeleine-valois': '6000000002322323932',
-    'james-hepburn': '6000000001723257706', 'francis-ii-france': '6000000003232545902',
-    'francis-teck': '6000000001543481636', 'george-cumberland': '4033341615700026163',
-    'henry-grey': '6000000000307262142', 'archibald-douglas': '6000000003232538566',
-    'william-ii-orange': '6000000001562593113', 'augusta-saxe-gotha': '6000000003891753089',
-    'catherine-aragon': '4475169', 'anne-boleyn': '6000000003702650070',
-    'jane-seymour': '6000000001465721422', 'anne-cleves': '4475232',
-    'catherine-howard': '6000000001465827019', 'catherine-parr': '6000000001465762273',
-    'anne-hyde': '4033453667340030515', 'mary-modena': '6000000001573653856',
-    'anne-denmark': '4104662', 'sophia-dorothea-celle': '4555856',
-    'guildford-dudley': '6000000003409098325', 'henry-methven': '6000000005412245713',
-    'adrian-stokes': '6000000000307271644', 'jeanne-france': '6000000003122346868',
-    'anne-brittany': '6000000003219788977', 'anne-browne': '6000000006444128280',
-    'margaret-neville': '6000000005599087163', 'katherine-willoughby': '5466010055340136751',
-    'jean-gordon': '6000000007464078514', 'louis-longueville': '6000000007103452983',
-    'edward-burgh': '6000000015653621535', 'john-neville-latimer': '6000000000628783459',
-    'thomas-seymour': '6000000000173186819', 'thomas-fitzherbert': '6000000010030843512',
-    'edward-weld': '6000000021567940842', 'emich-carl-leiningen': '6000000005599033002',
-    'anna-austria-spain': '6000000001142154909', 'elisabeth-valois': '6000000001777536029',
-    'maria-manuela': '6000000001599879609', 'andrew-parker-bowles': '5032563093790088828',
-    'alexandrine-hutten': '6000000002343276289', 'earl-winfield-spencer': '6000000003419417080',
-    'ernest-aldrich-simpson': '6000000003419427107', 'margaret-hepburn': '6000000018986012932',
-    'jane-stewart-douglas': '6000000219298892824', 'margaret-maxwell': '6000000006806744528',
-    'janet-stewart-sutherland': '6000000005559708008', 'lady-leslie': '6000000042163396821'
-  };
-  const people = {};
-  const displayNameOverrides = {
-    'henry-vii': 'Henry VII, King of England',
-    'louis-xii-france': 'Louis XII, King of France',
-    'francis-ii-france': 'Francis II, King of France',
-    'philip-ii-spain': 'Philip II of Spain',
-    victoria: 'Victoria, Queen of the United Kingdom and Empress of India',
-    'wallis-simpson': 'Wallis, Duchess of Windsor',
-    'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',
-    'harry-sussex': 'Harry, Duke of Sussex', 'meghan-sussex': 'Meghan, Duchess of Sussex',
-    'george-wales': 'Prince George of Wales', 'charlotte-wales': 'Princess Charlotte of Wales',
-    'louis-wales': 'Prince Louis of Wales', 'archie-sussex': 'Prince Archie Harrison Mountbatten-Windsor',
-    'lilibet-sussex': 'Princess Lilibet Diana Mountbatten-Windsor'
-  };
-  const livingSlugs = new Set(['charles-iii', 'camilla', 'william-wales', 'catherine-wales', 'harry-sussex', 'meghan-sussex', 'george-wales', 'charlotte-wales', 'louis-wales', 'archie-sussex', 'lilibet-sussex']);
-  const titlePrefix = /^(?:the\s+Queen\s+Mother|(?:Grand\s+)?(?:Duke|Duchess)|Prince(?:ss)?|Earl|Count(?:ess)?|Lord|Lady|Baron(?:ess)?|Marquess|Marchioness|King|Queen|Emperor|Empress)\b/i;
-  rows.filter(([slug]) => geniIds[slug]).forEach(([slug, firstName, lastName, birthYear, deathYear, gender, note]) => {
-    const geniId = geniIds[slug];
-    const id = canonicalGeniProfileId(geniId);
-    const baseName = lastName && titlePrefix.test(lastName) ? `${firstName}, ${lastName}` : [firstName, lastName].filter(Boolean).join(' ');
-    const titleClause = clean(note).split(/[;,]/)[0];
-    const royalTitle = titleClause.match(/\b(?:King|Queen)(?:\s+consort)?\s+of\s+.+$/i)?.[0] || '';
-    const displayName = displayNameOverrides[slug] || (royalTitle && !/\b(?:king|queen)\b/i.test(baseName) ? `${baseName}, ${royalTitle}` : baseName);
-    people[id] = normalizePerson({
-      id, firstName, lastName, displayName, title: royalTitle, birthYear, deathYear, gender, note,
-      nameOrder: 'western', isLiving: livingSlugs.has(slug), place: '',
-      sourceUrl: `https://www.geni.com/profile/index/${geniId}`, sourceProvider: 'geni', sourceId: id,
-      starterProfile: true
-    }, id);
-  });
-  const id = slug => geniIds[slug] ? canonicalGeniProfileId(geniIds[slug]) : '';
-  const parentLinks = {
-    'arthur-tudor': ['henry-vii', 'elizabeth-york'], 'henry-viii': ['henry-vii', 'elizabeth-york'],
-    'margaret-tudor': ['henry-vii', 'elizabeth-york'], 'mary-tudor': ['henry-vii', 'elizabeth-york'],
-    'mary-i': ['henry-viii', 'catherine-aragon'], 'elizabeth-i': ['henry-viii', 'anne-boleyn'], 'edward-vi': ['henry-viii', 'jane-seymour'],
-    'frances-brandon': ['mary-tudor', 'charles-brandon'], 'jane-grey': ['frances-brandon', 'henry-grey'],
-    'james-v': ['james-iv', 'margaret-tudor'], 'mary-scots': ['james-v', 'mary-lorraine'],
-    'james-vi-i': ['darnley', 'mary-scots'], 'charles-i': ['james-vi-i', 'anne-denmark'], 'elizabeth-stuart': ['james-vi-i', 'anne-denmark'],
-    'charles-ii': ['charles-i', 'henrietta-maria'], 'james-ii-vii': ['charles-i', 'henrietta-maria'], 'mary-princess-royal': ['charles-i', 'henrietta-maria'],
-    'william-iii': ['mary-princess-royal', 'william-ii-orange'], 'mary-ii': ['james-ii-vii', 'anne-hyde'], 'anne': ['james-ii-vii', 'anne-hyde'],
-    'sophia-hanover': ['frederick-v', 'elizabeth-stuart'], 'george-i': ['ernest-augustus', 'sophia-hanover'],
-    'george-ii': ['george-i', 'sophia-dorothea-celle'], 'frederick-wales': ['george-ii', 'caroline-ansbach'], 'george-iii': ['frederick-wales', 'augusta-saxe-gotha'],
-    'george-iv': ['george-iii'], 'william-iv': ['george-iii'], 'edward-kent': ['george-iii'],
-    'ernest-cumberland': ['george-iii'], 'adolphus-cambridge': ['george-iii'], 'mary-adelaide': ['adolphus-cambridge', 'augusta-hesse-kassel'],
-    'mary-teck': ['mary-adelaide', 'francis-teck'], 'victoria': ['edward-kent', 'victoria-saxe-coburg'],
-    'victoria-royal': ['albert', 'victoria'], 'edward-vii': ['albert', 'victoria'], 'alice-uk': ['albert', 'victoria'],
-    'alfred-saxe': ['albert', 'victoria'], 'helena-uk': ['albert', 'victoria'], 'louise-uk': ['albert', 'victoria'],
-    'arthur-connaught': ['albert', 'victoria'], 'leopold-albany': ['albert', 'victoria'], 'beatrice-uk': ['albert', 'victoria'],
-    'victoria-hesse': ['alice-uk', 'louis-iv-hesse'], 'alice-battenberg': ['victoria-hesse', 'louis-battenberg'], 'philip': ['alice-battenberg', 'andrew-greece'],
-    'george-v': ['edward-vii', 'alexandra-denmark'], 'maud-norway': ['edward-vii', 'alexandra-denmark'], 'olav-v': ['maud-norway'], 'harald-v': ['olav-v'],
-    'edward-viii': ['george-v', 'mary-teck'], 'george-vi': ['george-v', 'mary-teck'],
-    'elizabeth-ii': ['george-vi', 'queen-mother'], 'margaret-snowdon': ['george-vi', 'queen-mother'],
-    'charles-iii': ['philip', 'elizabeth-ii'], 'anne-royal': ['philip', 'elizabeth-ii'],
-    'andrew-york': ['philip', 'elizabeth-ii'], 'edward-edinburgh': ['philip', 'elizabeth-ii'],
-    'william-wales': ['charles-iii', 'diana'], 'harry-sussex': ['charles-iii', 'diana'],
-    'george-wales': ['william-wales', 'catherine-wales'], 'charlotte-wales': ['william-wales', 'catherine-wales'], 'louis-wales': ['william-wales', 'catherine-wales'],
-    'archie-sussex': ['harry-sussex', 'meghan-sussex'], 'lilibet-sussex': ['harry-sussex', 'meghan-sussex']
-  };
-  Object.entries(parentLinks).forEach(([childSlug, parentSlugs]) => {
-    const childId = id(childSlug);
-    if (!people[childId]) return;
-    const retainedParents = parentSlugs.map(id).filter(parentId => people[parentId]);
-    people[childId].parents = retainedParents;
-    retainedParents.forEach(parentId => { people[parentId].children = unique([...people[parentId].children, childId]); });
-  });
-  [
-   ['henry-vii','elizabeth-york','1486'], ['james-iv','margaret-tudor','1503'],
-   ['margaret-tudor','archibald-douglas','1514'], ['margaret-tudor','henry-methven','1528'],
-   ['henry-methven','janet-stewart-sutherland',''], ['henry-methven','lady-leslie',''],
-   ['mary-tudor','louis-xii-france','1514'], ['mary-tudor','charles-brandon','1515'],
-   ['frances-brandon','henry-grey','1533'], ['frances-brandon','adrian-stokes','1555'], ['jane-grey','guildford-dudley','1553'],
-   ['louis-xii-france','jeanne-france','1476'], ['louis-xii-france','anne-brittany','1499'],
-   ['charles-brandon','margaret-neville','1507'], ['charles-brandon','anne-browne','1508'], ['charles-brandon','katherine-willoughby','1533'],
-   ['archibald-douglas','margaret-hepburn','1509'], ['archibald-douglas','jane-stewart-douglas',''], ['archibald-douglas','margaret-maxwell','1543'],
-   ['henry-viii','catherine-aragon','1509','annulled','1533'], ['henry-viii','anne-boleyn','1533','annulled','1536'],
-   ['henry-viii','jane-seymour','1536'], ['henry-viii','anne-cleves','1540','annulled','1540'], ['henry-viii','catherine-howard','1540'], ['henry-viii','catherine-parr','1543'],
-   ['catherine-aragon','arthur-tudor','1501'],
-   ['catherine-parr','edward-burgh','1529'], ['catherine-parr','john-neville-latimer','1534'], ['catherine-parr','thomas-seymour','1547'],
-   ['mary-i','philip-ii-spain','1554'], ['james-v','madeleine-valois','1537'], ['james-v','mary-lorraine','1538'],
-   ['mary-lorraine','louis-longueville','1534'],
-   ['mary-scots','francis-ii-france','1558'], ['darnley','mary-scots','1565'], ['james-hepburn','jean-gordon','1566','divorced'], ['mary-scots','james-hepburn','1567'],
-   ['philip-ii-spain','maria-manuela','1543'], ['philip-ii-spain','elisabeth-valois','1560'], ['philip-ii-spain','anna-austria-spain','1570'],
-   ['james-vi-i','anne-denmark','1589'], ['frederick-v','elizabeth-stuart','1613'], ['ernest-augustus','sophia-hanover','1658'],
-   ['george-i','sophia-dorothea-celle','1682'], ['charles-i','henrietta-maria','1625'],
-   ['mary-princess-royal','william-ii-orange','1641'],
-   ['james-ii-vii','anne-hyde','1659'], ['charles-ii','catherine-braganza','1662'], ['james-ii-vii','mary-modena','1673'],
-   ['william-iii','mary-ii','1677'], ['anne','george-cumberland','1683'], ['george-ii','caroline-ansbach','1705'],
-   ['frederick-wales','augusta-saxe-gotha','1736'], ['george-iii','charlotte-mecklenburg','1761'],
-   ['george-iv','maria-fitzherbert','1785'], ['george-iv','caroline-brunswick','1795'],
-   ['maria-fitzherbert','edward-weld','1775'], ['maria-fitzherbert','thomas-fitzherbert','1778'],
-   ['victoria-saxe-coburg','emich-carl-leiningen','1803'], ['edward-kent','victoria-saxe-coburg','1818'], ['william-iv','adelaide-saxe-meiningen','1818'], ['adolphus-cambridge','augusta-hesse-kassel','1818'],
-   ['albert','victoria','1840'], ['alice-uk','louis-iv-hesse','1862'], ['edward-vii','alexandra-denmark','1863'],
-   ['louis-iv-hesse','alexandrine-hutten','1884'],
-   ['mary-adelaide','francis-teck','1866'], ['victoria-hesse','louis-battenberg','1884'], ['george-v','mary-teck','1893'],
-   ['alice-battenberg','andrew-greece','1903'], ['wallis-simpson','earl-winfield-spencer','1916','divorced'],
-   ['george-vi','queen-mother','1923'], ['wallis-simpson','ernest-aldrich-simpson','1928','divorced'], ['edward-viii','wallis-simpson','1937'],
-   ['philip','elizabeth-ii','1947'], ['camilla','andrew-parker-bowles','1973','divorced'], ['charles-iii','diana','1981','divorced'], ['charles-iii','camilla','2005'],
-   ['william-wales','catherine-wales','2011'], ['harry-sussex','meghan-sussex','2018']
-  ].forEach(([a, b, marriageYear, marriageStatus, relationshipEndYear]) => {
-    if (!people[id(a)] || !people[id(b)]) return;
-    people[id(a)].partners = unique([...people[id(a)].partners, id(b)]);
-    people[id(b)].partners = unique([...people[id(b)].partners, id(a)]);
-    people[id(a)].spouses = unique([...people[id(a)].spouses, id(b)]);
-    people[id(b)].spouses = unique([...people[id(b)].spouses, id(a)]);
-    if (['annulled', 'divorced'].includes(marriageStatus)) {
-      people[id(a)].divorcedSpouses = unique([...people[id(a)].divorcedSpouses, id(b)]);
-      people[id(b)].divorcedSpouses = unique([...people[id(b)].divorcedSpouses, id(a)]);
-      people[id(a)].relationshipEndStatuses[id(b)] = marriageStatus;
-      people[id(b)].relationshipEndStatuses[id(a)] = marriageStatus;
-      if (relationshipEndYear) {
-        people[id(a)].relationshipEndYears[id(b)] = relationshipEndYear;
-        people[id(b)].relationshipEndYears[id(a)] = relationshipEndYear;
-      }
+let britishRoyalStarterData = null;
+let britishRoyalStarterLoadError = null;
+
+async function loadBritishRoyalStarterData() {
+  try {
+    const response = await fetch("./data/british-royal-line.json", { cache: "no-cache" });
+    if (!response.ok) throw new Error(`Bundled royal line request failed (${response.status})`);
+    const payload = await response.json();
+    if (payload?.schema !== "lineage-starter"
+      || !Number.parseInt(payload.version, 10)
+      || !payload.people
+      || typeof payload.people !== "object"
+      || !payload.people[clean(payload.rootId)]) {
+      throw new Error("Bundled royal line has an unsupported format");
     }
-    people[id(a)].marriageYears[id(b)] = marriageYear;
-    people[id(b)].marriageYears[id(a)] = marriageYear;
-  });
-  const reigns = {
-    'henry-vii': [['Reign', 1485, 1509]], 'henry-viii': [['Reign', 1509, 1547]],
-    'jane-grey': [['Reign', 1553, 1553]], 'mary-i': [['Reign', 1553, 1558]], 'elizabeth-i': [['Reign', 1558, 1603]], 'edward-vi': [['Reign', 1547, 1553]],
-    'james-iv': [['Reign', 1488, 1513]], 'james-v': [['Reign', 1513, 1542]], 'mary-scots': [['Reign', 1542, 1567]],
-    'james-vi-i': [['Reign · Scotland', 1567, 1625], ['Reign · England and Ireland', 1603, 1625]],
-    'charles-i': [['Reign', 1625, 1649]], 'charles-ii': [['Reign', 1660, 1685]], 'james-ii-vii': [['Reign', 1685, 1688]],
-    'william-iii': [['Reign', 1689, 1702]], 'mary-ii': [['Reign', 1689, 1694]], 'anne': [['Reign', 1702, 1714]],
-    'george-i': [['Reign', 1714, 1727]], 'george-ii': [['Reign', 1727, 1760]], 'george-iii': [['Reign', 1760, 1820]],
-    'victoria': [['Reign', 1837, 1901]], 'edward-vii': [['Reign', 1901, 1910]], 'george-v': [['Reign', 1910, 1936]],
-    'edward-viii': [['Reign', 1936, 1936]], 'george-vi': [['Reign', 1936, 1952]], 'elizabeth-ii': [['Reign', 1952, 2022]],
-    'george-iv': [['Reign', 1820, 1830]], 'william-iv': [['Reign', 1830, 1837]], 'ernest-cumberland': [['Reign · Hanover', 1837, 1851]],
-    'maud-norway': [['Reign as queen consort', 1905, 1938]], 'olav-v': [['Reign · Norway', 1957, 1991]],
-    'harald-v': [['Reign · Norway', 1991, new Date().getFullYear()]], 'charles-iii': [['Reign', 2022, new Date().getFullYear()]]
-  };
-  Object.entries(reigns).forEach(([slug, events]) => {
-    if (!people[id(slug)]) return;
-    people[id(slug)].personalEvents = events.map(([name, startYear, endYear]) => ({ name, startYear, endYear, source: 'royal', color: state.reignColor }));
-  });
-  const nameSources = {
-    'henry-vii': 'https://www.royal.uk/henry-vii',
-    victoria: 'https://www.nationalgallery.org.uk/people/victoria-queen-of-the-united-kingdom-of-great-britain-and-ireland-and-empress-of-india',
-    'george-v': 'https://www.royal.uk/george-v',
-    'elizabeth-ii': 'https://www.royal.uk/her-majesty-queen-elizabeth-ii',
-    philip: 'https://www.royal.uk/the-duke-of-edinburgh',
-    'charles-iii': 'https://www.royal.uk/the-king',
-    camilla: 'https://www.royal.uk/the-queen',
-    'anne-royal': 'https://www.royal.uk/the-princess-royal',
-    'edward-edinburgh': 'https://www.royal.uk/duke/edinburgh',
-    'william-wales': 'https://www.royal.uk/the-prince-of-wales-0',
-    'catherine-wales': 'https://www.royal.uk/the-princess-of-wales',
-    'harry-sussex': 'https://www.royal.uk/sussex',
-    'meghan-sussex': 'https://www.royal.uk/sussex'
-  };
-  const wikipediaNameArticles = {
-    'henry-vii': 'Henry VII of England', 'elizabeth-york': 'Elizabeth of York', 'arthur-tudor': 'Arthur, Prince of Wales',
-    'henry-viii': 'Henry VIII', 'margaret-tudor': 'Margaret Tudor', 'mary-tudor': 'Mary Tudor, Queen of France',
-    'mary-i': 'Mary I of England', 'elizabeth-i': 'Elizabeth I', 'edward-vi': 'Edward VI', 'james-vi-i': 'James VI and I',
-    'charles-i': 'Charles I of England', 'charles-ii': 'Charles II of England', 'james-ii-vii': 'James II of England',
-    'mary-ii': 'Mary II', anne: 'Anne, Queen of Great Britain', 'george-i': 'George I of Great Britain',
-    'george-ii': 'George II of Great Britain', 'frederick-wales': 'Frederick, Prince of Wales', 'george-iii': 'George III',
-    'george-iv': 'George IV', 'william-iv': 'William IV', albert: 'Prince Albert of Saxe-Coburg and Gotha',
-    'edward-vii': 'Edward VII', 'george-v': 'George V', 'mary-teck': 'Mary of Teck', 'edward-viii': 'Edward VIII',
-    'george-vi': 'George VI', 'queen-mother': 'Queen Elizabeth The Queen Mother', philip: 'Prince Philip, Duke of Edinburgh',
-    'wallis-simpson': 'Wallis Simpson',
-    'elizabeth-ii': 'Elizabeth II', 'margaret-snowdon': 'Princess Margaret, Countess of Snowdon', 'charles-iii': 'Charles III',
-    camilla: 'Queen Camilla', 'anne-royal': 'Anne, Princess Royal', 'andrew-york': 'Prince Andrew, Duke of York',
-    'edward-edinburgh': 'Prince Edward, Duke of Edinburgh', diana: 'Diana, Princess of Wales',
-    'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',
-    'harry-sussex': 'Prince Harry, Duke of Sussex', 'meghan-sussex': 'Meghan, Duchess of Sussex',
-    'george-wales': 'Prince George of Wales', 'charlotte-wales': 'Princess Charlotte of Wales',
-    'louis-wales': 'Prince Louis of Wales', 'archie-sussex': 'Prince Archie of Sussex', 'lilibet-sussex': 'Princess Lilibet of Sussex'
-  };
-  const historicalNameTransitions = {
-    'henry-vii': [[1457, 'Henry Tudor'], [1485, 'Henry VII, King of England']],
-    'elizabeth-york': [[1466, 'Elizabeth of York'], [1486, 'Elizabeth of York, Queen consort of England']],
-    'arthur-tudor': [[1486, 'Arthur Tudor'], [1489, 'Arthur, Prince of Wales']],
-    'henry-viii': [[1491, 'Prince Henry Tudor'], [1494, 'Henry, Duke of York'], [1502, 'Henry, Prince of Wales'], [1509, 'Henry VIII, King of England']],
-    'margaret-tudor': [[1489, 'Princess Margaret Tudor'], [1503, 'Margaret Tudor, Queen of Scots'], [1513, 'Margaret Tudor, Queen dowager of Scots']],
-    'mary-tudor': [[1496, 'Princess Mary Tudor'], [1514, 'Mary Tudor, Queen of France'], [1515, 'Mary Tudor, Duchess of Suffolk']],
-    'mary-i': [[1516, 'Princess Mary Tudor'], [1533, 'Lady Mary Tudor'], [1553, 'Mary I, Queen of England and Ireland']],
-    'elizabeth-i': [[1533, 'Princess Elizabeth Tudor'], [1536, 'Lady Elizabeth Tudor'], [1558, 'Elizabeth I, Queen of England and Ireland']],
-    'edward-vi': [[1537, 'Prince Edward Tudor'], [1547, 'Edward VI, King of England and Ireland']],
-    'james-vi-i': [[1566, 'Prince James Stuart'], [1567, 'James VI, King of Scots'], [1603, 'James VI & I, King of Scots, England and Ireland']],
-    'charles-i': [[1600, 'Prince Charles Stuart'], [1605, 'Charles, Duke of York'], [1616, 'Charles, Prince of Wales'], [1625, 'Charles I, King of England, Scotland and Ireland']],
-    'charles-ii': [[1630, 'Prince Charles Stuart'], [1649, 'Charles II, King of England, Scotland and Ireland']],
-    'james-ii-vii': [[1633, 'Prince James Stuart'], [1644, 'James, Duke of York'], [1685, 'James II & VII, King of England, Scotland and Ireland']],
-    'mary-ii': [[1662, 'Princess Mary Stuart'], [1689, 'Mary II, Queen of England, Scotland and Ireland']],
-    anne: [[1665, 'Princess Anne Stuart'], [1702, 'Anne, Queen of Great Britain and Ireland']],
-    'george-i': [[1660, 'Georg Ludwig of Hanover'], [1698, 'Georg Ludwig, Elector of Hanover'], [1714, 'George I, King of Great Britain and Ireland']],
-    'george-ii': [[1683, 'Prince George Augustus of Hanover'], [1706, 'George, Duke of Cambridge'], [1714, 'George, Prince of Wales'], [1727, 'George II, King of Great Britain and Ireland']],
-    'frederick-wales': [[1707, 'Prince Frederick of Hanover'], [1726, 'Frederick, Duke of Edinburgh'], [1729, 'Frederick, Prince of Wales']],
-    'george-iii': [[1738, 'Prince George'], [1751, 'George, Prince of Wales'], [1760, 'George III, King of Great Britain and Ireland']],
-    'george-iv': [[1762, 'George, Prince of Wales'], [1811, 'George, Prince Regent'], [1820, 'George IV, King of the United Kingdom']],
-    'william-iv': [[1765, 'Prince William Henry'], [1789, 'William, Duke of Clarence and St Andrews'], [1830, 'William IV, King of the United Kingdom']],
-    victoria: [[1819, 'Princess Alexandrina Victoria of Kent'], [1837, 'Victoria, Queen of the United Kingdom'], [1876, 'Victoria, Queen of the United Kingdom and Empress of India']],
-    albert: [[1819, 'Prince Albert of Saxe-Coburg and Gotha'], [1857, 'Albert, Prince Consort']],
-    'edward-vii': [[1841, 'Albert Edward, Prince of Wales'], [1901, 'Edward VII, King of the United Kingdom and Emperor of India']],
-    'george-v': [[1865, 'Prince George of Wales'], [1892, 'George, Duke of York'], [1901, 'George, Prince of Wales'], [1910, 'George V, King of the United Kingdom and Emperor of India']],
-    'mary-teck': [[1867, 'Princess Victoria Mary of Teck'], [1893, 'Mary, Duchess of York'], [1901, 'Mary, Princess of Wales'], [1910, 'Mary, Queen of the United Kingdom'], [1936, 'Queen Mary']],
-    'edward-viii': [[1894, 'Prince Edward of York'], [1901, 'Prince Edward of Wales'], [1910, 'Edward, Prince of Wales'], [1936, 'Edward VIII, King of the United Kingdom and Emperor of India'], [1937, 'Edward, Duke of Windsor']],
-    'george-vi': [[1895, 'Prince Albert of York'], [1901, 'Prince Albert of Wales'], [1910, 'Prince Albert'], [1920, 'Albert, Duke of York'], [1936, 'George VI, King of the United Kingdom and Emperor of India'], [1948, 'George VI, King of the United Kingdom']],
-    'queen-mother': [[1900, 'Elizabeth Bowes-Lyon'], [1923, 'Elizabeth, Duchess of York'], [1936, 'Elizabeth, Queen of the United Kingdom'], [1952, 'Elizabeth, the Queen Mother']],
-    'wallis-simpson': [[1896, 'Bessie Wallis Warfield'], [1916, 'Wallis Spencer'], [1928, 'Wallis Simpson'], [1937, 'Wallis, Duchess of Windsor']],
-    philip: [[1921, 'Prince Philip of Greece and Denmark'], [1947, 'Philip, Duke of Edinburgh']],
-    'elizabeth-ii': [[1926, 'Princess Elizabeth of York'], [1936, 'The Princess Elizabeth'], [1947, 'The Princess Elizabeth, Duchess of Edinburgh'], [1952, 'Elizabeth II, Queen of the United Kingdom']],
-    'margaret-snowdon': [[1930, 'Princess Margaret Rose of York'], [1936, 'The Princess Margaret'], [1960, 'Margaret, Countess of Snowdon']],
-    'charles-iii': [[1948, 'Prince Charles of Edinburgh'], [1952, 'Charles, Duke of Cornwall'], [1958, 'Charles, Prince of Wales'], [2022, 'Charles III, King of the United Kingdom']],
-    camilla: [[1947, 'Camilla Shand'], [1973, 'Camilla Parker Bowles'], [2005, 'Camilla, Duchess of Cornwall'], [2022, 'Camilla, Queen Consort'], [2023, 'Camilla, Queen of the United Kingdom']],
-    'anne-royal': [[1950, 'Princess Anne of Edinburgh'], [1952, 'The Princess Anne'], [1987, 'Anne, Princess Royal']],
-    'andrew-york': [[1960, 'Prince Andrew'], [1986, 'Andrew, Duke of York']],
-    'edward-edinburgh': [[1964, 'Prince Edward'], [1999, 'Edward, Earl of Wessex'], [2023, 'Edward, Duke of Edinburgh']],
-    diana: [[1961, 'Diana Spencer'], [1975, 'Lady Diana Spencer'], [1981, 'Diana, Princess of Wales']],
-    'william-wales': [[1982, 'Prince William of Wales'], [2011, 'William, Duke of Cambridge'], [2022, 'William, Prince of Wales']],
-    'catherine-wales': [[1982, 'Catherine Middleton'], [2011, 'Catherine, Duchess of Cambridge'], [2022, 'Catherine, Princess of Wales']],
-    'harry-sussex': [[1984, 'Prince Harry of Wales'], [2018, 'Harry, Duke of Sussex']],
-    'meghan-sussex': [[1981, 'Meghan Markle'], [2018, 'Meghan, Duchess of Sussex']],
-    'george-wales': [[2013, 'Prince George of Cambridge'], [2022, 'Prince George of Wales']],
-    'charlotte-wales': [[2015, 'Princess Charlotte of Cambridge'], [2022, 'Princess Charlotte of Wales']],
-    'louis-wales': [[2018, 'Prince Louis of Cambridge'], [2022, 'Prince Louis of Wales']],
-    'archie-sussex': [[2019, 'Archie Mountbatten-Windsor'], [2023, 'Prince Archie of Sussex']],
-    'lilibet-sussex': [[2021, 'Lilibet Mountbatten-Windsor'], [2023, 'Princess Lilibet of Sussex']]
-  };
-  const defaultNameStartYears = {
-    // A lasting identity need not be the person's final chronological title.
-    'margaret-tudor': 1503,
-    'edward-vii': 1901,
-    'george-v': 1910,
-    'edward-viii': 1936,
-    'george-vi': 1936
-  };
-  Object.entries(historicalNameTransitions).forEach(([slug, transitions]) => {
-    const person = people[id(slug)];
-    if (!person) return;
-    const sourceUrl = wikipediaNameArticles[slug]
-      ? `https://en.wikipedia.org/wiki/${encodeURIComponent(wikipediaNameArticles[slug].replaceAll(' ', '_'))}`
-      : nameSources[slug] || person.sourceUrl || historyUrl;
-    person.namePeriods = normalizeNamePeriods(transitions.map(([startYear, name], index) => ({
-      id: `${slug}-name-${startYear}`,
-      name,
-      startYear,
-      endYear: transitions[index + 1]?.[0] ?? numericYear(person.deathYear),
-      sourceUrl
-    })));
-    const preferredStartYear = defaultNameStartYears[slug];
-    const preferredPeriod = person.namePeriods.find(period => preferredStartYear != null && period.startYear === preferredStartYear)
-      || person.namePeriods.find(period => period.name.toLocaleLowerCase() === clean(person.displayName).toLocaleLowerCase())
-      || person.namePeriods.at(-1);
-    person.defaultNamePeriodId = preferredPeriod?.id || '';
-  });
-  return people;
+    britishRoyalStarterData = payload;
+  } catch (error) {
+    britishRoyalStarterLoadError = error;
+    console.error(error);
+  }
+}
+
+function britishRoyalStarterVersion() {
+  return Number.parseInt(britishRoyalStarterData?.version, 10) || 0;
+}
+
+function britishRoyalStarterRootId() {
+  return clean(britishRoyalStarterData?.rootId) || profileIdFromInput(HENRY_VII_GENI_URL);
+}
+
+function createBritishRoyalSample() {
+  if (!britishRoyalStarterData?.people) return {};
+  return migrateGeniPeople(structuredClone(britishRoyalStarterData.people)).people;
 }
 
 function createBritishHistoryEvents() {
-  return normalizeGlobalEvents([
-    { id: 'british-commonwealth', name: 'Commonwealth', startYear: 1649, endYear: 1660, color: '#616161' },
-    { id: 'british-wwi', name: 'WW1', startYear: 1914, endYear: 1918, color: '#6b7d2a' },
-    { id: 'british-wwii', name: 'WW2', startYear: 1939, endYear: 1945, color: '#3949ab' }
-  ]);
+  return normalizeGlobalEvents(structuredClone(britishRoyalStarterData?.globalEvents || []));
 }
 
 function loadBritishRoyalExample({ persistResult = true } = {}) {
   const button = els['royal-example-button'];
+  if (!britishRoyalStarterData) {
+    toast('The bundled British royal line could not be loaded.', true);
+    return;
+  }
   state.people = createBritishRoyalSample();
   state.globalEvents = createBritishHistoryEvents();
   state.asOfYear = null;
-  state.rootId = profileIdFromInput(HENRY_VII_GENI_URL);
+  state.rootId = britishRoyalStarterRootId();
   state.selectedId = '';
   state.ephemeral = false;
   state.relationVisibility = {};
   state.collapsedIds.clear();
   state.zoom = 1;
-  state.treeFilter = 'king queen';
-  state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
+  state.treeFilter = clean(britishRoyalStarterData.treeFilter) || 'king queen';
+  state.starterDataVersion = britishRoyalStarterVersion();
   state.manualTree = false;
-  state.title = 'The British royal line from Henry VII';
+  state.title = clean(britishRoyalStarterData.title) || 'The British royal line from Henry VII';
   pendingTimelineViewport = null;
   timelineViewportInitialized = false;
   els['tree-filter'].value = state.treeFilter;
@@ -941,8 +507,9 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
 }
 
 function upgradeBundledBritishRoyalLine() {
-  if (state.starterDataVersion >= BRITISH_ROYAL_STARTER_VERSION) return false;
-  const starterRootId = profileIdFromInput(HENRY_VII_GENI_URL);
+  const starterVersion = britishRoyalStarterVersion();
+  if (!starterVersion || state.starterDataVersion >= starterVersion) return false;
+  const starterRootId = britishRoyalStarterRootId();
   const isBundledLine = state.rootId === starterRootId && (
     state.title === 'The British royal line from Henry VII' ||
     Object.values(state.people).some(person => person.starterProfile)
@@ -1006,7 +573,7 @@ function upgradeBundledBritishRoyalLine() {
     ));
     if (!alreadyPresent) state.globalEvents.push(event);
   });
-  state.starterDataVersion = BRITISH_ROYAL_STARTER_VERSION;
+  state.starterDataVersion = starterVersion;
   return true;
 }
 
@@ -3768,7 +3335,7 @@ els['new-tree-form'].addEventListener('submit', event => {
   openAddPersonDialog();
 });
 els['royal-example-button'].addEventListener('click', () => {
-  const starterRootId = profileIdFromInput(HENRY_VII_GENI_URL);
+  const starterRootId = britishRoyalStarterRootId();
   const existing = treeWorkspace.trees.find(tree => tree.rootId === starterRootId && tree.id !== treeWorkspace.activeTreeId);
   if (existing) {
     switchTree(existing.id);
@@ -4113,11 +3680,18 @@ els['personal-event-name'].addEventListener('input', () => {
   updateEventColorPalette(els['personal-event-color'], nextIsReign ? state.reignColor : DEFAULT_PERSONAL_EVENT_COLOR);
 });
 
+await loadBritishRoyalStarterData();
 const migratedStoredGeniIds = restore();
-if (!Object.keys(state.people).length && !state.manualTree) loadBritishRoyalExample({ persistResult: true });
-else {
+if (!Object.keys(state.people).length && !state.manualTree && britishRoyalStarterData) {
+  loadBritishRoyalExample({ persistResult: true });
+} else {
   const upgradedBundledLine = upgradeBundledBritishRoyalLine();
   if (upgradedBundledLine || migratedStoredGeniIds) persist(upgradedBundledLine ? 'Bundled royal example updated' : 'Geni profile IDs updated');
 }
 els['tree-filter'].value = state.treeFilter;
 render();
+if (britishRoyalStarterLoadError) {
+  toast(Object.keys(state.people).length
+    ? 'The saved tree opened, but the bundled royal example could not be refreshed.'
+    : 'The bundled royal example could not be loaded. You can still create a manual tree.', true);
+}

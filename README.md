@@ -12,7 +12,7 @@ The **As of** snapshot can be placed directly from the sticky year ruler: hoveri
 
 The bundled British royal line includes dated names across the dynastic spine and present family. For example, William changes from Prince William of Wales to William, Duke of Cambridge in 2011 and William, Prince of Wales in 2022. These records follow published “Titles and styles” chronologies while omitting ceremonial prefixes such as HM and HRH.
 
-A fresh visit immediately shows a bundled British royal line from Henry VII, pre-filtered with `king queen`. It does not contact Geni or open authorization. The historical records—including the line's confirmed spouses and Charles III's living descendant families through William and Harry—and their stable public profile IDs ship with the static app. The left-column restore button replaces the working copy with this bundled baseline.
+A fresh visit immediately shows a bundled British royal line from Henry VII, pre-filtered with `king queen`. It does not contact Geni or open authorization. The historical records—including the line's confirmed spouses and Charles III's living descendant families through William and Harry—and their stable public profile IDs live in the single canonical [`data/british-royal-line.json`](data/british-royal-line.json) file. The left-column restore button replaces the working copy with this bundled baseline.
 
 Timeline rows use the mini-program's two-pass bottom-up compaction approach. Branches move upward in half-row steps when their lifespan-plus-label ranges fit, retain a half-row of breathing room, and stay put whenever a node or external connector would be crossed. A final stable-order pass prevents compaction from moving unrelated profiles between a spouse and that union's children, and enforces a six-pixel vertical gutter whenever two complete node ranges overlap horizontally.
 
@@ -38,7 +38,8 @@ Then open <http://localhost:4173>.
 
 ## Data and AI-assisted imports
 
-- Working trees—including the bundled starter after edits or stitched expansion—are stored in the browser's `localStorage`.
+- The repository's canonical bundled tree is [`data/british-royal-line.json`](data/british-royal-line.json). A first visit loads a normalized working copy into the browser; editing that copy never changes the repository file.
+- Working trees—including the bundled starter after edits or stitched expansion—are stored in the browser's `localStorage`. A version number in the canonical file lets published corrections and additions merge into previously saved bundled trees while preserving local edits; manual trees remain independent.
 - JSON import accepts this web export format and the mini-program's `{ activeRootId, people }` backup shape.
 - AI research packages use the provider-neutral [`lineage-stitch` schema](docs/import-schema.md). A [complete example](examples/stitch-import.example.json) and [generic prompt](docs/ai-import-prompt.md) are stored in the repository. The app generates a more useful prompt containing current-tree anchor IDs.
 - Research prompts ask the user's preferred AI chatbot to complement genealogy profiles with Wikipedia, Wikidata, official biographies, and other reliable public sources, producing cited chronological names rather than one timeless label.

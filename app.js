@@ -28,7 +28,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 16;
+const BRITISH_ROYAL_STARTER_VERSION = 17;
 
 function sessionValue(key, value) {
   try {
@@ -665,6 +665,7 @@ function createBritishRoyalSample() {
     'henry-vii': 'Henry VII, King of England',
     'louis-xii-france': 'Louis XII, King of France',
     'francis-ii-france': 'Francis II, King of France',
+    'philip-ii-spain': 'Philip II of Spain',
     victoria: 'Victoria, Queen of the United Kingdom and Empress of India',
     'wallis-simpson': 'Wallis, Duchess of Windsor',
     'william-wales': 'William, Prince of Wales', 'catherine-wales': 'Catherine, Princess of Wales',

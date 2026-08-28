@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 19,
+  "version": 20,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -2561,16 +2561,16 @@
     "profile-g6000000003285553237": {
       "id": "profile-g6000000003285553237",
       "firstName": "William",
-      "lastName": "III",
-      "displayName": "William III, King of England",
-      "title": "King of England",
+      "lastName": "III & II",
+      "displayName": "William III & II, King of England, Scotland and Ireland",
+      "title": "King of England, Scotland and Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1650",
       "deathYear": "1702",
       "isLiving": false,
       "place": "",
-      "note": "King of England, Scotland and Ireland, 1689–1702",
+      "note": "Joint King of England, Scotland and Ireland with Mary II, 1689–1694; sole King, 1694–1702",
       "parents": [
         "profile-g6000000003885198846",
         "profile-g6000000001562593113"
@@ -2589,8 +2589,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "william-iii-name-1650",
+          "name": "William, Prince of Orange",
+          "startYear": 1650,
+          "endYear": 1689,
+          "sourceUrl": "https://www.royal.uk/william-ii-and-iii-r-1689-1702-and-mary-ii-r1689-1694"
+        },
+        {
+          "id": "william-iii-name-1689",
+          "name": "William III & II, King of England, Scotland and Ireland",
+          "startYear": 1689,
+          "endYear": 1702,
+          "sourceUrl": "https://www.royal.uk/william-ii-and-iii-r-1689-1702-and-mary-ii-r1689-1694"
+        }
+      ],
+      "defaultNamePeriodId": "william-iii-name-1689",
       "personalEvents": [
         {
           "name": "Reign",
@@ -2613,15 +2628,15 @@
       "id": "profile-g6000000003285472970",
       "firstName": "Mary",
       "lastName": "II",
-      "displayName": "Mary II, Queen of England",
-      "title": "Queen of England",
+      "displayName": "Mary II, Queen of England, Scotland and Ireland",
+      "title": "Queen of England, Scotland and Ireland",
       "nameOrder": "western",
       "gender": "female",
       "birthYear": "1662",
       "deathYear": "1694",
       "isLiving": false,
       "place": "",
-      "note": "Queen of England, Scotland and Ireland, 1689–1694",
+      "note": "Joint Queen of England, Scotland and Ireland with William III & II, 1689–1694",
       "parents": [
         "profile-g6000000013038690528",
         "profile-g4033453667340030515"

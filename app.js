@@ -28,7 +28,7 @@ const TIMELINE_NODE_HEIGHT_OPTIONS = [
   [24, 'Dense · 24 px'], [28, 'Compact · 28 px'], [32, 'Standard · 32 px'],
   [36, 'Tall · 36 px'], [42, 'Extra tall · 42 px']
 ];
-const BRITISH_ROYAL_STARTER_VERSION = 17;
+const BRITISH_ROYAL_STARTER_VERSION = 18;
 
 function sessionValue(key, value) {
   try {
@@ -853,11 +853,11 @@ function createBritishRoyalSample() {
     'william-iv': [[1765, 'Prince William Henry'], [1789, 'William, Duke of Clarence and St Andrews'], [1830, 'William IV, King of the United Kingdom']],
     victoria: [[1819, 'Princess Alexandrina Victoria of Kent'], [1837, 'Victoria, Queen of the United Kingdom'], [1876, 'Victoria, Queen of the United Kingdom and Empress of India']],
     albert: [[1819, 'Prince Albert of Saxe-Coburg and Gotha'], [1857, 'Albert, Prince Consort']],
-    'edward-vii': [[1841, 'Albert Edward, Prince of Wales'], [1901, 'Edward VII, King of the United Kingdom']],
-    'george-v': [[1865, 'Prince George of Wales'], [1892, 'George, Duke of York'], [1901, 'George, Prince of Wales'], [1910, 'George V, King of the United Kingdom']],
+    'edward-vii': [[1841, 'Albert Edward, Prince of Wales'], [1901, 'Edward VII, King of the United Kingdom and Emperor of India']],
+    'george-v': [[1865, 'Prince George of Wales'], [1892, 'George, Duke of York'], [1901, 'George, Prince of Wales'], [1910, 'George V, King of the United Kingdom and Emperor of India']],
     'mary-teck': [[1867, 'Princess Victoria Mary of Teck'], [1893, 'Mary, Duchess of York'], [1901, 'Mary, Princess of Wales'], [1910, 'Mary, Queen of the United Kingdom'], [1936, 'Queen Mary']],
-    'edward-viii': [[1894, 'Prince Edward of York'], [1901, 'Prince Edward of Wales'], [1910, 'Edward, Prince of Wales'], [1936, 'Edward VIII, King of the United Kingdom'], [1937, 'Edward, Duke of Windsor']],
-    'george-vi': [[1895, 'Prince Albert of York'], [1901, 'Prince Albert of Wales'], [1910, 'Prince Albert'], [1920, 'Albert, Duke of York'], [1936, 'George VI, King of the United Kingdom']],
+    'edward-viii': [[1894, 'Prince Edward of York'], [1901, 'Prince Edward of Wales'], [1910, 'Edward, Prince of Wales'], [1936, 'Edward VIII, King of the United Kingdom and Emperor of India'], [1937, 'Edward, Duke of Windsor']],
+    'george-vi': [[1895, 'Prince Albert of York'], [1901, 'Prince Albert of Wales'], [1910, 'Prince Albert'], [1920, 'Albert, Duke of York'], [1936, 'George VI, King of the United Kingdom and Emperor of India'], [1948, 'George VI, King of the United Kingdom']],
     'queen-mother': [[1900, 'Elizabeth Bowes-Lyon'], [1923, 'Elizabeth, Duchess of York'], [1936, 'Elizabeth, Queen of the United Kingdom'], [1952, 'Elizabeth, the Queen Mother']],
     'wallis-simpson': [[1896, 'Bessie Wallis Warfield'], [1916, 'Wallis Spencer'], [1928, 'Wallis Simpson'], [1937, 'Wallis, Duchess of Windsor']],
     philip: [[1921, 'Prince Philip of Greece and Denmark'], [1947, 'Philip, Duke of Edinburgh']],
@@ -882,7 +882,10 @@ function createBritishRoyalSample() {
   const defaultNameStartYears = {
     // A lasting identity need not be the person's final chronological title.
     'margaret-tudor': 1503,
-    'edward-viii': 1936
+    'edward-vii': 1901,
+    'george-v': 1910,
+    'edward-viii': 1936,
+    'george-vi': 1936
   };
   Object.entries(historicalNameTransitions).forEach(([slug, transitions]) => {
     const person = people[id(slug)];
@@ -947,6 +950,12 @@ function upgradeBundledBritishRoyalLine() {
   if (!isBundledLine) return false;
 
   const bundledPeople = createBritishRoyalSample();
+  const revisedImperialNamePeriods = {
+    [canonicalGeniProfileId('6000000001651648070')]: ['edward-vii-name-1901', 'Edward VII, King of the United Kingdom'],
+    [canonicalGeniProfileId('6000000000701511040')]: ['george-v-name-1910', 'George V, King of the United Kingdom'],
+    [canonicalGeniProfileId('5031922362950130285')]: ['edward-viii-name-1936', 'Edward VIII, King of the United Kingdom'],
+    [canonicalGeniProfileId('6000000001217955606')]: ['george-vi-name-1936', 'George VI, King of the United Kingdom']
+  };
   Object.entries(bundledPeople).forEach(([id, bundled]) => {
     const saved = state.people[id];
     if (!saved) {
@@ -977,6 +986,15 @@ function upgradeBundledBritishRoyalLine() {
           ? { ...period, endYear: 1876 }
           : period
       )));
+    }
+    const revisedPeriod = revisedImperialNamePeriods[id];
+    if (revisedPeriod) {
+      const [periodId, formerName] = revisedPeriod;
+      const bundledPeriod = bundled.namePeriods.find(period => period.id === periodId);
+      merged.namePeriods = normalizeNamePeriods(merged.namePeriods.map(period => (
+        period.id === periodId && period.name === formerName && bundledPeriod ? bundledPeriod : period
+      )));
+      merged.defaultNamePeriodId = bundled.defaultNamePeriodId;
     }
     merged.marriageYears = { ...bundled.marriageYears, ...saved.marriageYears };
     merged.personalEvents = normalizePersonalEvents([...bundled.personalEvents, ...saved.personalEvents]);

@@ -3372,15 +3372,8 @@ function renderRelationshipHouseholds(person) {
   const ungroupedChildren = person.children.filter(id => state.people[id] && !assignedChildren.has(id)).sort(byBirth);
   if (ungroupedChildren.length) groups.push({ partnerId: '', children: ungroupedChildren });
   const parentIds = person.parents.filter(id => state.people[id]).sort(byBirth);
-  const siblingParentsById = new Map();
-  parentIds.forEach(parentId => state.people[parentId].children.forEach(childId => {
-    if (childId === person.id || !state.people[childId]) return;
-    if (!siblingParentsById.has(childId)) siblingParentsById.set(childId, []);
-    siblingParentsById.get(childId).push(parentId);
-  }));
-  const siblingIds = [...siblingParentsById.keys()].sort(byBirth);
 
-  if (!groups.length && !parentIds.length && !siblingIds.length) {
+  if (!groups.length && !parentIds.length) {
     const empty = document.createElement('p');
     empty.className = 'relationship-empty';
     empty.textContent = 'No family members in the local tree.';
@@ -3393,7 +3386,7 @@ function renderRelationshipHouseholds(person) {
     row.className = `relationship-row ${kind}${visible ? '' : ' is-hidden'}`;
     const branch = document.createElement('span');
     branch.className = 'relationship-branch';
-    branch.textContent = kind === 'spouse' ? '⚭' : kind === 'parent' ? '↑' : kind === 'sibling' ? '├' : '└';
+    branch.textContent = kind === 'spouse' ? '⚭' : kind === 'parent' ? '↑' : '└';
     const copy = document.createElement('span');
     copy.className = 'relationship-copy';
     const name = document.createElement('strong');
@@ -3425,12 +3418,12 @@ function renderRelationshipHouseholds(person) {
   };
 
   const sections = [];
-  if (parentIds.length || siblingIds.length) {
+  if (parentIds.length) {
     const origin = document.createElement('div');
     origin.className = 'relationship-household family-origin';
     const heading = document.createElement('p');
     heading.className = 'relationship-group-label';
-    heading.textContent = 'Parents and siblings';
+    heading.textContent = 'Parents';
     origin.append(heading);
     parentIds.forEach(parentId => {
       const parent = state.people[parentId];
@@ -3438,14 +3431,6 @@ function renderRelationshipHouseholds(person) {
       const key = childRelationKey(parentId, person.id);
       const visible = visibility.visibleIds.has(parentId) && visibility.childEdgeVisible(parentId, person.id);
       origin.append(makeRow({ targetId: parentId, kind: 'parent', visible, label: role.toLowerCase(), detail: `${role} · ${life(parent)}`, relationKeys: [key], canToggle: false }));
-    });
-    siblingIds.forEach(siblingId => {
-      const sibling = state.people[siblingId];
-      const role = sibling.gender === 'male' ? 'Brother' : sibling.gender === 'female' ? 'Sister' : 'Sibling';
-      const sharedParents = siblingParentsById.get(siblingId);
-      const relationKeys = sharedParents.map(parentId => childRelationKey(parentId, siblingId));
-      const visible = visibility.visibleIds.has(siblingId) && sharedParents.some(parentId => visibility.childEdgeVisible(parentId, siblingId));
-      origin.append(makeRow({ targetId: siblingId, kind: 'sibling', visible, label: role.toLowerCase(), detail: `${role} · ${life(sibling)}`, relationKeys }));
     });
     sections.push(origin);
   }

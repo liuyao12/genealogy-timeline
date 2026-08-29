@@ -1522,8 +1522,17 @@ async function saveTimelineImage() {
     const timelineBox = timeline.viewBox.baseVal;
     const rulerBox = ruler.viewBox.baseVal;
     const rulerHeight = rulerBox.height || 60;
-    const logicalWidth = Math.ceil(Math.max(timelineBox.width, rulerBox.width));
-    const logicalHeight = Math.ceil(rulerHeight + timelineBox.height);
+    // The live canvas includes generous drag space on every side. It is useful
+    // while navigating, but an exported image should end at the actual layout
+    // bounds rather than preserving those four panning margins.
+    const exportBox = {
+      x: timelineBox.x + TIMELINE_PAN_MARGIN.left,
+      y: timelineBox.y + TIMELINE_PAN_MARGIN.top,
+      width: timelineBox.width - TIMELINE_PAN_MARGIN.left - TIMELINE_PAN_MARGIN.right,
+      height: timelineBox.height - TIMELINE_PAN_MARGIN.top - TIMELINE_PAN_MARGIN.bottom
+    };
+    const logicalWidth = Math.ceil(exportBox.width);
+    const logicalHeight = Math.ceil(rulerHeight + exportBox.height);
     const maximumDimension = 14000;
     const maximumPixels = 80000000;
     const scale = Math.max(.01, Math.min(
@@ -1539,15 +1548,15 @@ async function saveTimelineImage() {
     exported.setAttribute('xmlns', SVG_NS);
     exported.setAttribute('width', logicalWidth);
     exported.setAttribute('height', logicalHeight);
-    exported.setAttribute('viewBox', `${timelineBox.x} 0 ${logicalWidth} ${logicalHeight}`);
+    exported.setAttribute('viewBox', `${exportBox.x} 0 ${logicalWidth} ${logicalHeight}`);
     exported.append(svg('title', {}, `${state.title} genealogy timeline`));
     const defs = svg('defs');
     defs.append(svg('style', { type: 'text/css' }, svgDocumentStyles()));
     exported.append(defs);
-    exported.append(svg('rect', { x: timelineBox.x, y: 0, width: logicalWidth, height: logicalHeight, fill: '#fff' }));
+    exported.append(svg('rect', { x: exportBox.x, y: 0, width: logicalWidth, height: logicalHeight, fill: '#fff' }));
 
     const timelineClone = timeline.cloneNode(true);
-    const timelineGroup = svg('g', { transform: `translate(0 ${rulerHeight - timelineBox.y})` });
+    const timelineGroup = svg('g', { transform: `translate(0 ${rulerHeight - exportBox.y})` });
     timelineGroup.append(...timelineClone.childNodes);
     exported.append(timelineGroup);
 

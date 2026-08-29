@@ -1768,60 +1768,85 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         });
       }
   });
-  const preferredSpatialOrder = nodes.map((_, index) => index).sort((first, second) =>
-    preferredY[first] - preferredY[second] || first - second
-  );
-  // Respect household predecessors while retaining preferred spatial order
-  // everywhere else. In particular, place every node in an earlier marriage
-  // group before attempting to place any node in the following group.
-  const spatialOrder = [];
-  const pendingOrder = [...preferredSpatialOrder];
-  const orderedSet = new Set();
-  while (pendingOrder.length) {
-    let nextPosition = pendingOrder.findIndex(index =>
-      (siblingHouseholdConstraints.get(index) || []).every(precedingIndexes =>
-        precedingIndexes.every(precedingIndex => orderedSet.has(precedingIndex))
-      )
+  // Consecutive direct relatives form a rigid packing run. Place and move the
+  // run as one object so a collision can never insert an unrelated row between
+  // a spouse pair, a parent and child, or adjacent siblings. Unrelated runs
+  // retain the extra minimum gutter supplied by timelineVerticalSeparation and
+  // may be farther apart when another occupied range blocks them.
+  const directRuns = [];
+  nodes.forEach((_, index) => {
+    const currentRun = directRuns.at(-1);
+    const previousIndex = currentRun?.at(-1);
+    if (previousIndex != null && timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index])) currentRun.push(index);
+    else directRuns.push([index]);
+  });
+  const runByIndex = new Map();
+  directRuns.forEach((run, runIndex) => run.forEach(index => runByIndex.set(index, runIndex)));
+  const runDependencies = new Map(directRuns.map((_, runIndex) => [runIndex, new Set()]));
+  siblingHouseholdConstraints.forEach((precedingGroups, index) => {
+    const runIndex = runByIndex.get(index);
+    precedingGroups.flat().forEach(precedingIndex => {
+      const precedingRun = runByIndex.get(precedingIndex);
+      if (precedingRun != null && precedingRun !== runIndex) runDependencies.get(runIndex).add(precedingRun);
+    });
+  });
+  const preferredRunOrder = directRuns.map((run, runIndex) => ({
+    runIndex,
+    preferredTop: Math.min(...run.map((index, offset) => preferredY[index] - offset * rowStep))
+  })).sort((first, second) => first.preferredTop - second.preferredTop || first.runIndex - second.runIndex);
+  const runOrder = [];
+  const pendingRuns = [...preferredRunOrder];
+  const orderedRuns = new Set();
+  while (pendingRuns.length) {
+    let nextPosition = pendingRuns.findIndex(item =>
+      [...runDependencies.get(item.runIndex)].every(precedingRun => orderedRuns.has(precedingRun))
     );
     if (nextPosition < 0) nextPosition = 0;
-    const [nextIndex] = pendingOrder.splice(nextPosition, 1);
-    spatialOrder.push(nextIndex);
-    orderedSet.add(nextIndex);
+    const [nextRun] = pendingRuns.splice(nextPosition, 1);
+    runOrder.push(nextRun.runIndex);
+    orderedRuns.add(nextRun.runIndex);
   }
   const placed = [];
   const placedSet = new Set();
 
-  spatialOrder.forEach(index => {
-    const node = nodes[index];
-    const parentIndex = indexByKey.get(displayParentByKey.get(node.key));
-    const parentFloor = parentIndex != null && placedSet.has(parentIndex)
-      ? nodes[parentIndex].y + rowStep
-      : 0;
-    const siblingHouseholdFloor = Math.max(0, ...(siblingHouseholdConstraints.get(index) || []).map(precedingIndexes => {
-      const placedIndexes = precedingIndexes.filter(other => placedSet.has(other));
-      return placedIndexes.length ? Math.max(...placedIndexes.map(other => nodes[other].y)) + rowStep : 0;
-    }));
-    let targetY = Math.max(preferredY[index], parentFloor, siblingHouseholdFloor);
+  runOrder.forEach(runIndex => {
+    const run = directRuns[runIndex];
+    const offsetByIndex = new Map(run.map((index, offset) => [index, offset * rowStep]));
+    let targetTop = 0;
+    run.forEach(index => {
+      const offset = offsetByIndex.get(index);
+      const parentIndex = indexByKey.get(displayParentByKey.get(nodes[index].key));
+      if (parentIndex != null && !offsetByIndex.has(parentIndex) && placedSet.has(parentIndex)) {
+        targetTop = Math.max(targetTop, nodes[parentIndex].y + rowStep - offset);
+      }
+      (siblingHouseholdConstraints.get(index) || []).forEach(precedingIndexes => {
+        const placedIndexes = precedingIndexes.filter(other => !offsetByIndex.has(other) && placedSet.has(other));
+        if (placedIndexes.length) targetTop = Math.max(targetTop, Math.max(...placedIndexes.map(other => nodes[other].y)) + rowStep - offset);
+      });
+    });
 
-    // Search final destinations rather than replaying the original row order.
-    // A node may therefore settle safely above a previously indexed obstacle;
-    // when it really intersects one, jump directly below the entire blocking
-    // band and test again.
+    // Search for the earliest destination that fits the whole direct-family
+    // run. When one member meets an obstacle, shift every member together.
     let moved;
     do {
       moved = false;
-      for (const other of placed) {
-        if (!timelineRowsConflict(index, other, ranges, horizontalRangesByKey, nodes)) continue;
-        const relationshipSeparation = Math.max(requiredVerticalSeparation, timelineVerticalSeparation(index, other, nodes, rowStep));
-        if (Math.abs(targetY - nodes[other].y) >= relationshipSeparation) continue;
-        targetY = nodes[other].y + relationshipSeparation;
-        moved = true;
+      for (const index of run) {
+        const targetY = targetTop + offsetByIndex.get(index);
+        for (const other of placed) {
+          if (!timelineRowsConflict(index, other, ranges, horizontalRangesByKey, nodes)) continue;
+          const relationshipSeparation = Math.max(requiredVerticalSeparation, timelineVerticalSeparation(index, other, nodes, rowStep));
+          if (Math.abs(targetY - nodes[other].y) >= relationshipSeparation) continue;
+          targetTop = Math.max(targetTop, nodes[other].y + relationshipSeparation - offsetByIndex.get(index));
+          moved = true;
+        }
       }
     } while (moved);
 
-    node.y = Math.round(targetY * 1000) / 1000;
-    placed.push(index);
-    placedSet.add(index);
+    run.forEach(index => {
+      nodes[index].y = Math.round((targetTop + offsetByIndex.get(index)) * 1000) / 1000;
+      placed.push(index);
+      placedSet.add(index);
+    });
   });
 }
 

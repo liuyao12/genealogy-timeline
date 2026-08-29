@@ -78,7 +78,7 @@ const treeWorkspace = { version: 1, activeTreeId: '', trees: [] };
 const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
 
 const els = Object.fromEntries([
-  'tree-title', 'global-events-button', 'import-file-button', 'export-button', 'file-input', 'prepare-ai-import',
+  'tree-title', 'global-events-button', 'import-file-button', 'save-image-button', 'export-button', 'file-input', 'prepare-ai-import',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'tree-tabs', 'add-tree-tab', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
   'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
@@ -1492,6 +1492,104 @@ function exportBackup() {
   link.click();
   URL.revokeObjectURL(url);
   toast('Tree exported as JSON.');
+}
+
+function exportFileStem() {
+  return state.title.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'family';
+}
+
+function svgDocumentStyles() {
+  return [...document.styleSheets].flatMap(sheet => {
+    try { return [...sheet.cssRules].map(rule => rule.cssText); }
+    catch { return []; }
+  }).join('\n');
+}
+
+async function saveTimelineImage() {
+  const button = els['save-image-button'];
+  const timeline = els['timeline-canvas'];
+  const ruler = els['timeline-ruler'];
+  if (timeline.hidden || !timeline.childNodes.length) {
+    toast('Add a dated profile before saving an image.', true);
+    return;
+  }
+
+  button.disabled = true;
+  const originalLabel = button.textContent;
+  button.textContent = 'Rendering…';
+  try {
+    await document.fonts?.ready;
+    const timelineBox = timeline.viewBox.baseVal;
+    const rulerBox = ruler.viewBox.baseVal;
+    const rulerHeight = rulerBox.height || 60;
+    const logicalWidth = Math.ceil(Math.max(timelineBox.width, rulerBox.width));
+    const logicalHeight = Math.ceil(rulerHeight + timelineBox.height);
+    const maximumDimension = 14000;
+    const maximumPixels = 80000000;
+    const scale = Math.max(.01, Math.min(
+      2,
+      maximumDimension / logicalWidth,
+      maximumDimension / logicalHeight,
+      Math.sqrt(maximumPixels / (logicalWidth * logicalHeight))
+    ));
+    const pixelWidth = Math.max(1, Math.floor(logicalWidth * scale));
+    const pixelHeight = Math.max(1, Math.floor(logicalHeight * scale));
+
+    const exported = document.createElementNS(SVG_NS, 'svg');
+    exported.setAttribute('xmlns', SVG_NS);
+    exported.setAttribute('width', logicalWidth);
+    exported.setAttribute('height', logicalHeight);
+    exported.setAttribute('viewBox', `${timelineBox.x} 0 ${logicalWidth} ${logicalHeight}`);
+    exported.append(svg('title', {}, `${state.title} genealogy timeline`));
+    const defs = svg('defs');
+    defs.append(svg('style', { type: 'text/css' }, svgDocumentStyles()));
+    exported.append(defs);
+    exported.append(svg('rect', { x: timelineBox.x, y: 0, width: logicalWidth, height: logicalHeight, fill: '#fff' }));
+
+    const timelineClone = timeline.cloneNode(true);
+    const timelineGroup = svg('g', { transform: `translate(0 ${rulerHeight - timelineBox.y})` });
+    timelineGroup.append(...timelineClone.childNodes);
+    exported.append(timelineGroup);
+
+    const rulerClone = ruler.cloneNode(true);
+    const rulerGroup = svg('g', { class: 'timeline-grid' });
+    rulerGroup.append(...rulerClone.childNodes);
+    exported.append(rulerGroup);
+
+    const source = new Blob([new XMLSerializer().serializeToString(exported)], { type: 'image/svg+xml;charset=utf-8' });
+    const sourceUrl = URL.createObjectURL(source);
+    const image = new Image();
+    try {
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('The timeline image could not be rendered.'));
+        image.src = sourceUrl;
+      });
+      const bitmap = document.createElement('canvas');
+      bitmap.width = pixelWidth;
+      bitmap.height = pixelHeight;
+      const context = bitmap.getContext('2d');
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, pixelWidth, pixelHeight);
+      context.drawImage(image, 0, 0, pixelWidth, pixelHeight);
+      const png = await new Promise(resolve => bitmap.toBlob(resolve, 'image/png'));
+      if (!png) throw new Error('The browser could not create the PNG file.');
+      const downloadUrl = URL.createObjectURL(png);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${exportFileStem()}-${new Date().toISOString().slice(0, 10)}.png`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      toast(`Saved full timeline as ${pixelWidth.toLocaleString()} × ${pixelHeight.toLocaleString()} PNG.`);
+    } finally {
+      URL.revokeObjectURL(sourceUrl);
+    }
+  } catch (error) {
+    toast(error.message || 'Could not save the timeline image.', true);
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
 }
 
 function partnerRelationKey(firstId, secondId) {
@@ -3256,6 +3354,7 @@ els['file-input'].addEventListener('change', async () => {
   els['file-input'].value = '';
 });
 els['export-button'].addEventListener('click', exportBackup);
+els['save-image-button'].addEventListener('click', saveTimelineImage);
 function syncTimelineSettingControls() {
   const sync = (options, value, output, down, up) => {
     const index = options.findIndex(([candidate]) => candidate === value);

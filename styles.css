@@ -29,7 +29,7 @@ a { color: var(--green); }
 
 .app-shell { height: 100%; display: flex; flex-direction: column; }
 .app-header {
-  height: 76px; flex: 0 0 76px; display: grid; grid-template-columns: 330px 1fr 430px;
+  height: 76px; flex: 0 0 76px; display: grid; grid-template-columns: 310px 1fr 545px;
   align-items: center; padding: 0 24px; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); z-index: 10;
 }
 .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); width: fit-content; }

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=59">
+  <link rel="stylesheet" href="./styles.css?v=60">
 </head>
 <body>
   <div class="app-shell">
@@ -31,7 +31,8 @@
         <span class="privacy-pill"><span class="status-dot"></span> Stored on this device</span>
         <button class="button secondary" id="global-events-button" type="button">Timeline</button>
         <button class="button secondary" id="import-file-button" type="button">Import file</button>
-        <button class="button primary" id="export-button" type="button">Export</button>
+        <button class="button secondary" id="save-image-button" type="button">Save as image</button>
+        <button class="button primary" id="export-button" type="button">Export JSON</button>
         <input id="file-input" type="file" accept="application/json,.json,.ged,.gedcom,text/plain" hidden>
       </div>
     </header>
@@ -280,6 +281,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=103"></script>
+  <script type="module" src="./app.js?v=104"></script>
 </body>
 </html>

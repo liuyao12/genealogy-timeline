@@ -1624,7 +1624,16 @@ function householdChildren(personId, partnerId = '') {
 
 function buildTimelineVisibility() {
   const allIds = Object.keys(state.people);
-  const childEdgeVisible = (parentId, childId) => relationOverride(childRelationKey(parentId, childId)) !== false;
+  // Child visibility belongs to the whole parental household. Older builds
+  // stored the toggle only on whichever parent's drawer was open, leaving the
+  // other edge active and rendering the child on a stray one-parent stem.
+  // Treat any hidden parental edge as hiding the child from every recorded
+  // parent; the drawer now writes all of those edges together when toggled.
+  const childEdgeVisible = (parentId, childId) => {
+    if (relationOverride(childRelationKey(parentId, childId)) === false) return false;
+    const parentIds = state.people[childId]?.parents || [];
+    return !parentIds.some(id => relationOverride(childRelationKey(id, childId)) === false);
+  };
   const descendantsOfRoot = new Set();
   const descendantQueue = state.people[state.rootId] ? [state.rootId] : [];
   while (descendantQueue.length) {
@@ -3214,7 +3223,10 @@ function renderRelationshipHouseholds(person) {
     }
     group.children.forEach(childId => {
       const visible = visibility.visibleIds.has(childId) && visibility.childEdgeVisible(person.id, childId);
-      household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}` }));
+      const childRelationKeys = state.people[childId].parents
+        .filter(parentId => state.people[parentId])
+        .map(parentId => childRelationKey(parentId, childId));
+      household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}`, relationKeys: childRelationKeys }));
     });
     return household;
   }));

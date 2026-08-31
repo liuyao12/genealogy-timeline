@@ -20,6 +20,8 @@ Timeline rows use the mini-program's two-pass bottom-up compaction approach. Bra
 
 Within each branch, rows are ordered by parental union rather than collecting all spouses beside the principal profile. Spouse households are ordered by recorded marriage year, including marriages without children; undated marriages follow dated ones. Each spouse appears immediately before that couple's children, and a later spouse begins a new group with its own marriage-aligned vertical stem.
 
+Child visibility is household-wide: hiding a child from either parent's profile hides both parental edges, and showing the child restores the complete parental union. A child therefore cannot reappear on a stray one-parent stem after being hidden.
+
 A profile occupying a spouse position uses an italic label and the genealogical marriage symbol `⚭` in place of the branch expand/collapse square. When that same person appears in their own birth branch, the ordinary node styling and branch control are retained.
 
 Confirmed spouses and former spouses are always included in the timeline and in filtered connecting paths. Geni unions recorded only as partners, engagements, or other non-marital relationships are retained as parentage facts but their profiles and union lines are hidden.

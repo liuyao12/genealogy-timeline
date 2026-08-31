@@ -24,7 +24,7 @@ Child visibility is household-wide: hiding a child from either parent's profile 
 
 A profile occupying a spouse position uses an italic label and the genealogical marriage symbol `⚭` in place of the branch expand/collapse square. When that same person appears in their own birth branch, the ordinary node styling and branch control are retained.
 
-In the Western male-line layout, a woman in more than one visible marriage receives a separate spouse occurrence in each household. Those boxes share one dotted transport spine: it follows the biological parents' marriage line when the natal family is visible, or a synthetic anchor just left of the occurrences when it is not. A visible natal occurrence remains a third box alongside two marriage occurrences.
+In the Western male-line layout, a woman already occupying a spouse position in more than one visible male-line household receives a separate occurrence in each household. Those boxes share one dotted transport spine: it follows the biological parents' marriage line when the natal family is visible, or a synthetic anchor just left of the occurrences when it is not. A visible natal occurrence remains a third box alongside two marriage occurrences. A woman who owns her branch—such as Mary, Queen of Scots—stays single, with successive husbands grouped beneath her in marriage order just as successive wives are grouped beneath a man.
 
 Confirmed spouses and former spouses are always included in the timeline and in filtered connecting paths. Geni unions recorded only as partners, engagements, or other non-marital relationships are retained as parentage facts but their profiles and union lines are hidden.
 

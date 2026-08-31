@@ -2344,16 +2344,20 @@ function renderTimeline() {
     return copyKey;
   };
 
-  // Preserve the established cousin-marriage transport, and also duplicate a
-  // profile that participates in more than one visible marriage. This gives
-  // Catherine of Aragon one box beside Arthur and another beside Henry VIII;
-  // if her parents are later imported, her primary natal box becomes a third.
+  // Preserve the established cousin-marriage transport. For successive
+  // marriages, duplicate a woman only when her primary occurrence is already
+  // a spouse in another male-line household. This gives Catherine of Aragon
+  // one box beside Arthur and another beside Henry VIII (plus a natal box if
+  // her parents are visible), while a branch owner such as Mary, Queen of
+  // Scots stays single and has both husbands grouped beneath her.
   [...families.entries()].forEach(([key, family]) => {
     const parentIds = family.parents.filter(id => datedIds.has(id));
     if (parentIds.length !== 2) return;
     const cousinTransportId = transportedParent(parentIds);
     parentIds.forEach(id => {
-      const hasSeveralMarriageHouseholds = state.people[id]?.gender === 'female'
+      const primaryOccurrenceIsSpouse = layoutEntries.find(entry => entry.key === id)?.isSpouse === true;
+      const hasSeveralMarriageHouseholds = primaryOccurrenceIsSpouse
+        && state.people[id]?.gender === 'female'
         && (spouseFamilyKeysByPerson.get(id)?.size || 0) > 1;
       if (id !== cousinTransportId && !hasSeveralMarriageHouseholds) return;
       insertTransportedOccurrence(key, family, id);

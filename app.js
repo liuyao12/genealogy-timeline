@@ -2034,6 +2034,7 @@ function compactTimelineTidyContours(nodes, displayParentByKey, rowHeight, rowSt
 function renderTimeline() {
   const canvas = els['timeline-canvas'];
   const ruler = els['timeline-ruler'];
+  const timelineKeywords = clean(els['tree-filter']?.value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
   timelineRulerGeometry = null;
   canvas.replaceChildren();
   ruler.replaceChildren();
@@ -2760,6 +2761,30 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
+    // An affinal profile can have another recorded marriage whose other
+    // person is outside this tree. Keep its dated fact visible without drawing
+    // a connector to a profile that is not present.
+    if (isSpouseNode) {
+      const attachedKey = displayParentByKey.get(nodeKey);
+      const attachedPartnerId = layoutNodeByKey.get(attachedKey)?.id || attachedKey || '';
+      allPartnerIds(person).forEach(partnerId => {
+        const partner = state.people[partnerId];
+        const pairKey = partnerRelationKey(id, partnerId);
+        const isFormal = person.spouses.includes(partnerId) || partner?.spouses?.includes(id);
+        const marriageYear = marriageYearFor(id, partnerId);
+        if (!isFormal || partnerId === attachedPartnerId || renderedPartnerPairs.has(pairKey) || marriageYear == null) return;
+        const localX = (marriageYear - birthYear(person)) * yearWidth;
+        if (localX < 0 || localX > lifespanWidth) return;
+        const marker = svg('line', {
+          class: 'timeline-edge unconnected-marriage-marker vertical',
+          x1: localX, y1: 0, x2: localX, y2: rowHeight,
+          'data-marriage-year': marriageYear,
+          'data-partner-id': partnerId
+        });
+        marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}; profile not shown in this tree`));
+        group.append(marker);
+      });
+    }
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
     const hasChildren = person.children.some(childId =>
       !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
@@ -2795,7 +2820,9 @@ function renderTimeline() {
     nodeDefs.append(textMask);
     const makeLabel = className => {
       const text = svg('text', { class: className, x: 38, y: nodeCenterY + 1 });
-      text.append(svg('tspan', { class: 'timeline-name' }, historicalDisplayName));
+      highlightedNameParts(historicalDisplayName, timelineKeywords).forEach(part => {
+        text.append(svg('tspan', { class: `timeline-name${part.matched ? ' timeline-name-match' : ''}` }, part.text));
+      });
       text.append(svg('tspan', { class: 'timeline-life-label', dx: 8 }, historicalLifeLabel));
       return text;
     };
@@ -2805,7 +2832,8 @@ function renderTimeline() {
     if (snapshotLabelLayer) {
       const snapshotLabel = svg('g', {
         class: `timeline-snapshot-label ${isSpouseNode ? 'spouse' : ''}`,
-        transform: `translate(${pos.x} ${pos.y})`
+        transform: `translate(${pos.x} ${pos.y})`,
+        'data-person-id': id
       });
       snapshotLabel.append(halo, label);
       snapshotLabelLayer.append(snapshotLabel);
@@ -2861,22 +2889,34 @@ function escapeHtml(value) {
 }
 
 function appendHighlightedName(container, value, keywords) {
+  highlightedNameParts(value, keywords).forEach(part => {
+    if (!part.matched) {
+      container.append(document.createTextNode(part.text));
+      return;
+    }
+    const mark = document.createElement('mark');
+    mark.className = 'person-name-match';
+    mark.textContent = part.text;
+    container.append(mark);
+  });
+}
+
+function highlightedNameParts(value, keywords) {
   const text = String(value || '');
   const terms = [...new Set(keywords.map(clean).filter(Boolean))].sort((a, b) => b.length - a.length);
-  if (!terms.length) { container.textContent = text; return; }
+  if (!terms.length) return [{ text, matched: false }];
   const pattern = terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
   const matcher = new RegExp(pattern, 'giu');
+  const parts = [];
   let cursor = 0;
   for (const match of text.matchAll(matcher)) {
     const index = match.index ?? 0;
-    if (index > cursor) container.append(document.createTextNode(text.slice(cursor, index)));
-    const mark = document.createElement('mark');
-    mark.className = 'person-name-match';
-    mark.textContent = match[0];
-    container.append(mark);
+    if (index > cursor) parts.push({ text: text.slice(cursor, index), matched: false });
+    parts.push({ text: match[0], matched: true });
     cursor = index + match[0].length;
   }
-  if (cursor < text.length) container.append(document.createTextNode(text.slice(cursor)));
+  if (cursor < text.length) parts.push({ text: text.slice(cursor), matched: false });
+  return parts.length ? parts : [{ text, matched: false }];
 }
 
 function centerTimelinePerson(id) {
@@ -2902,16 +2942,20 @@ function centerTimelinePerson(id) {
 function clearTimelinePersonPreview(id = '') {
   if (id && hoveredListPersonId !== id) return;
   hoveredListPersonId = '';
-  els['timeline-canvas'].querySelectorAll('.timeline-node.list-hover').forEach(node => node.classList.remove('list-hover'));
+  const canvas = els['timeline-canvas'];
+  canvas.querySelectorAll('.timeline-node.list-hover').forEach(node => node.classList.remove('list-hover'));
+  canvas.querySelectorAll('.timeline-snapshot-label.list-hover-label').forEach(label => label.classList.remove('list-hover-label'));
 }
 
 function previewTimelinePerson(id) {
   hoveredListPersonId = id;
   const canvas = els['timeline-canvas'];
   canvas.querySelectorAll('.timeline-node.list-hover').forEach(node => node.classList.remove('list-hover'));
+  canvas.querySelectorAll('.timeline-snapshot-label.list-hover-label').forEach(label => label.classList.remove('list-hover-label'));
   const nodes = [...canvas.querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(id)}"]`)];
   if (!nodes.length) return;
   nodes.forEach(node => node.classList.add('list-hover'));
+  canvas.querySelectorAll(`.timeline-snapshot-label[data-person-id="${CSS.escape(id)}"]`).forEach(label => label.classList.add('list-hover-label'));
 
   const viewport = els['canvas-viewport'];
   const viewportRect = viewport.getBoundingClientRect();
@@ -2938,7 +2982,11 @@ function previewTimelinePerson(id) {
     return { dx, dy, distance: Math.abs(dx) + Math.abs(dy) };
   };
   const best = nodes.map(adjustment).sort((a, b) => a.distance - b.distance)[0];
-  if (best.distance > 0) viewport.scrollBy({ left: best.dx, top: best.dy, behavior: 'auto' });
+  if (best.distance > 0) viewport.scrollBy({
+    left: best.dx,
+    top: best.dy,
+    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  });
 }
 
 function selectPerson(id, { center = false } = {}) {
@@ -3277,6 +3325,8 @@ function renderRelationshipHouseholds(person) {
   const container = els['relationship-households'];
   if (!person) { container.replaceChildren(); return; }
   const visibility = buildTimelineVisibility();
+  const visibleOccurrences = [...els['timeline-canvas'].querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(person.id)}"]`)];
+  const shownOnlyAsSpouse = visibleOccurrences.length > 0 && visibleOccurrences.every(node => node.classList.contains('spouse'));
   const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]));
   const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
     const firstYear = marriageYearFor(person.id, firstId);
@@ -3304,7 +3354,7 @@ function renderRelationshipHouseholds(person) {
     return;
   }
 
-  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [], canToggle = true }) => {
+  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [], canToggle = true, toggleDisabled = false }) => {
     const row = document.createElement('div');
     row.className = `relationship-row ${kind}${visible ? '' : ' is-hidden'}`;
     const branch = document.createElement('span');
@@ -3323,17 +3373,20 @@ function renderRelationshipHouseholds(person) {
       toggle.type = 'button';
       toggle.className = 'relationship-visibility';
       toggle.textContent = visible ? '◉' : '○';
-      toggle.title = `${visible ? 'Hide' : 'Show'} ${label} in the timeline`;
+      toggle.disabled = toggleDisabled;
+      toggle.title = toggleDisabled
+        ? `${label} belongs to another marriage outside the visible tree`
+        : `${visible ? 'Hide' : 'Show'} ${label} in the timeline`;
       toggle.setAttribute('aria-label', toggle.title);
-      toggle.addEventListener('click', () => {
+      if (!toggleDisabled) toggle.addEventListener('click', () => {
         const keys = relationKeys.length ? relationKeys
           : [kind === 'spouse' ? partnerRelationKey(person.id, targetId) : childRelationKey(person.id, targetId)];
-      keys.forEach(key => { state.relationVisibility[key] = !visible; });
-      persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
-      render();
-      if (!visible && numericYear(state.people[targetId]?.birthYear) == null) {
-        toast(`${fullName(state.people[targetId])} has no birth year, so it cannot be positioned on the timeline yet.`, true);
-      }
+        keys.forEach(key => { state.relationVisibility[key] = !visible; });
+        persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
+        render();
+        if (!visible && numericYear(state.people[targetId]?.birthYear) == null) {
+          toast(`${fullName(state.people[targetId])} has no birth year, so it cannot be positioned on the timeline yet.`, true);
+        }
       });
       row.append(toggle);
     }
@@ -3365,6 +3418,7 @@ function renderRelationshipHouseholds(person) {
       const partner = state.people[group.partnerId];
       const pairKey = partnerRelationKey(person.id, group.partnerId);
       const visible = visibility.renderedPartnerPairs.has(pairKey);
+      const partnerHasVisibleOccurrence = !!els['timeline-canvas'].querySelector(`.timeline-node[data-person-id="${CSS.escape(group.partnerId)}"]`);
       const formal = person.spouses.includes(group.partnerId) || partner.spouses.includes(person.id);
       const divorced = person.divorcedSpouses.includes(group.partnerId) || partner.divorcedSpouses.includes(person.id);
       const year = clean(person.marriageYears[group.partnerId] || partner.marriageYears[person.id]);
@@ -3378,7 +3432,8 @@ function renderRelationshipHouseholds(person) {
         kind: 'spouse',
         visible,
         label: visibleName(partner),
-        detail: [formal && year && `Married ${year}`, !formal && year && `Relationship ${year}`, ended].filter(Boolean).join(' · ')
+        detail: [formal && year && `Married ${year}`, !formal && year && `Relationship ${year}`, ended].filter(Boolean).join(' · '),
+        toggleDisabled: shownOnlyAsSpouse && !partnerHasVisibleOccurrence
       }));
     } else {
       const label = document.createElement('p');

@@ -171,6 +171,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-edge.marriage-couple { stroke: #b5c2bf; }
 .timeline-edge.node-horizontal-overlay, .timeline-edge.descendant-node-overlay { pointer-events: none; }
 .timeline-edge.marriage-node-overlay { stroke: #fff; pointer-events: none; }
+.timeline-edge.unconnected-marriage-marker { stroke: #fff; stroke-width: 1.5; pointer-events: none; }
 .timeline-node { cursor: pointer; }
 .timeline-node .lifespan { fill: #fff; stroke: none; }
 .timeline-node .lifespan-outline { fill: none; stroke: #555; stroke-width: 2.2; vector-effect: non-scaling-stroke; pointer-events: none; }
@@ -181,6 +182,10 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node.reigned .lifespan-outline { stroke-width: 2.8; }
 .timeline-node.selected .lifespan-outline { stroke-width: 3.4; }
 .timeline-node.list-hover .lifespan-outline { stroke-width: 4.4; filter: drop-shadow(0 0 2px var(--as-of)); }
+.timeline-node.list-hover .timeline-label:not(.timeline-label-halo) .timeline-name-match,
+.timeline-snapshot-label.list-hover-label .timeline-label:not(.timeline-label-halo) .timeline-name-match {
+  fill: #000; stroke: #ffeb3b; stroke-width: 5px; stroke-linejoin: round; paint-order: stroke fill;
+}
 .global-event-range { pointer-events: none; }
 .global-event-edge { stroke-width: 1.3; vector-effect: non-scaling-stroke; pointer-events: none; }
 .global-event-label { stroke: rgba(255,255,255,.92); stroke-width: 3px; paint-order: stroke fill; font: 8px Georgia, serif; pointer-events: none; }
@@ -252,7 +257,9 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .relationship-copy small { display: block; margin-top: 2px; color: #777; font-size: 8px; }
 .relationship-visibility { width: 27px; height: 25px; display: grid; place-items: center; padding: 0; border: 1px solid #aaa; border-radius: 6px; background: #fff; color: #111; cursor: pointer; font-size: 12px; }
 .relationship-visibility:hover { border-color: #000; }
+.relationship-visibility:disabled { border-color: #ccc; background: #f4f4f4; color: #aaa; cursor: not-allowed; }
 .relationship-row.is-hidden .relationship-visibility { color: #777; }
+.relationship-row.is-hidden .relationship-visibility:disabled { color: #aaa; }
 .provenance-box { margin: 6px 0 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; background: #fff; }
 .provenance-row { display: flex; align-items: center; gap: 10px; margin: 11px 0 14px; }
 .provenance-row strong { display: block; font-size: 11px; }

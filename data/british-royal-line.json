@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 21,
+  "version": 22,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -864,15 +864,15 @@
       "id": "profile-g304433105310001815",
       "firstName": "Frederick",
       "lastName": "V",
-      "displayName": "Frederick V",
-      "title": "",
+      "displayName": "Frederick V, Elector Palatine and King of Bohemia",
+      "title": "Elector Palatine and King of Bohemia",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1596",
       "deathYear": "1632",
       "isLiving": false,
       "place": "",
-      "note": "Elector Palatine",
+      "note": "Elector Palatine; King of Bohemia, 1619–1620",
       "parents": [],
       "children": [
         "profile-g6000000003879438150"
@@ -890,8 +890,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "frederick-v-name-1596",
+          "name": "Frederick of the Palatinate",
+          "startYear": 1596,
+          "endYear": 1609,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_V_of_the_Palatinate"
+        },
+        {
+          "id": "frederick-v-name-1610",
+          "name": "Frederick V, Elector Palatine",
+          "startYear": 1610,
+          "endYear": 1618,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_V_of_the_Palatinate"
+        },
+        {
+          "id": "frederick-v-name-1619",
+          "name": "Frederick V, Elector Palatine and King of Bohemia",
+          "startYear": 1619,
+          "endYear": 1632,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_V_of_the_Palatinate"
+        }
+      ],
+      "defaultNamePeriodId": "frederick-v-name-1619",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/304433105310001815",
       "sourceId": "profile-g304433105310001815",
@@ -4114,16 +4136,16 @@
     "profile-g6000000001600060051": {
       "id": "profile-g6000000001600060051",
       "firstName": "Philip",
-      "lastName": "II of Spain",
-      "displayName": "Philip II of Spain",
-      "title": "King consort of England",
+      "lastName": "II",
+      "displayName": "Philip II, King of Spain",
+      "title": "King of Spain",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1527",
       "deathYear": "1598",
       "isLiving": false,
       "place": "",
-      "note": "King consort of England; husband of Mary I",
+      "note": "King of Spain; husband of Mary I",
       "parents": [],
       "children": [],
       "partners": [
@@ -4148,8 +4170,30 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "philip-ii-name-1527",
+          "name": "Prince Philip of Spain",
+          "startYear": 1527,
+          "endYear": 1553,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_II_of_Spain"
+        },
+        {
+          "id": "philip-ii-name-1554",
+          "name": "Philip, King of Naples and Sicily",
+          "startYear": 1554,
+          "endYear": 1555,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_II_of_Spain"
+        },
+        {
+          "id": "philip-ii-name-1556",
+          "name": "Philip II, King of Spain",
+          "startYear": 1556,
+          "endYear": 1598,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_II_of_Spain"
+        }
+      ],
+      "defaultNamePeriodId": "philip-ii-name-1556",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001600060051",
       "sourceId": "profile-g6000000001600060051",
@@ -4383,16 +4427,16 @@
     "profile-g6000000000703378021": {
       "id": "profile-g6000000000703378021",
       "firstName": "Louis",
-      "lastName": "IV of Hesse",
-      "displayName": "Louis IV of Hesse",
-      "title": "",
+      "lastName": "IV",
+      "displayName": "Louis IV, Grand Duke of Hesse and by Rhine",
+      "title": "Grand Duke of Hesse and by Rhine",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1837",
       "deathYear": "1892",
       "isLiving": false,
       "place": "",
-      "note": "Grand Duke of Hesse; husband of Princess Alice",
+      "note": "Grand Duke of Hesse and by Rhine; husband of Princess Alice",
       "parents": [],
       "children": [
         "profile-g6000000003221554850"
@@ -4413,8 +4457,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "louis-iv-name-1837",
+          "name": "Prince Louis of Hesse and by Rhine",
+          "startYear": 1837,
+          "endYear": 1876,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_IV,_Grand_Duke_of_Hesse"
+        },
+        {
+          "id": "louis-iv-name-1877",
+          "name": "Louis IV, Grand Duke of Hesse and by Rhine",
+          "startYear": 1877,
+          "endYear": 1892,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_IV,_Grand_Duke_of_Hesse"
+        }
+      ],
+      "defaultNamePeriodId": "louis-iv-name-1877",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000000703378021",
       "sourceId": "profile-g6000000000703378021",
@@ -5319,9 +5378,9 @@
     "profile-g6000000001562593113": {
       "id": "profile-g6000000001562593113",
       "firstName": "William",
-      "lastName": "II of Orange",
-      "displayName": "William II of Orange",
-      "title": "",
+      "lastName": "II",
+      "displayName": "William II, Prince of Orange",
+      "title": "Prince of Orange",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1626",
@@ -5346,8 +5405,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "william-ii-orange-name-1626",
+          "name": "William, Hereditary Prince of Orange",
+          "startYear": 1626,
+          "endYear": 1646,
+          "sourceUrl": "https://en.wikipedia.org/wiki/William_II,_Prince_of_Orange"
+        },
+        {
+          "id": "william-ii-orange-name-1647",
+          "name": "William II, Prince of Orange",
+          "startYear": 1647,
+          "endYear": 1650,
+          "sourceUrl": "https://en.wikipedia.org/wiki/William_II,_Prince_of_Orange"
+        }
+      ],
+      "defaultNamePeriodId": "william-ii-orange-name-1647",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000001562593113",
       "sourceId": "profile-g6000000001562593113",
@@ -6420,17 +6494,17 @@
     },
     "profile-g6000000007103452983": {
       "id": "profile-g6000000007103452983",
-      "firstName": "Louis II",
-      "lastName": "of Longueville",
-      "displayName": "Louis II of Longueville",
-      "title": "",
+      "firstName": "Louis",
+      "lastName": "II",
+      "displayName": "Louis II, Duke of Longueville",
+      "title": "Duke of Longueville",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1510",
       "deathYear": "1537",
       "isLiving": false,
       "place": "",
-      "note": "First husband of Mary of Guise",
+      "note": "Duke of Longueville; first husband of Mary of Guise",
       "parents": [],
       "children": [],
       "partners": [
@@ -6446,8 +6520,23 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
+      "namePeriods": [
+        {
+          "id": "louis-ii-longueville-name-1510",
+          "name": "Louis d’Orléans",
+          "startYear": 1510,
+          "endYear": 1511,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_II_d%27Orl%C3%A9ans,_Duke_of_Longueville"
+        },
+        {
+          "id": "louis-ii-longueville-name-1512",
+          "name": "Louis II, Duke of Longueville",
+          "startYear": 1512,
+          "endYear": 1537,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_II_d%27Orl%C3%A9ans,_Duke_of_Longueville"
+        }
+      ],
+      "defaultNamePeriodId": "louis-ii-longueville-name-1512",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000007103452983",
       "sourceId": "profile-g6000000007103452983",

@@ -53,6 +53,7 @@ Then open <http://localhost:4173>.
 - The web app has its own profile model and does not modify or depend on the mini-program runtime.
 - Profiles use the Western `First Last` display order.
 - When a source supplies a display name, the app preserves and shows it in preference to reconstructing a name from separate fields. This keeps titles such as “King of England” searchable and visible on the timeline.
+- A regnal or noble numeral is paired with its substantive title after a comma, never in parentheses: for example, “Louis IV, Grand Duke of Hesse and by Rhine.” Territorial titles are thereby distinguished from geographic or dynastic bynames such as “Prince Louis of Wales.”
 - `namePeriods` entries contain a stable period ID, dated name, optional open date boundaries, and direct source URL. One period is explicitly marked as the default lasting identity; it is used outside the person's lifespan and need not be their final chronological title.
 - Tree ordering and line weight prioritize paternal descent while retaining maternal relationships with a lighter solid line.
 - Timeline labels keep the name and lifespan on one line. They do not display age.

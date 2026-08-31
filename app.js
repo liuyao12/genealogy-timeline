@@ -1355,6 +1355,7 @@ Requirements:
 - Make parent/child and partner/spouse relationships reciprocal. Group children under the correct two parents.
 - Give marriage years in "marriageYears" keyed by spouse ID. Use relationshipEndStatuses values "annulled", "divorced", or "ended" when supported.
 - Prefer displayName as publicly displayed, including titles useful for searching. Use four-digit years where known; use null or omit fields when unknown.
+- When a ruler or noble is identified by a numeral, follow it with the substantive title after a comma—for example, "Louis IV, Grand Duke of Hesse and by Rhine"—rather than treating the territory as a surname or putting the title in parentheses. Keep geographic or dynastic bynames for children distinct from titles.
 - Research the names and titles by which each person was known during different periods of life. Consult Wikipedia and other reliable public biographical or official sources in addition to genealogy profiles.
 - For royal and noble profiles, use Wikipedia's "Titles and styles" chronology where available, checking important transitions against official or other reliable sources.
 - Store readable names and substantive titles only. Omit honorific style prefixes such as HM, HRH, His or Her Majesty, and His or Her Royal Highness.

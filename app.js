@@ -73,6 +73,7 @@ let timelineRulerGeometry = null;
 let timelineAsOfDrag = null;
 let timelineAsOfGripClientY = null;
 let pendingTimelineViewport = null;
+let hoveredListPersonId = '';
 const treeWorkspace = { version: 1, activeTreeId: '', trees: [] };
 
 const TIMELINE_PAN_MARGIN = { left: 220, right: 520, top: 170, bottom: 360 };
@@ -2687,7 +2688,7 @@ function renderTimeline() {
       : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: cornerRadius, ry: cornerRadius });
     const historicalDisplayName = visibleName(person);
     const historicalLifeLabel = timelineLifeLabel(person, historicalYear);
-    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${historicalLifeLabel}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, 'data-person-id': id, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${historicalLifeLabel}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
     group.append(svg('title', {}, `${historicalDisplayName} · ${historicalLifeLabel}`));
     group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
@@ -2898,6 +2899,48 @@ function centerTimelinePerson(id) {
   });
 }
 
+function clearTimelinePersonPreview(id = '') {
+  if (id && hoveredListPersonId !== id) return;
+  hoveredListPersonId = '';
+  els['timeline-canvas'].querySelectorAll('.timeline-node.list-hover').forEach(node => node.classList.remove('list-hover'));
+}
+
+function previewTimelinePerson(id) {
+  hoveredListPersonId = id;
+  const canvas = els['timeline-canvas'];
+  canvas.querySelectorAll('.timeline-node.list-hover').forEach(node => node.classList.remove('list-hover'));
+  const nodes = [...canvas.querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(id)}"]`)];
+  if (!nodes.length) return;
+  nodes.forEach(node => node.classList.add('list-hover'));
+
+  const viewport = els['canvas-viewport'];
+  const viewportRect = viewport.getBoundingClientRect();
+  const rulerHeight = els['timeline-ruler'].hidden ? 0 : els['timeline-ruler'].getBoundingClientRect().height;
+  const visibleRight = els['detail-sidebar'].classList.contains('open')
+    ? Math.max(viewportRect.left, viewportRect.right - els['detail-sidebar'].offsetWidth)
+    : viewportRect.right;
+  const bounds = {
+    left: viewportRect.left + 12,
+    right: visibleRight - 12,
+    top: viewportRect.top + rulerHeight + 10,
+    bottom: viewportRect.bottom - 12
+  };
+  const adjustment = node => {
+    const rect = node.getBoundingClientRect();
+    const availableWidth = bounds.right - bounds.left;
+    const availableHeight = bounds.bottom - bounds.top;
+    const dx = rect.width > availableWidth
+      ? rect.left + rect.width / 2 - (bounds.left + bounds.right) / 2
+      : rect.left < bounds.left ? rect.left - bounds.left : rect.right > bounds.right ? rect.right - bounds.right : 0;
+    const dy = rect.height > availableHeight
+      ? rect.top + rect.height / 2 - (bounds.top + bounds.bottom) / 2
+      : rect.top < bounds.top ? rect.top - bounds.top : rect.bottom > bounds.bottom ? rect.bottom - bounds.bottom : 0;
+    return { dx, dy, distance: Math.abs(dx) + Math.abs(dy) };
+  };
+  const best = nodes.map(adjustment).sort((a, b) => a.distance - b.distance)[0];
+  if (best.distance > 0) viewport.scrollBy({ left: best.dx, top: best.dy, behavior: 'auto' });
+}
+
 function selectPerson(id, { center = false } = {}) {
   if (els['events-dialog'].open) els['events-dialog'].close();
   state.selectedId = id;
@@ -2907,6 +2950,7 @@ function selectPerson(id, { center = false } = {}) {
   if (center) centerTimelinePerson(id);
 }
 function renderPersonList() {
+  clearTimelinePersonPreview();
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const people = Object.values(state.people).filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
   people.sort((a, b) => visibleName(a).localeCompare(visibleName(b)));
@@ -2914,7 +2958,7 @@ function renderPersonList() {
   els['people-label'].textContent = keywords.length ? (people.length === 1 ? 'match' : 'matches') : (people.length === 1 ? 'profile' : 'profiles');
   els['people-list'].replaceChildren(...people.map(person => {
     const button = document.createElement('button');
-    button.type = 'button'; button.className = `person-list-item${person.id === state.selectedId ? ' active' : ''}`; button.dataset.gender = person.gender;
+    button.type = 'button'; button.className = `person-list-item${person.id === state.selectedId ? ' active' : ''}`; button.dataset.gender = person.gender; button.dataset.personId = person.id;
     const gender = document.createElement('span');
     gender.className = 'person-gender';
     gender.setAttribute('role', 'img');
@@ -2939,6 +2983,10 @@ function renderPersonList() {
     }
     summary.append(lifespan);
     button.append(gender, summary);
+    button.addEventListener('pointerenter', () => previewTimelinePerson(person.id));
+    button.addEventListener('pointerleave', () => clearTimelinePersonPreview(person.id));
+    button.addEventListener('focus', () => previewTimelinePerson(person.id));
+    button.addEventListener('blur', () => clearTimelinePersonPreview(person.id));
     button.addEventListener('click', () => selectPerson(person.id, { center: true }));
     return button;
   }));

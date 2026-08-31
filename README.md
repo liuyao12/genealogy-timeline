@@ -61,6 +61,7 @@ Then open <http://localhost:4173>.
 - Imported marriage events are retained by spouse pair. Family stems align to the recorded marriage year; when no marriage date is available, the renderer uses a position shortly before the first child's birth.
 - A personal event whose label begins with `Reign` marks the profile as a reigning monarch. Reigning kings and queens share one event colour; same-century end years are abbreviated (for example, `1509–47`).
 - The tree-toolbar filter accepts one or more partial words or arbitrary substrings with OR semantics and searches display names and explicit titles. The current tree root always remains visible, and each result retains its complete line of descent from that root plus any spouse/union needed to explain the relationship. Branches unrelated to a match remain hidden.
+- Hovering or keyboard-focusing a result in the left match list highlights every visible occurrence of that profile. If none is onscreen, the canvas pans only far enough to reveal the nearest occurrence and its full label; leaving the result removes the highlight without moving the canvas back.
 - Genealogy services can be represented in provider-neutral stitch JSON or brought in through a GEDCOM export without site-specific browser scraping.
 - GitHub Pages has no backend, access token, or client secret. Research happens outside the app, and only the returned JSON is imported.
 - Every imported profile retains a source link, and the UI includes the required non-affiliation statement.

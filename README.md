@@ -24,6 +24,8 @@ Child visibility is household-wide: hiding a child from either parent's profile 
 
 A profile occupying a spouse position uses an italic label and the genealogical marriage symbol `⚭` in place of the branch expand/collapse square. When that same person appears in their own birth branch, the ordinary node styling and branch control are retained.
 
+In the Western male-line layout, a woman in more than one visible marriage receives a separate spouse occurrence in each household. Those boxes share one dotted transport spine: it follows the biological parents' marriage line when the natal family is visible, or a synthetic anchor just left of the occurrences when it is not. A visible natal occurrence remains a third box alongside two marriage occurrences.
+
 Confirmed spouses and former spouses are always included in the timeline and in filtered connecting paths. Geni unions recorded only as partners, engagements, or other non-marital relationships are retained as parentage facts but their profiles and union lines are hidden.
 
 Selecting any bundled node opens its editable local copy. **Prepare prompt for this profile** generates an AI-research prompt containing that profile and the current root as stable anchors. The user gives it to a preferred AI chatbot, then pastes or uploads the returned `lineage-stitch` JSON. Matching IDs are merged, new profiles are added, relationship arrays are unioned, and reciprocal links are repaired without replacing the current tree. The resulting working tree and local edits are saved in `localStorage`.

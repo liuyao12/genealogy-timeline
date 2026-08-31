@@ -2271,23 +2271,113 @@ function renderTimeline() {
 
   const estimateTextWidth = text => Array.from(String(text || '')).reduce((sum, char) => sum + (/[^\x00-\x7F]/.test(char) ? 13 : 7), 0);
   const layoutEntries = order.map(id => ({ key: id, id, isSpouse: spouseIds.has(id), isTransportedCopy: false }));
-  const transportKeyByFamily = new Map();
+  const familyPersonKey = (key, personId) => `${key}::${personId}`;
+  const occurrenceKeyByFamilyPerson = new Map();
+  const natalOccurrenceKeyByPerson = new Map();
   const transportedChildrenByNatalId = new Map();
-  [...families.entries()].forEach(([key, family]) => {
-    const parentIds = family.parents.filter(id => datedIds.has(id));
-    const transportedId = transportedParent(parentIds);
-    if (!transportedId) return;
-    const otherParentId = parentIds.find(id => id !== transportedId);
+
+  // Record the marriage household already represented by a person's primary
+  // occurrence. A person with several visible spouses needs one occurrence in
+  // each household; when their visible parents also supply a natal occurrence,
+  // every marriage receives a copy and the natal box remains independent.
+  layoutEntries.forEach(entry => {
+    if (!entry.isSpouse) return;
+    const partnerId = displayParentByKey.get(entry.key);
+    const key = partnerId ? familyKey([entry.id, partnerId]) : '';
+    if (key && families.has(key)) occurrenceKeyByFamilyPerson.set(familyPersonKey(key, entry.id), entry.key);
+  });
+  const spouseFamilyKeysByPerson = new Map();
+  families.forEach((family, key) => {
+    if (family.parents.length !== 2) return;
+    family.parents.forEach(id => {
+      if (!spouseFamilyKeysByPerson.has(id)) spouseFamilyKeysByPerson.set(id, new Set());
+      spouseFamilyKeysByPerson.get(id).add(key);
+    });
+  });
+
+  // A repeated spouse whose primary occurrence was claimed by a marriage may
+  // later acquire visible parents through an import. Create a separate natal
+  // occurrence so the parents' family keeps its own child box instead of
+  // borrowing either marriage occurrence.
+  spouseFamilyKeysByPerson.forEach((keys, id) => {
+    if (state.people[id]?.gender !== 'female' || keys.size < 2) return;
+    const natalFamilyKey = familyKeyByChild.get(id);
+    const natalFamily = families.get(natalFamilyKey);
+    const primaryEntry = layoutEntries.find(entry => entry.key === id);
+    if (!natalFamily || !primaryEntry) return;
+    if (!primaryEntry.isSpouse) {
+      natalOccurrenceKeyByPerson.set(id, id);
+      return;
+    }
+    const natalKey = `natal:${natalFamilyKey}:${id}`;
+    const laterSiblingIndex = [...natalFamily.children]
+      .sort(byBirth)
+      .filter(childId => childId !== id && birthYear(state.people[childId]) >= birthYear(state.people[id]))
+      .map(childId => layoutEntries.findIndex(entry => entry.key === childId))
+      .find(index => index >= 0);
+    const siblingIndexes = natalFamily.children
+      .filter(childId => childId !== id)
+      .map(childId => layoutEntries.findIndex(entry => entry.key === childId))
+      .filter(index => index >= 0);
+    const parentIndexes = natalFamily.parents
+      .map(parentId => layoutEntries.findIndex(entry => entry.key === parentId))
+      .filter(index => index >= 0);
+    const insertAt = laterSiblingIndex ?? (siblingIndexes.length
+      ? Math.max(...siblingIndexes) + 1
+      : parentIndexes.length ? Math.max(...parentIndexes) + 1 : layoutEntries.length);
+    layoutEntries.splice(insertAt, 0, { key: natalKey, id, isSpouse: false, isTransportedCopy: false, isNatalCopy: true, familyKey: natalFamilyKey });
+    const householdParentId = natalFamily.parents.find(parentId => state.people[parentId]?.gender === 'female') || natalFamily.parents.at(-1);
+    if (householdParentId) displayParentByKey.set(natalKey, householdParentId);
+    natalOccurrenceKeyByPerson.set(id, natalKey);
+  });
+
+  const insertTransportedOccurrence = (key, family, transportedId) => {
+    const associationKey = familyPersonKey(key, transportedId);
+    if (occurrenceKeyByFamilyPerson.has(associationKey)) return occurrenceKeyByFamilyPerson.get(associationKey);
+    const otherParentId = family.parents.find(id => id !== transportedId);
     const copyKey = `transport:${key}:${transportedId}`;
     const childIndexes = family.children.map(childId => layoutEntries.findIndex(entry => entry.key === childId)).filter(index => index >= 0);
     const otherParentIndex = layoutEntries.findIndex(entry => entry.key === otherParentId);
     const insertAt = childIndexes.length ? Math.min(...childIndexes) : Math.max(0, otherParentIndex + 1);
     layoutEntries.splice(insertAt, 0, { key: copyKey, id: transportedId, isSpouse: true, isTransportedCopy: true, familyKey: key });
-    family.children.forEach(childId => displayParentByKey.set(childId, copyKey));
-    if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
-    transportKeyByFamily.set(key, copyKey);
-    if (!transportedChildrenByNatalId.has(transportedId)) transportedChildrenByNatalId.set(transportedId, new Set());
-    family.children.forEach(childId => transportedChildrenByNatalId.get(transportedId).add(childId));
+    occurrenceKeyByFamilyPerson.set(associationKey, copyKey);
+    return copyKey;
+  };
+
+  // Preserve the established cousin-marriage transport, and also duplicate a
+  // profile that participates in more than one visible marriage. This gives
+  // Catherine of Aragon one box beside Arthur and another beside Henry VIII;
+  // if her parents are later imported, her primary natal box becomes a third.
+  [...families.entries()].forEach(([key, family]) => {
+    const parentIds = family.parents.filter(id => datedIds.has(id));
+    if (parentIds.length !== 2) return;
+    const cousinTransportId = transportedParent(parentIds);
+    parentIds.forEach(id => {
+      const hasSeveralMarriageHouseholds = state.people[id]?.gender === 'female'
+        && (spouseFamilyKeysByPerson.get(id)?.size || 0) > 1;
+      if (id !== cousinTransportId && !hasSeveralMarriageHouseholds) return;
+      insertTransportedOccurrence(key, family, id);
+    });
+  });
+
+  // Once every occurrence exists, attach each copy to the other occurrence in
+  // that marriage. Children follow the transported spouse immediately below
+  // the appropriate union, never the same person's box in another household.
+  layoutEntries.filter(entry => entry.isTransportedCopy).forEach(entry => {
+    const family = families.get(entry.familyKey);
+    const otherParentId = family?.parents.find(id => id !== entry.id);
+    const otherParentKey = otherParentId
+      ? (occurrenceKeyByFamilyPerson.get(familyPersonKey(entry.familyKey, otherParentId)) || otherParentId)
+      : '';
+    if (otherParentKey) displayParentByKey.set(entry.key, otherParentKey);
+    if (!transportedChildrenByNatalId.has(entry.id)) transportedChildrenByNatalId.set(entry.id, new Set());
+    (family?.children || []).forEach(childId => transportedChildrenByNatalId.get(entry.id).add(childId));
+  });
+  families.forEach((family, key) => {
+    const transportedEntries = layoutEntries.filter(entry => entry.familyKey === key && entry.isTransportedCopy);
+    if (!transportedEntries.length) return;
+    const householdParent = transportedEntries.find(entry => state.people[entry.id]?.gender === 'female') || transportedEntries.at(-1);
+    family.children.forEach(childId => displayParentByKey.set(childId, householdParent.key));
   });
 
   const layoutNodes = layoutEntries.map((entry, index) => {
@@ -2300,6 +2390,22 @@ function renderTimeline() {
   // vertical stems deliberately do not. This lets otherwise unrelated rows
   // cross marriage/transport stems without letting a label obscure a branch.
   const layoutNodeByKey = new Map(layoutNodes.map(node => [node.key, node]));
+  const occurrenceKeyFor = (key, personId) => occurrenceKeyByFamilyPerson.get(familyPersonKey(key, personId)) || personId;
+  const childOccurrenceKeyFor = personId => natalOccurrenceKeyByPerson.get(personId) || personId;
+  const transportedOccurrenceGroups = new Map();
+  layoutNodes.forEach(node => {
+    if (!transportedOccurrenceGroups.has(node.id)) transportedOccurrenceGroups.set(node.id, []);
+    transportedOccurrenceGroups.get(node.id).push(node.key);
+  });
+  [...transportedOccurrenceGroups.entries()].forEach(([id, keys]) => {
+    if (keys.length < 2) transportedOccurrenceGroups.delete(id);
+  });
+  const transportAnchorX = id => {
+    const natalFamilyKey = familyKeyByChild.get(id);
+    const natalTrunkX = familyTimingByKey.get(natalFamilyKey)?.trunkX;
+    if (natalTrunkX != null && layoutNodeByKey.has(childOccurrenceKeyFor(id))) return natalTrunkX;
+    return Math.min(...transportedOccurrenceGroups.get(id).map(key => layoutNodeByKey.get(key).x)) - 18;
+  };
   const incomingConnectorEndOffset = id => {
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
     const hasControlHere = state.people[id]?.children.some(childId =>
@@ -2321,25 +2427,27 @@ function renderTimeline() {
   };
   families.forEach((family, key) => {
     const parentIds = family.parents.filter(id => datedIds.has(id));
-    const transportedId = transportedParent(parentIds);
-    const transportedCopyKey = transportKeyByFamily.get(key) || '';
-    const parentKeys = parentIds.map(id => id === transportedId && transportedCopyKey ? transportedCopyKey : id);
-    const childIds = family.children.filter(id => layoutNodeByKey.has(id));
-    if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
+    const parentKeys = parentIds.map(id => occurrenceKeyFor(key, id));
+    const childEntries = family.children.map(id => ({ id, key: childOccurrenceKeyFor(id) })).filter(entry => layoutNodeByKey.has(entry.key));
+    if (!parentIds.length || (!childEntries.length && parentIds.length < 2)) return;
     const trunkX = familyTimingByKey.get(key).trunkX;
     parentKeys.forEach(parentKey => {
       const node = layoutNodeByKey.get(parentKey);
       if (node) addHorizontalRange(parentKey, node.x + 24, trunkX);
     });
-    childIds.forEach(childId => {
-      const node = layoutNodeByKey.get(childId);
-      if (node) addHorizontalRange(childId, trunkX, node.x + incomingConnectorEndOffset(childId));
+    childEntries.forEach(child => {
+      const node = layoutNodeByKey.get(child.key);
+      if (node) addHorizontalRange(child.key, trunkX, node.x + incomingConnectorEndOffset(child.id));
     });
-    if (transportedId && transportedCopyKey) {
-      const natalFamilyKey = familyKeyByChild.get(transportedId);
-      const natalTrunkX = familyTimingByKey.get(natalFamilyKey)?.trunkX;
-      if (natalTrunkX != null) addHorizontalRange(transportedCopyKey, natalTrunkX, trunkX);
-    }
+  });
+  transportedOccurrenceGroups.forEach((keys, id) => {
+    const anchorX = transportAnchorX(id);
+    const natalFamilyKey = familyKeyByChild.get(id);
+    const natalOccurrenceKey = childOccurrenceKeyFor(id);
+    keys.forEach(key => {
+      if (key === natalOccurrenceKey && natalFamilyKey && familyTimingByKey.has(natalFamilyKey)) return;
+      addHorizontalRange(key, anchorX, layoutNodeByKey.get(key).x);
+    });
   });
   compactTimelineTidyContours(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
   stabilizeTimelineOrder(layoutNodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey);
@@ -2446,15 +2554,13 @@ function renderTimeline() {
     descendantOverlaysByChild.get(nodeKey).push(overlay);
   };
   families.forEach((family, key) => {
-    const parentIds = family.parents.filter(id => positions.has(id));
-    const transportedId = transportedParent(parentIds);
-    const transportedCopyKey = transportKeyByFamily.get(key) || '';
-    const parentKeys = parentIds.map(id => id === transportedId && transportedCopyKey ? transportedCopyKey : id);
-    const childIds = family.children.filter(id => positions.has(id));
-    if (!parentIds.length || (!childIds.length && parentIds.length < 2)) return;
+    const parentIds = family.parents.filter(id => datedIds.has(id));
+    const parentKeys = parentIds.map(id => occurrenceKeyFor(key, id)).filter(parentKey => positions.has(parentKey));
+    const childEntries = family.children.map(id => ({ id, key: childOccurrenceKeyFor(id) })).filter(entry => positions.has(entry.key));
+    if (!parentIds.length || (!childEntries.length && parentIds.length < 2)) return;
     const { recordedMarriageYear, trunkX } = familyTimingByKey.get(key);
     const parentYs = parentKeys.map(parentKey => positions.get(parentKey).y + rowHeight / 2);
-    const childYs = childIds.map(id => positions.get(id).y + rowHeight / 2);
+    const childYs = childEntries.map(child => positions.get(child.key).y + rowHeight / 2);
     const hasPaternalParent = parentIds.some(id => state.people[id]?.gender === 'male');
     const stemClass = hasPaternalParent ? 'paternal' : 'maternal';
     const isDivorced = marriageIsDivorced(parentIds);
@@ -2490,7 +2596,7 @@ function renderTimeline() {
       const stemEndY = Math.max(...descendantYs);
       if (stemEndY > stemStartY) {
         connectors.append(svg('line', { x1: trunkX, y1: stemStartY, x2: trunkX, y2: stemEndY, class: `timeline-edge family-stem vertical ${stemClass}` }));
-        childIds.forEach(childId => addDescendantOverlay(childId, {
+        childEntries.forEach(child => addDescendantOverlay(child.key, {
           x: trunkX,
           y1: stemStartY,
           y2: stemEndY,
@@ -2499,39 +2605,45 @@ function renderTimeline() {
         }));
       }
     }
-    childIds.forEach(id => {
-      const pos = positions.get(id);
+    childEntries.forEach(child => {
+      const pos = positions.get(child.key);
       connectors.append(svg('path', { d: `M ${trunkX} ${pos.y + rowHeight / 2} H ${pos.x + 1}`, class: `timeline-edge horizontal ${stemClass}` }));
-      addHorizontalOverlay(id, { x1: trunkX, x2: pos.x + incomingConnectorEndOffset(id), className: stemClass });
+      addHorizontalOverlay(child.key, { x1: trunkX, x2: pos.x + incomingConnectorEndOffset(child.id), className: stemClass });
     });
-    if (transportedId && transportedCopyKey && positions.has(transportedId) && positions.has(transportedCopyKey)) {
-      const natal = positions.get(transportedId);
-      const transported = positions.get(transportedCopyKey);
-      const natalFamilyKey = familyKeyByChild.get(transportedId);
-      const transportX = familyTimingByKey.get(natalFamilyKey)?.trunkX;
-      if (transportX == null) return;
-      const natalY = natal.y + rowHeight / 2;
-      const transportedY = transported.y + rowHeight / 2;
-      const transportLine = svg('line', {
-        x1: transportX, y1: Math.min(natalY, transportedY),
-        x2: transportX, y2: Math.max(natalY, transportedY),
-        class: 'timeline-edge transport vertical',
-        'data-family-key': key,
+  });
+  // Join every occurrence of a transported profile with one dotted spine.
+  // Use the biological parents' marriage line as its x-coordinate when that
+  // natal family is visible; otherwise place a synthetic anchor just left of
+  // the repeated boxes, as for Catherine of Aragon in the bundled example.
+  transportedOccurrenceGroups.forEach((keys, id) => {
+    const anchorX = transportAnchorX(id);
+    const natalFamilyKey = familyKeyByChild.get(id) || '';
+    const natalOccurrenceKey = childOccurrenceKeyFor(id);
+    const hasNatalAnchor = !!natalFamilyKey && familyTimingByKey.has(natalFamilyKey) && positions.has(natalOccurrenceKey);
+    const occurrenceYs = keys.map(key => positions.get(key)?.y + rowHeight / 2).filter(Number.isFinite);
+    if (occurrenceYs.length < 2) return;
+    const transportLine = svg('line', {
+      x1: anchorX, y1: Math.min(...occurrenceYs), x2: anchorX, y2: Math.max(...occurrenceYs),
+      class: 'timeline-edge transport vertical',
+      'data-source-family-key': natalFamilyKey,
+      'data-transported-id': id
+    });
+    transportLine.append(svg('title', {}, hasNatalAnchor
+      ? `${visibleName(state.people[id])} transported from the biological parents’ marriage line to each marriage household`
+      : `${visibleName(state.people[id])} appears in more than one marriage household`));
+    connectors.append(transportLine);
+    keys.forEach(key => {
+      if (key === natalOccurrenceKey && hasNatalAnchor) return;
+      const occurrence = positions.get(key);
+      if (!occurrence || Math.abs(anchorX - occurrence.x) < 0.5) return;
+      connectors.append(svg('path', {
+        d: `M ${anchorX} ${occurrence.y + rowHeight / 2} H ${occurrence.x}`,
+        class: 'timeline-edge transport transport-bridge horizontal',
         'data-source-family-key': natalFamilyKey,
-        'data-transported-id': transportedId
-      });
-      transportLine.append(svg('title', {}, `${visibleName(state.people[transportedId])} transported from the biological parents’ marriage line to this marriage`));
-      connectors.append(transportLine);
-      if (Math.abs(transportX - trunkX) >= 0.5) {
-        connectors.append(svg('path', {
-          d: `M ${transportX} ${transportedY} H ${trunkX}`,
-          class: 'timeline-edge transport transport-bridge horizontal',
-          'data-family-key': key,
-          'data-source-family-key': natalFamilyKey,
-          'data-transported-id': transportedId
-        }));
-      }
-    }
+        'data-transported-id': id,
+        'data-occurrence-key': key
+      }));
+    });
   });
   canvas.append(connectors);
 

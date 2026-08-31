@@ -2831,9 +2831,9 @@ function renderTimeline() {
       class: 'timeline-as-of-grip', hidden: '', 'aria-hidden': 'true',
       'data-x': historicalX, 'data-min-y': eventTop + 28, 'data-max-y': eventBottom - 28
     });
-    grip.append(svg('rect', { class: 'timeline-as-of-grip-box', x: -11, y: -27, width: 22, height: 54, rx: 9 }));
-    grip.append(svg('line', { class: 'timeline-as-of-grip-bar', x1: -2.5, y1: -17, x2: -2.5, y2: 17 }));
-    grip.append(svg('line', { class: 'timeline-as-of-grip-bar', x1: 2.5, y1: -17, x2: 2.5, y2: 17 }));
+    grip.append(svg('rect', { class: 'timeline-as-of-grip-box', x: -7, y: -27, width: 14, height: 54, rx: 5 }));
+    grip.append(svg('line', { class: 'timeline-as-of-grip-bar', x1: -2, y1: -17, x2: -2, y2: 17 }));
+    grip.append(svg('line', { class: 'timeline-as-of-grip-bar', x1: 2, y1: -17, x2: 2, y2: 17 }));
     canvas.append(grip);
   }
   canvas.style.transform = `scale(${state.zoom})`;

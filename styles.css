@@ -158,8 +158,8 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-as-of-hit { fill: none; stroke: rgba(0,0,0,.001); stroke-width: 14; cursor: none; pointer-events: stroke; vector-effect: non-scaling-stroke; }
 .timeline-as-of-hit:hover + .timeline-as-of-line { stroke-width: 3; }
 .timeline-as-of-grip { pointer-events: none; }
-.timeline-as-of-grip-box { fill: rgba(255,255,255,.97); stroke: #666; stroke-width: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.28)); vector-effect: non-scaling-stroke; }
-.timeline-as-of-grip-bar { stroke: #111; stroke-width: 1.8; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.timeline-as-of-grip-box { fill: var(--as-of); stroke: var(--as-of); stroke-width: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.28)); vector-effect: non-scaling-stroke; }
+.timeline-as-of-grip-bar { stroke: #fff; stroke-width: 1.6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .timeline-snapshot-labels { pointer-events: none; }
 .timeline-edge { fill: none; stroke: #000; stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
 .timeline-edge.paternal { stroke-width: 2; }

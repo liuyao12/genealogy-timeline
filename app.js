@@ -1,3 +1,5 @@
+import { computeDescendantScope } from './descendant-scope.js?v=1';
+
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
 const WORKSPACE_STORAGE_KEY = 'lineage-tree-workspace-v1';
@@ -1613,6 +1615,15 @@ function marriageYearFor(firstId, secondId) {
   return numericYear(state.people[firstId]?.marriageYears?.[secondId] || state.people[secondId]?.marriageYears?.[firstId]);
 }
 function allPartnerIds(person) { return unique([...(person?.spouses || []), ...(person?.partners || [])]).filter(id => state.people[id]); }
+function activeDescendantScope() {
+  return computeDescendantScope(state.people, state.rootId);
+}
+function scopedSpouseIds(person, scope = activeDescendantScope()) {
+  return [...(scope.spouseIdsByPerson.get(person?.id) || [])].filter(id => state.people[id]);
+}
+function scopedHouseholdChildren(personId, partnerId = '', scope = activeDescendantScope()) {
+  return householdChildren(personId, partnerId).filter(childId => scope.descendantIds.has(childId));
+}
 function householdChildren(personId, partnerId = '') {
   const person = state.people[personId];
   if (!person) return [];
@@ -1625,46 +1636,34 @@ function householdChildren(personId, partnerId = '') {
 }
 
 function buildTimelineVisibility() {
-  const allIds = Object.keys(state.people);
-  // Child visibility belongs to the whole parental household. Older builds
-  // stored the toggle only on whichever parent's drawer was open, leaving the
-  // other edge active and rendering the child on a stray one-parent stem.
-  // Treat any hidden parental edge as hiding the child from every recorded
-  // parent; the drawer now writes all of those edges together when toggled.
+  const scope = activeDescendantScope();
+  const allIds = [...scope.allowedIds];
+  // Child visibility belongs to the whole parental household. A descendant
+  // can be hidden, but no override is allowed to pull a collateral relative,
+  // an ancestor, or a spouse's other family into the active tree.
   const childEdgeVisible = (parentId, childId) => {
+    if (!scope.descendantIds.has(childId) || !scope.allowedIds.has(parentId)) return false;
     if (relationOverride(childRelationKey(parentId, childId)) === false) return false;
     const parentIds = state.people[childId]?.parents || [];
     return !parentIds.some(id => relationOverride(childRelationKey(id, childId)) === false);
   };
+
   const descendantsOfRoot = new Set();
-  const descendantQueue = state.people[state.rootId] ? [state.rootId] : [];
+  const descendantQueue = scope.descendantIds.has(state.rootId) ? [state.rootId] : [];
   while (descendantQueue.length) {
     const id = descendantQueue.shift();
-    if (descendantsOfRoot.has(id) || !state.people[id]) continue;
+    if (descendantsOfRoot.has(id) || !scope.descendantIds.has(id) || !state.people[id]) continue;
     descendantsOfRoot.add(id);
     state.people[id].children.forEach(childId => {
-      if (childEdgeVisible(id, childId)) descendantQueue.push(childId);
-    });
-  }
-  const connectedByBlood = new Set();
-  const bloodQueue = state.people[state.rootId] ? [state.rootId] : [];
-  while (bloodQueue.length) {
-    const id = bloodQueue.shift();
-    if (connectedByBlood.has(id) || !state.people[id]) continue;
-    connectedByBlood.add(id);
-    state.people[id].parents.forEach(parentId => {
-      if (childEdgeVisible(parentId, id)) bloodQueue.push(parentId);
-    });
-    state.people[id].children.forEach(childId => {
-      if (childEdgeVisible(id, childId)) bloodQueue.push(childId);
+      if (scope.descendantIds.has(childId) && childEdgeVisible(id, childId)) descendantQueue.push(childId);
     });
   }
 
   const query = clean(els['tree-filter']?.value).toLocaleLowerCase();
   const keywords = query.split(/\s+/).filter(Boolean);
   const matches = allIds.filter(id => keywords.some(keyword => matchesKeyword(state.people[id], keyword)));
-  const hasRoot = !!state.people[state.rootId];
-  const visible = new Set(query ? (hasRoot ? [state.rootId] : matches) : (connectedByBlood.size ? connectedByBlood : allIds));
+  const hasRoot = scope.descendantIds.has(state.rootId);
+  const visible = new Set(query ? (hasRoot ? [state.rootId] : matches) : descendantsOfRoot);
   const matchedPartnerPairs = new Set();
 
   if (query) {
@@ -1675,16 +1674,17 @@ function buildTimelineVisibility() {
         pathSeeds.add(id);
         return;
       }
-      // A matching spouse is not a blood descendant, but their marriage is
-      // still part of the path from the tree root to the matched household.
-      allPartnerIds(state.people[id]).forEach(partnerId => {
+      if (!scope.affinalIds.has(id)) return;
+      // A matching spouse is attached only to the descendant whom they married.
+      // Their parents, siblings, other spouses, and unrelated children remain
+      // outside this root's descendant projection.
+      scopedSpouseIds(state.people[id], scope).forEach(partnerId => {
         if (!descendantsOfRoot.has(partnerId)) return;
-        const isFormalSpouse = state.people[id].spouses.includes(partnerId) || state.people[partnerId]?.spouses.includes(id);
-        if (!isFormalSpouse) return;
+        const pairKey = partnerRelationKey(id, partnerId);
         visible.add(id);
         visible.add(partnerId);
         pathSeeds.add(partnerId);
-        matchedPartnerPairs.add(partnerRelationKey(id, partnerId));
+        matchedPartnerPairs.add(pairKey);
       });
     });
     const queue = [...pathSeeds];
@@ -1702,69 +1702,78 @@ function buildTimelineVisibility() {
     Object.entries(state.relationVisibility).forEach(([key, shown]) => {
       if (shown || !key.startsWith('child:')) return;
       const childId = key.split('>').pop();
+      if (!scope.descendantIds.has(childId)) return;
       const queue = [childId];
       while (queue.length) {
         const id = queue.shift();
         if (!visible.delete(id)) continue;
-        queue.push(...(state.people[id]?.children || []));
+        (state.people[id]?.children || []).forEach(nextId => {
+          if (scope.descendantIds.has(nextId)) queue.push(nextId);
+        });
       }
     });
   }
 
   // A manually shown child can be inspected even when it is not part of the
-  // current keyword path. Its descendants still obey the active filter.
+  // current keyword path, but only when it is structurally below this root.
   Object.entries(state.relationVisibility).forEach(([key, shown]) => {
     if (!shown || !key.startsWith('child:')) return;
     const relation = key.slice('child:'.length);
     const split = relation.lastIndexOf('>');
     const parentId = relation.slice(0, split);
     const childId = relation.slice(split + 1);
-    if (visible.has(parentId) && state.people[childId]) visible.add(childId);
+    if (scope.allowedIds.has(parentId) && scope.descendantIds.has(childId) && visible.has(parentId)) visible.add(childId);
   });
-  // Unclassified profiles returned by an immediate-family request can still
-  // be explicitly shown and inspected. A birth year is checked later when
-  // deciding whether the profile can be placed on the timeline itself.
+  // Legacy profile overrides are honored only inside the current descendant
+  // scope. They can never resurrect an unrelated mini-tree.
   Object.entries(state.relationVisibility).forEach(([key, shown]) => {
     if (!shown || !key.startsWith('profile:')) return;
     const profileId = key.slice('profile:'.length);
-    if (state.people[profileId]) visible.add(profileId);
+    if (scope.allowedIds.has(profileId)) visible.add(profileId);
   });
 
   const renderedPartnerPairs = new Set();
-  Object.values(state.people).forEach(person => allPartnerIds(person).forEach(partnerId => {
-    if (person.id >= partnerId) return;
-    const key = partnerRelationKey(person.id, partnerId);
+  scope.spousePairs.forEach(key => {
+    const [firstId, secondId] = key.slice('partner:'.length).split('|');
+    if (!state.people[firstId] || !state.people[secondId]) return;
     const override = relationOverride(key);
     if (override === false) return;
-    const isFormalSpouse = person.spouses.includes(partnerId) || state.people[partnerId]?.spouses.includes(person.id);
-    const carriesVisibleChild = householdChildren(person.id, partnerId).some(childId => visible.has(childId));
-    const defaultVisible = isFormalSpouse && (!query || carriesVisibleChild);
+    const touchesVisibleDescendant = [firstId, secondId].some(id => descendantsOfRoot.has(id) && visible.has(id));
+    if (!touchesVisibleDescendant) return;
+    const carriesVisibleChild = unique([
+      ...scopedHouseholdChildren(firstId, secondId, scope),
+      ...scopedHouseholdChildren(secondId, firstId, scope)
+    ]).some(childId => visible.has(childId));
+    const defaultVisible = !query || carriesVisibleChild;
     if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);
-  }));
+  });
 
-  // Add only the spouse or partner occurrences that support a visible
-  // household, or that the user explicitly asked to show.
-  let changed = true;
-  while (changed) {
-    changed = false;
-    renderedPartnerPairs.forEach(key => {
-      const [firstId, secondId] = key.slice('partner:'.length).split('|');
-      if (visible.has(firstId) && !visible.has(secondId)) { visible.add(secondId); changed = true; }
-      if (visible.has(secondId) && !visible.has(firstId)) { visible.add(firstId); changed = true; }
-    });
-  }
+  renderedPartnerPairs.forEach(key => {
+    const [firstId, secondId] = key.slice('partner:'.length).split('|');
+    if (visible.has(firstId) || visible.has(secondId)) {
+      visible.add(firstId);
+      visible.add(secondId);
+    }
+  });
 
-  // Affinal profiles do not become detached roots when their household
-  // occurrence is hidden. Blood descendants keep their natal occurrence.
-  visible.forEach(id => {
-    if (descendantsOfRoot.has(id) || id === state.rootId) return;
-    const affinalToLine = allPartnerIds(state.people[id]).some(partnerId => descendantsOfRoot.has(partnerId));
-    if (!affinalToLine) return;
-    const hasRenderedHousehold = allPartnerIds(state.people[id]).some(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)) && visible.has(partnerId));
+  // An affinal profile survives only as the spouse occurrence attached to a
+  // visible lineal descendant. This is the boundary that excludes, for
+  // example, John Neville's separate marriage tree from Henry VII's view.
+  [...visible].forEach(id => {
+    if (!scope.allowedIds.has(id)) {
+      visible.delete(id);
+      return;
+    }
+    if (!scope.affinalIds.has(id)) return;
+    const hasRenderedHousehold = scopedSpouseIds(state.people[id], scope).some(partnerId =>
+      descendantsOfRoot.has(partnerId)
+      && visible.has(partnerId)
+      && renderedPartnerPairs.has(partnerRelationKey(id, partnerId))
+    );
     if (!hasRenderedHousehold) visible.delete(id);
   });
 
-  return { visibleIds: visible, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible };
+  return { visibleIds: visible, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible, scope };
 }
 
 function svg(tag, attrs = {}, text = '') {
@@ -2039,11 +2048,11 @@ function renderTimeline() {
   canvas.replaceChildren();
   ruler.replaceChildren();
   const visibility = buildTimelineVisibility();
-  const { visibleIds, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible } = visibility;
+  const { visibleIds, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible, scope } = visibility;
   // Preserve the pre-collapse branch membership. A collapsed node's children
   // are removed from `visibleIds` below, but its control must remain expandable.
   const expandableIds = new Set(visibleIds);
-  const renderedPartnerIds = id => allPartnerIds(state.people[id]).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
+  const renderedPartnerIds = id => scopedSpouseIds(state.people[id], scope).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
   // Collapse paths, not people. A cousin-marriage profile can occur once in
   // its natal branch and again beside a spouse. If one route from the root is
   // collapsed, the other route must keep the shared household alive.
@@ -2074,7 +2083,17 @@ function renderTimeline() {
     visibleIds.clear();
     activeVisibleIds.forEach(id => visibleIds.add(id));
   }
-  const people = Object.values(state.people).filter(person => visibleIds.has(person.id) && numericYear(person.birthYear) != null);
+  const datedVisibleDescendants = new Set([...descendantsOfRoot].filter(id =>
+    visibleIds.has(id) && numericYear(state.people[id]?.birthYear) != null
+  ));
+  const people = Object.values(state.people).filter(person => {
+    if (!visibleIds.has(person.id) || numericYear(person.birthYear) == null) return false;
+    if (descendantsOfRoot.has(person.id)) return true;
+    return scopedSpouseIds(person, scope).some(partnerId =>
+      datedVisibleDescendants.has(partnerId)
+      && renderedPartnerPairs.has(partnerRelationKey(person.id, partnerId))
+    );
+  });
   if (!people.length) {
     ruler.toggleAttribute('hidden', true);
     canvas.setAttribute('width', 820); canvas.setAttribute('height', 560); canvas.setAttribute('viewBox', '0 0 820 560');
@@ -2761,13 +2780,12 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    // An affinal profile can have another recorded marriage whose other
-    // person is outside this tree. Keep its dated fact visible without drawing
-    // a connector to a profile that is not present.
+    // Keep marriage markers inside the root's descendant scope. A spouse's
+    // other family belongs to a different descendant-tree view.
     if (isSpouseNode) {
       const attachedKey = displayParentByKey.get(nodeKey);
       const attachedPartnerId = layoutNodeByKey.get(attachedKey)?.id || attachedKey || '';
-      allPartnerIds(person).forEach(partnerId => {
+      scopedSpouseIds(person, scope).forEach(partnerId => {
         const partner = state.people[partnerId];
         const pairKey = partnerRelationKey(id, partnerId);
         const isFormal = person.spouses.includes(partnerId) || partner?.spouses?.includes(id);
@@ -2990,6 +3008,7 @@ function previewTimelinePerson(id) {
 }
 
 function selectPerson(id, { center = false } = {}) {
+  if (!activeDescendantScope().allowedIds.has(id)) return;
   if (els['events-dialog'].open) els['events-dialog'].close();
   state.selectedId = id;
   state.editingProfileId = '';
@@ -2999,8 +3018,10 @@ function selectPerson(id, { center = false } = {}) {
 }
 function renderPersonList() {
   clearTimelinePersonPreview();
+  const scope = activeDescendantScope();
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  const people = Object.values(state.people).filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
+  const people = [...scope.allowedIds].map(id => state.people[id]).filter(Boolean)
+    .filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
   people.sort((a, b) => visibleName(a).localeCompare(visibleName(b)));
   els['people-count'].textContent = people.length;
   els['people-label'].textContent = keywords.length ? (people.length === 1 ? 'match' : 'matches') : (people.length === 1 ? 'profile' : 'profiles');
@@ -3323,28 +3344,29 @@ function renderGlobalEventsEditor() {
 
 function renderRelationshipHouseholds(person) {
   const container = els['relationship-households'];
-  if (!person) { container.replaceChildren(); return; }
+  const scope = activeDescendantScope();
+  if (!person || !scope.allowedIds.has(person.id)) { container.replaceChildren(); return; }
   const visibility = buildTimelineVisibility();
   const visibleOccurrences = [...els['timeline-canvas'].querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(person.id)}"]`)];
   const shownOnlyAsSpouse = visibleOccurrences.length > 0 && visibleOccurrences.every(node => node.classList.contains('spouse'));
   const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]));
-  const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
+  const partnerIds = scopedSpouseIds(person, scope).sort((firstId, secondId) => {
     const firstYear = marriageYearFor(person.id, firstId);
     const secondYear = marriageYearFor(person.id, secondId);
     if (firstYear != null || secondYear != null) return (firstYear ?? Number.POSITIVE_INFINITY) - (secondYear ?? Number.POSITIVE_INFINITY);
-    const firstChildYear = Math.min(...householdChildren(person.id, firstId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
-    const secondChildYear = Math.min(...householdChildren(person.id, secondId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    const firstChildYear = Math.min(...scopedHouseholdChildren(person.id, firstId, scope).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    const secondChildYear = Math.min(...scopedHouseholdChildren(person.id, secondId, scope).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
     return firstChildYear - secondChildYear || byBirth(firstId, secondId);
   });
   const assignedChildren = new Set();
   const groups = partnerIds.map(partnerId => {
-    const children = householdChildren(person.id, partnerId).sort(byBirth);
+    const children = scopedHouseholdChildren(person.id, partnerId, scope).sort(byBirth);
     children.forEach(id => assignedChildren.add(id));
     return { partnerId, children };
   });
-  const ungroupedChildren = person.children.filter(id => state.people[id] && !assignedChildren.has(id)).sort(byBirth);
+  const ungroupedChildren = person.children.filter(id => scope.descendantIds.has(id) && state.people[id] && !assignedChildren.has(id)).sort(byBirth);
   if (ungroupedChildren.length) groups.push({ partnerId: '', children: ungroupedChildren });
-  const parentIds = person.parents.filter(id => state.people[id]).sort(byBirth);
+  const parentIds = person.parents.filter(id => scope.allowedIds.has(id) && state.people[id]).sort(byBirth);
 
   if (!groups.length && !parentIds.length) {
     const empty = document.createElement('p');
@@ -3444,7 +3466,7 @@ function renderRelationshipHouseholds(person) {
     group.children.forEach(childId => {
       const visible = visibility.visibleIds.has(childId) && visibility.childEdgeVisible(person.id, childId);
       const childRelationKeys = state.people[childId].parents
-        .filter(parentId => state.people[parentId])
+        .filter(parentId => scope.allowedIds.has(parentId) && state.people[parentId])
         .map(parentId => childRelationKey(parentId, childId));
       household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}`, relationKeys: childRelationKeys }));
     });
@@ -3454,7 +3476,9 @@ function renderRelationshipHouseholds(person) {
 }
 
 function renderDetails() {
-  const person = state.people[state.selectedId];
+  const scope = activeDescendantScope();
+  const person = scope.allowedIds.has(state.selectedId) ? state.people[state.selectedId] : null;
+  if (!person && state.selectedId) { state.selectedId = ''; state.editingProfileId = ''; }
   const isOpen = !!person;
   els['detail-backdrop'].hidden = !isOpen;
   els['detail-sidebar'].classList.toggle('open', isOpen);
@@ -3496,7 +3520,10 @@ function renderDetails() {
   els['ai-family-status'].textContent = `The generated prompt will preserve “${fullName(person)}” as anchor ID ${person.id}.`;
 }
 function renderParentOptions() {
-  const options = ['<option value="">No profile selected</option>', ...Object.values(state.people).sort((a,b) => visibleName(a).localeCompare(visibleName(b))).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(visibleName(person))}</option>`)].join('');
+  const scope = activeDescendantScope();
+  const people = [...scope.allowedIds].map(id => state.people[id]).filter(Boolean)
+    .sort((a, b) => visibleName(a).localeCompare(visibleName(b)));
+  const options = ['<option value="">No profile selected</option>', ...people.map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(visibleName(person))}</option>`)].join('');
   els['parent-select'].innerHTML = options;
 }
 
@@ -3538,7 +3565,7 @@ function beginNewTree() {
 }
 
 function render() {
-  const count = Object.keys(state.people).length;
+  const count = activeDescendantScope().allowedIds.size;
   els['tree-title'].textContent = state.title;
   els['people-count'].textContent = count;
   els['people-label'].textContent = count === 1 ? 'profile' : 'profiles';

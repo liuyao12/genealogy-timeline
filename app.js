@@ -1621,8 +1621,23 @@ function activeDescendantScope() {
 function scopedSpouseIds(person, scope = activeDescendantScope()) {
   return [...(scope.spouseIdsByPerson.get(person?.id) || [])].filter(id => state.people[id]);
 }
+function scopedChildIds(personId, scope = activeDescendantScope()) {
+  return [...(scope.childrenByParent.get(personId) || [])]
+    .filter(id => scope.descendantIds.has(id) && state.people[id]);
+}
+function scopedParentIds(childId, scope = activeDescendantScope()) {
+  return [...(scope.parentsByChild.get(childId) || [])]
+    .filter(id => scope.allowedIds.has(id) && state.people[id]);
+}
 function scopedHouseholdChildren(personId, partnerId = '', scope = activeDescendantScope()) {
-  return householdChildren(personId, partnerId).filter(childId => scope.descendantIds.has(childId));
+  const person = state.people[personId];
+  if (!person) return [];
+  const formalSpouses = new Set(scopedSpouseIds(person, scope));
+  return scopedChildIds(personId, scope).filter(childId => {
+    const parentIds = scopedParentIds(childId, scope);
+    if (!partnerId) return !parentIds.some(parentId => parentId !== personId && formalSpouses.has(parentId));
+    return parentIds.includes(partnerId);
+  });
 }
 function householdChildren(personId, partnerId = '') {
   const person = state.people[personId];
@@ -1644,7 +1659,7 @@ function buildTimelineVisibility() {
   const childEdgeVisible = (parentId, childId) => {
     if (!scope.descendantIds.has(childId) || !scope.allowedIds.has(parentId)) return false;
     if (relationOverride(childRelationKey(parentId, childId)) === false) return false;
-    const parentIds = state.people[childId]?.parents || [];
+    const parentIds = scopedParentIds(childId, scope);
     return !parentIds.some(id => relationOverride(childRelationKey(id, childId)) === false);
   };
 
@@ -1654,7 +1669,7 @@ function buildTimelineVisibility() {
     const id = descendantQueue.shift();
     if (descendantsOfRoot.has(id) || !scope.descendantIds.has(id) || !state.people[id]) continue;
     descendantsOfRoot.add(id);
-    state.people[id].children.forEach(childId => {
+    scopedChildIds(id, scope).forEach(childId => {
       if (scope.descendantIds.has(childId) && childEdgeVisible(id, childId)) descendantQueue.push(childId);
     });
   }
@@ -1692,7 +1707,7 @@ function buildTimelineVisibility() {
       const childId = queue.shift();
       const child = state.people[childId];
       if (!child) continue;
-      child.parents.forEach(parentId => {
+      scopedParentIds(childId, scope).forEach(parentId => {
         if (!descendantsOfRoot.has(parentId) || !childEdgeVisible(parentId, childId) || visible.has(parentId)) return;
         visible.add(parentId);
         queue.push(parentId);
@@ -1707,7 +1722,7 @@ function buildTimelineVisibility() {
       while (queue.length) {
         const id = queue.shift();
         if (!visible.delete(id)) continue;
-        (state.people[id]?.children || []).forEach(nextId => {
+        scopedChildIds(id, scope).forEach(nextId => {
           if (scope.descendantIds.has(nextId)) queue.push(nextId);
         });
       }
@@ -2063,7 +2078,7 @@ function renderTimeline() {
     if (activeLineageIds.has(id) || !visibleIds.has(id) || !state.people[id]) continue;
     activeLineageIds.add(id);
     if (state.collapsedIds.has(id)) continue;
-    state.people[id].children.forEach(childId => {
+    scopedChildIds(id, scope).forEach(childId => {
       if (visibleIds.has(childId) && childEdgeVisible(id, childId)) lineageQueue.push(childId);
     });
   }
@@ -2141,7 +2156,7 @@ function renderTimeline() {
     return parentIds.find(id => state.people[id]?.gender === 'female') || '';
   };
   const childrenByParent = new Map();
-  people.forEach(person => person.parents.forEach(parentId => {
+  people.forEach(person => scopedParentIds(person.id, scope).forEach(parentId => {
     if (!datedIds.has(parentId)) return;
     if (!childEdgeVisible(parentId, person.id)) return;
     if (state.collapsedIds.has(parentId)) return;
@@ -2161,8 +2176,8 @@ function renderTimeline() {
   // not become a detached root and claim the household before that lineage is
   // visited.
   const lineageRoots = people.filter(person => activeLineageIds.has(person.id)
-    && !person.parents.some(id => datedIds.has(id) && activeLineageIds.has(id)));
-  const roots = (lineageRoots.length ? lineageRoots : people.filter(person => !person.parents.some(id => datedIds.has(id))))
+    && !scopedParentIds(person.id, scope).some(id => datedIds.has(id) && activeLineageIds.has(id)));
+  const roots = (lineageRoots.length ? lineageRoots : people.filter(person => !scopedParentIds(person.id, scope).some(id => datedIds.has(id))))
     .map(person => person.id).sort(byBirth);
   if (datedIds.has(state.rootId)) roots.sort((a, b) => (a === state.rootId ? -1 : b === state.rootId ? 1 : byBirth(a, b)));
   const order = [];
@@ -2188,7 +2203,7 @@ function renderTimeline() {
 
     const groups = new Map();
     (childrenByParent.get(id) || []).forEach(childId => {
-      const otherParent = state.people[childId]?.parents.find(parentId => parentId !== id && datedIds.has(parentId) && renderedPartnerPairs.has(partnerRelationKey(id, parentId))) || '';
+      const otherParent = scopedParentIds(childId, scope).find(parentId => parentId !== id && datedIds.has(parentId) && renderedPartnerPairs.has(partnerRelationKey(id, parentId))) || '';
       const partnerId = otherParent;
       if (!groups.has(partnerId)) groups.set(partnerId, []);
       groups.get(partnerId).push(childId);
@@ -2260,7 +2275,7 @@ function renderTimeline() {
     // Omitting that inactive natal family also removes its obsolete vertical
     // stem and dotted transport line.
     if (state.collapsedIds.size && state.people[state.rootId] && !activeLineageIds.has(child.id)) return;
-    let parentIds = child.parents.filter(id => datedIds.has(id) && childEdgeVisible(id, child.id) && !state.collapsedIds.has(id));
+    let parentIds = scopedParentIds(child.id, scope).filter(id => datedIds.has(id) && childEdgeVisible(id, child.id) && !state.collapsedIds.has(id));
     if (!parentIds.length) return;
     if (parentIds.length === 2 && !renderedPartnerPairs.has(partnerRelationKey(parentIds[0], parentIds[1]))) {
       parentIds = [parentIds.find(id => state.people[id]?.gender === 'male') || parentIds[0]];
@@ -2434,7 +2449,7 @@ function renderTimeline() {
   };
   const incomingConnectorEndOffset = id => {
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
-    const hasControlHere = state.people[id]?.children.some(childId =>
+    const hasControlHere = scopedChildIds(id, scope).some(childId =>
       !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
     );
     return hasControlHere ? 18 : 12;
@@ -2804,7 +2819,7 @@ function renderTimeline() {
       });
     }
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
-    const hasChildren = person.children.some(childId =>
+    const hasChildren = scopedChildIds(id, scope).some(childId =>
       !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
     );
     const isCollapsed = state.collapsedIds.has(id);
@@ -3364,9 +3379,9 @@ function renderRelationshipHouseholds(person) {
     children.forEach(id => assignedChildren.add(id));
     return { partnerId, children };
   });
-  const ungroupedChildren = person.children.filter(id => scope.descendantIds.has(id) && state.people[id] && !assignedChildren.has(id)).sort(byBirth);
+  const ungroupedChildren = scopedChildIds(person.id, scope).filter(id => !assignedChildren.has(id)).sort(byBirth);
   if (ungroupedChildren.length) groups.push({ partnerId: '', children: ungroupedChildren });
-  const parentIds = person.parents.filter(id => scope.allowedIds.has(id) && state.people[id]).sort(byBirth);
+  const parentIds = scopedParentIds(person.id, scope).sort(byBirth);
 
   if (!groups.length && !parentIds.length) {
     const empty = document.createElement('p');
@@ -3465,8 +3480,7 @@ function renderRelationshipHouseholds(person) {
     }
     group.children.forEach(childId => {
       const visible = visibility.visibleIds.has(childId) && visibility.childEdgeVisible(person.id, childId);
-      const childRelationKeys = state.people[childId].parents
-        .filter(parentId => scope.allowedIds.has(parentId) && state.people[parentId])
+      const childRelationKeys = scopedParentIds(childId, scope)
         .map(parentId => childRelationKey(parentId, childId));
       household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}`, relationKeys: childRelationKeys }));
     });

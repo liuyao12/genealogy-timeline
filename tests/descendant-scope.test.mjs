@@ -30,14 +30,18 @@ test('keeps one lineal descendant tree plus one formal-spouse layer', () => {
   assert.equal(scope.spousePairs.has(descendantPairKey('root-spouse', 'former-root-spouse')), false);
 });
 
-test('uses reverse parent links when a parent children array is sparse', () => {
+test('repairs sparse parent-child links in both directions for one connected layout', () => {
   const people = {
     root: { id: 'root', children: [], parents: [], spouses: [] },
-    child: { id: 'child', children: [], parents: ['root'], spouses: [] },
-    grandchild: { id: 'grandchild', children: [], parents: ['child'], spouses: [] }
+    child: { id: 'child', children: ['grandchild'], parents: ['root'], spouses: [] },
+    grandchild: { id: 'grandchild', children: [], parents: [], spouses: [] }
   };
   const scope = computeDescendantScope(people, 'root');
   assert.deepEqual([...scope.descendantIds], ['root', 'child', 'grandchild']);
+  assert.deepEqual([...scope.childrenByParent.get('root')], ['child']);
+  assert.deepEqual([...scope.parentsByChild.get('child')], ['root']);
+  assert.deepEqual([...scope.childrenByParent.get('child')], ['grandchild']);
+  assert.deepEqual([...scope.parentsByChild.get('grandchild')], ['child']);
 });
 
 test('the Henry VII starter scope includes Catherine Parr but excludes her other husbands', () => {

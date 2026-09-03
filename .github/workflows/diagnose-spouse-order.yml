@@ -15,6 +15,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: fix/multiple-spouse-order
+      - name: Inspect Margaret Tudor's recorded households
+        run: |
+          python3 - <<'PY'
+          import json
+          data = json.load(open('data/british-royal-line.json'))
+          people = data['people']
+          margaret = people['profile-g6000000003858820967']
+          print('Margaret:', margaret['displayName'], margaret['birthYear'], margaret['children'])
+          for spouse_id in margaret['spouses']:
+              spouse = people[spouse_id]
+              print('spouse:', spouse_id, spouse['displayName'], spouse.get('birthYear'), spouse.get('children'))
+          PY
       - name: Show the full bundled tree
         run: |
           python3 - <<'PY'
@@ -47,8 +59,7 @@ jobs:
                   continue
               name = ''.join(part.get_text() for part in node.select('tspan.timeline-name')).strip()
               rows.append((float(match.group(1)), name, node.get('data-person-id', ''), node.get('class', [])))
-          targets = ('Margaret Tudor', 'James IV', 'James V', 'Archibald Douglas', 'Henry Stewart', 'Henry VIII', 'Mary, Queen of Scots')
           for y, name, profile_id, classes in sorted(rows):
-              if any(target in name for target in targets):
-                  print(f'{y:8.1f}  {name:60}  {profile_id}  {" ".join(classes)}')
+              if 150 <= y <= 850:
+                  print(f'{y:8.1f}  {name:66}  {profile_id}  {" ".join(classes)}')
           PY

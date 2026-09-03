@@ -1,3 +1,5 @@
+import './source-modes.js?v=1';
+
 export const GENI_TOKEN_SESSION_KEY = 'lineage-geni-access-token';
 export const GENI_TOKEN_EXPIRY_KEY = 'lineage-geni-access-token-expiry';
 export const GENI_IMPORT_INTENT_KEY = 'lineage-geni-descendant-intent-v1';

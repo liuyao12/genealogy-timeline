@@ -1885,10 +1885,11 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         branch.indexes.forEach(index => { preferredY[index] += shift; });
       });
       // Keep the next sibling below the preceding sibling's immediate
-      // household. A spouse root is different: it begins an ordered marriage
-      // group, so its complete descendant block must finish before the next
-      // spouse group starts. Otherwise contour compaction can put one wife's
-      // child among another wife's branch.
+      // household. Consecutive spouse roots belonging to the same person are
+      // the exception: only the preceding spouse row constrains the next one,
+      // so all marriages remain contiguous before any descendant subtree.
+      // A spouse followed by a different kind of branch still protects its
+      // complete descendant block.
       for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
         const precedingRoot = branches[branchIndex - 1].rootIndex;
         const followingRoot = branches[branchIndex].rootIndex;
@@ -1897,10 +1898,18 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
           precedingHousehold.push(childIndex);
           if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
         });
+        const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);
+        const followingOwner = displayParentByKey.get(nodes[followingRoot].key);
+        const sharesMarriageOwner = nodes[precedingRoot].isSpouse
+          && nodes[followingRoot].isSpouse
+          && precedingOwner
+          && precedingOwner === followingOwner;
         const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
-        const uniquePrecedingHousehold = protectsMarriageOrder
-          ? branches[branchIndex - 1].indexes
-          : unique(precedingHousehold);
+        const uniquePrecedingHousehold = sharesMarriageOwner
+          ? [precedingRoot]
+          : protectsMarriageOrder
+            ? branches[branchIndex - 1].indexes
+            : unique(precedingHousehold);
         const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
         const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
         const householdShift = Math.max(0, householdBottom + rowStep - followingTop);
@@ -1920,7 +1929,14 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
   nodes.forEach((_, index) => {
     const currentRun = directRuns.at(-1);
     const previousIndex = currentRun?.at(-1);
-    if (previousIndex != null && timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index])) currentRun.push(index);
+    const previousOwner = previousIndex == null ? '' : displayParentByKey.get(nodes[previousIndex].key);
+    const currentOwner = displayParentByKey.get(nodes[index].key);
+    const sharesMarriageOwner = previousIndex != null
+      && nodes[previousIndex].isSpouse
+      && nodes[index].isSpouse
+      && previousOwner
+      && previousOwner === currentOwner;
+    if (previousIndex != null && (timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index]) || sharesMarriageOwner)) currentRun.push(index);
     else directRuns.push([index]);
   });
   const runByIndex = new Map();
@@ -2229,25 +2245,33 @@ function renderTimeline() {
         || byBirth(a.partnerId || a.childIds[0], b.partnerId || b.childIds[0]);
     });
 
+    // Lay out the immediate marriage household before descending into any
+    // child's branch. Without this two-pass order, a prolific first marriage
+    // can push later spouses below the next sibling branch. The spouse rows now
+    // form one chronological block directly below the person; descendants of
+    // each union are expanded only after that block has been established.
+    const preparedGroups = orderedGroups.map(group => ({
+      group,
+      pendingChildren: group.childIds.filter(childId => !expanded.has(childId)),
+      transportedId: group.partnerId ? transportedParent([id, group.partnerId]) : '',
+      householdParentId: id
+    }));
     const groupedPartners = new Set();
-    orderedGroups.forEach(group => {
-      const pendingChildren = group.childIds.filter(childId => !expanded.has(childId));
-      if (!pendingChildren.length && !group.partnerId) return;
-      const transportedId = group.partnerId ? transportedParent([id, group.partnerId]) : '';
+    preparedGroups.forEach(prepared => {
+      const { group, transportedId } = prepared;
       // A cousin-marriage household is rendered on the non-transported side.
       // The transported spouse retains their primary occurrence in the natal
       // branch; an auxiliary spouse occurrence is inserted below.
+      if (!group.partnerId || transportedId === id) return;
+      groupedPartners.add(group.partnerId);
+      if (transportedId) return;
+      const partnerWasPlaced = placed.has(group.partnerId);
+      place(group.partnerId, true, id);
+      if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
+      if (!partnerWasPlaced) prepared.householdParentId = group.partnerId;
+    });
+    preparedGroups.forEach(({ pendingChildren, transportedId, householdParentId }) => {
       if (transportedId === id) return;
-      let householdParentId = id;
-      if (group.partnerId) {
-        groupedPartners.add(group.partnerId);
-        if (!transportedId) {
-          const partnerWasPlaced = placed.has(group.partnerId);
-          place(group.partnerId, true, id);
-          if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
-          if (!partnerWasPlaced) householdParentId = group.partnerId;
-        }
-      }
       pendingChildren.forEach(childId => visit(childId, householdParentId));
     });
 
@@ -2374,10 +2398,22 @@ function renderTimeline() {
     if (occurrenceKeyByFamilyPerson.has(associationKey)) return occurrenceKeyByFamilyPerson.get(associationKey);
     const otherParentId = family.parents.find(id => id !== transportedId);
     const copyKey = `transport:${key}:${transportedId}`;
-    const childIndexes = family.children.map(childId => layoutEntries.findIndex(entry => entry.key === childId)).filter(index => index >= 0);
     const otherParentIndex = layoutEntries.findIndex(entry => entry.key === otherParentId);
-    const insertAt = childIndexes.length ? Math.min(...childIndexes) : Math.max(0, otherParentIndex + 1);
+    const marriageYear = marriageYearFor(otherParentId, transportedId) ?? Number.POSITIVE_INFINITY;
+    const spouseSlots = layoutEntries.map((entry, index) => ({
+      entry,
+      index,
+      ownerId: displayParentByKey.get(entry.key),
+      marriageYear: marriageYearFor(otherParentId, entry.id) ?? Number.POSITIVE_INFINITY
+    })).filter(slot => slot.entry.isSpouse && slot.ownerId === otherParentId);
+    const laterSpouse = spouseSlots.find(slot => slot.marriageYear > marriageYear);
+    const insertAt = laterSpouse
+      ? laterSpouse.index
+      : spouseSlots.length
+        ? Math.max(...spouseSlots.map(slot => slot.index)) + 1
+        : Math.max(0, otherParentIndex + 1);
     layoutEntries.splice(insertAt, 0, { key: copyKey, id: transportedId, isSpouse: true, isTransportedCopy: true, familyKey: key });
+    if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
     occurrenceKeyByFamilyPerson.set(associationKey, copyKey);
     return copyKey;
   };

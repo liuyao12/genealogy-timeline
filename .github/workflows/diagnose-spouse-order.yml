@@ -1,4 +1,4 @@
-name: Diagnose multiple-spouse ordering
+name: Apply household-first spouse ordering
 
 on:
   push:
@@ -6,60 +6,103 @@ on:
       - fix/multiple-spouse-order
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: fix/multiple-spouse-order
-      - name: Inspect Margaret Tudor's recorded households
-        run: |
-          python3 - <<'PY'
-          import json
-          data = json.load(open('data/british-royal-line.json'))
-          people = data['people']
-          margaret = people['profile-g6000000003858820967']
-          print('Margaret:', margaret['displayName'], margaret['birthYear'], margaret['children'])
-          for spouse_id in margaret['spouses']:
-              spouse = people[spouse_id]
-              print('spouse:', spouse_id, spouse['displayName'], spouse.get('birthYear'), spouse.get('children'))
-          PY
-      - name: Show the full bundled tree
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('data/british-royal-line.json')
-          text = path.read_text()
-          text = text.replace('"treeFilter": "king queen"', '"treeFilter": ""', 1)
-          path.write_text(text)
-          PY
-      - name: Render and print vertical order
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply layout patch
+        run: python3 scripts/apply_household_first_order.py
+      - name: Run unit tests
+        run: npm test
+      - name: Check JavaScript syntax
+        run: node --check app.js
+      - name: Verify spouse blocks in a rendered tree
         shell: bash
         run: |
           python3 -m pip install --quiet beautifulsoup4
+          cp data/british-royal-line.json /tmp/british-royal-line.json
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('data/british-royal-line.json')
+          text = path.read_text().replace('"treeFilter": "king queen"', '"treeFilter": ""', 1)
+          path.write_text(text)
+          PY
           chrome="$(command -v google-chrome || command -v google-chrome-stable)"
           python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           sleep 2
           "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
-            --virtual-time-budget=7000 --dump-dom http://127.0.0.1:4173/ >/tmp/lineage-dom.html
+            --virtual-time-budget=8000 --dump-dom http://127.0.0.1:4173/ >/tmp/lineage-dom.html
+          mv /tmp/british-royal-line.json data/british-royal-line.json
           python3 - <<'PY'
           import re
+          from collections import defaultdict
           from bs4 import BeautifulSoup
+
           soup = BeautifulSoup(open('/tmp/lineage-dom.html', encoding='utf-8'), 'html.parser')
-          rows = []
+          positions = defaultdict(list)
+          names = {}
           for node in soup.select('g.timeline-node'):
-              transform = node.get('transform', '')
-              match = re.search(r'translate\([^ ]+\s+([^\)]+)\)', transform)
+              match = re.search(r'translate\([^ ]+\s+([^\)]+)\)', node.get('transform', ''))
               if not match:
                   continue
-              name = ''.join(part.get_text() for part in node.select('tspan.timeline-name')).strip()
-              rows.append((float(match.group(1)), name, node.get('data-person-id', ''), node.get('class', [])))
-          for y, name, profile_id, classes in sorted(rows):
-              if 150 <= y <= 850:
-                  print(f'{y:8.1f}  {name:66}  {profile_id}  {" ".join(classes)}')
+              profile_id = node.get('data-person-id', '')
+              positions[profile_id].append(float(match.group(1)))
+              names[profile_id] = ''.join(part.get_text() for part in node.select('tspan.timeline-name')).strip()
+
+          margaret = 'profile-g6000000003858820967'
+          james_iv = 'profile-g4229916861440069622'
+          archibald = 'profile-g6000000003232538566'
+          methven = 'profile-g6000000005412245713'
+          james_v = 'profile-g6000000003233882803'
+          henry_viii = 'profile-g6000000007442241030'
+          required = [margaret, james_iv, archibald, methven, james_v, henry_viii]
+          for profile_id in required:
+              assert positions[profile_id], f'Missing rendered profile {profile_id}'
+          y = {profile_id: min(positions[profile_id]) for profile_id in required}
+          assert y[margaret] < y[james_iv] < y[archibald] < y[methven] < y[james_v] < y[henry_viii], y
+          assert y[archibald] - y[james_iv] <= 40, y
+          assert y[methven] - y[archibald] <= 40, y
+
+          wives = [
+              'profile-4475169',
+              'profile-g6000000003702650070',
+              'profile-g6000000001465721422',
+              'profile-4475232',
+              'profile-g6000000001465827019',
+              'profile-g6000000001465762273'
+          ]
+          henry_y = y[henry_viii]
+          wife_y = []
+          for profile_id in wives:
+              candidates = sorted(value for value in positions[profile_id] if value > henry_y)
+              assert candidates, f'Missing Henry VIII spouse occurrence {profile_id}'
+              wife_y.append(candidates[0])
+          assert wife_y == sorted(wife_y), wife_y
+          assert max(b - a for a, b in zip(wife_y, wife_y[1:])) <= 40, wife_y
+
+          for profile_id in required:
+              print(f'{y[profile_id]:8.1f}  {names[profile_id]}')
+          print('Henry VIII spouse rows:', wife_y)
           PY
+      - name: Commit the verified application change
+        shell: bash
+        run: |
+          rm .github/workflows/diagnose-spouse-order.yml
+          rm scripts/apply_household_first_order.py
+          rmdir scripts 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Keep multiple spouses in one household block"
+          git push origin HEAD:fix/multiple-spouse-order

@@ -1,0 +1,94 @@
+function ids(value) {
+  return Array.isArray(value) ? value.filter(Boolean).map(String) : [];
+}
+
+export function descendantPairKey(firstId, secondId) {
+  return `partner:${[String(firstId || ''), String(secondId || '')].sort().join('|')}`;
+}
+
+function addParentChild(childrenByParent, parentsByChild, parentId, childId, people) {
+  if (!parentId || !childId || !people[parentId] || !people[childId]) return;
+  if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, new Set());
+  if (!parentsByChild.has(childId)) parentsByChild.set(childId, new Set());
+  childrenByParent.get(parentId).add(childId);
+  parentsByChild.get(childId).add(parentId);
+}
+
+/**
+ * Compute the people who belong to the one descendant tree rooted at rootId.
+ *
+ * The scope contains:
+ *   1. the root and every lineal descendant reachable through parent/child data;
+ *   2. formal spouses of those descendants, one affinal layer only.
+ *
+ * It deliberately does not recurse through a spouse's other marriages,
+ * parents, siblings, or children from unrelated unions. Parent/child indexes
+ * are repaired in both directions in memory, so sparse imported records do
+ * not split one descendant tree into detached mini-trees.
+ */
+export function computeDescendantScope(people = {}, rootId = '') {
+  const records = people && typeof people === 'object' ? people : {};
+  const root = String(rootId || '');
+  const childrenByParent = new Map();
+  const parentsByChild = new Map();
+
+  Object.entries(records).forEach(([id, person]) => {
+    ids(person?.children).forEach(childId => addParentChild(childrenByParent, parentsByChild, id, childId, records));
+    ids(person?.parents).forEach(parentId => addParentChild(childrenByParent, parentsByChild, parentId, id, records));
+  });
+
+  const descendantIds = new Set();
+  const queue = records[root] ? [root] : [];
+  for (let index = 0; index < queue.length; index += 1) {
+    const id = queue[index];
+    if (!records[id] || descendantIds.has(id)) continue;
+    descendantIds.add(id);
+    (childrenByParent.get(id) || []).forEach(childId => queue.push(childId));
+  }
+
+  const spousePairs = new Set();
+  const spouseIdsByPerson = new Map();
+  const addSpousePair = (firstId, secondId) => {
+    if (!records[firstId] || !records[secondId] || firstId === secondId) return;
+    const key = descendantPairKey(firstId, secondId);
+    spousePairs.add(key);
+    if (!spouseIdsByPerson.has(firstId)) spouseIdsByPerson.set(firstId, new Set());
+    if (!spouseIdsByPerson.has(secondId)) spouseIdsByPerson.set(secondId, new Set());
+    spouseIdsByPerson.get(firstId).add(secondId);
+    spouseIdsByPerson.get(secondId).add(firstId);
+  };
+
+  Object.entries(records).forEach(([id, person]) => {
+    const formallyEndedPartners = Object.entries(person?.relationshipEndStatuses || {})
+      .filter(([, status]) => ['annulled', 'divorced'].includes(String(status || '').toLowerCase()))
+      .map(([partnerId]) => partnerId);
+    const formalSpouses = new Set([
+      ...ids(person?.spouses),
+      ...ids(person?.divorcedSpouses),
+      ...Object.keys(person?.marriageYears || {}),
+      ...formallyEndedPartners
+    ]);
+    formalSpouses.forEach(spouseId => {
+      if (descendantIds.has(id) || descendantIds.has(spouseId)) addSpousePair(id, spouseId);
+    });
+  });
+
+  const allowedIds = new Set(descendantIds);
+  spousePairs.forEach(key => {
+    const [firstId, secondId] = key.slice('partner:'.length).split('|');
+    allowedIds.add(firstId);
+    allowedIds.add(secondId);
+  });
+  const affinalIds = new Set([...allowedIds].filter(id => !descendantIds.has(id)));
+
+  return {
+    rootId: root,
+    descendantIds,
+    affinalIds,
+    allowedIds,
+    spousePairs,
+    spouseIdsByPerson,
+    childrenByParent,
+    parentsByChild
+  };
+}

@@ -33,7 +33,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           path = Path('data/british-royal-line.json')
-          text = path.read_text().replace('"treeFilter": "king queen"', '"treeFilter": ""', 1)
+          text = path.read_text().replace('"treeFilter": "king queen"', '"treeFilter": "a e i o u y"', 1)
           path.write_text(text)
           PY
           chrome="$(command -v google-chrome || command -v google-chrome-stable)"

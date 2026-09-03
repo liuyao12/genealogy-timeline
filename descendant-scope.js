@@ -39,8 +39,8 @@ export function computeDescendantScope(people = {}, rootId = '') {
 
   const descendantIds = new Set();
   const queue = records[root] ? [root] : [];
-  while (queue.length) {
-    const id = queue.shift();
+  for (let index = 0; index < queue.length; index += 1) {
+    const id = queue[index];
     if (!records[id] || descendantIds.has(id)) continue;
     descendantIds.add(id);
     (childrenByParent.get(id) || []).forEach(childId => queue.push(childId));
@@ -59,9 +59,14 @@ export function computeDescendantScope(people = {}, rootId = '') {
   };
 
   Object.entries(records).forEach(([id, person]) => {
+    const formallyEndedPartners = Object.entries(person?.relationshipEndStatuses || {})
+      .filter(([, status]) => ['annulled', 'divorced'].includes(String(status || '').toLowerCase()))
+      .map(([partnerId]) => partnerId);
     const formalSpouses = new Set([
       ...ids(person?.spouses),
-      ...Object.keys(person?.marriageYears || {})
+      ...ids(person?.divorcedSpouses),
+      ...Object.keys(person?.marriageYears || {}),
+      ...formallyEndedPartners
     ]);
     formalSpouses.forEach(spouseId => {
       if (descendantIds.has(id) || descendantIds.has(spouseId)) addSpousePair(id, spouseId);

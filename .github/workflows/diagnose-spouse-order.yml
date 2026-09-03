@@ -1,0 +1,54 @@
+name: Diagnose multiple-spouse ordering
+
+on:
+  push:
+    branches:
+      - fix/multiple-spouse-order
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/multiple-spouse-order
+      - name: Show the full bundled tree
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('data/british-royal-line.json')
+          text = path.read_text()
+          text = text.replace('"treeFilter": "king queen"', '"treeFilter": ""', 1)
+          path.write_text(text)
+          PY
+      - name: Render and print vertical order
+        shell: bash
+        run: |
+          python3 -m pip install --quiet beautifulsoup4
+          chrome="$(command -v google-chrome || command -v google-chrome-stable)"
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=7000 --dump-dom http://127.0.0.1:4173/ >/tmp/lineage-dom.html
+          python3 - <<'PY'
+          import re
+          from bs4 import BeautifulSoup
+          soup = BeautifulSoup(open('/tmp/lineage-dom.html', encoding='utf-8'), 'html.parser')
+          rows = []
+          for node in soup.select('g.timeline-node'):
+              transform = node.get('transform', '')
+              match = re.search(r'translate\([^ ]+\s+([^\)]+)\)', transform)
+              if not match:
+                  continue
+              name = ''.join(part.get_text() for part in node.select('tspan.timeline-name')).strip()
+              rows.append((float(match.group(1)), name, node.get('data-person-id', ''), node.get('class', [])))
+          targets = ('Margaret Tudor', 'James IV', 'James V', 'Archibald Douglas', 'Henry Stewart', 'Henry VIII', 'Mary, Queen of Scots')
+          for y, name, profile_id, classes in sorted(rows):
+              if any(target in name for target in targets):
+                  print(f'{y:8.1f}  {name:60}  {profile_id}  {" ".join(classes)}')
+          PY

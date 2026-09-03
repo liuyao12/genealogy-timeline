@@ -6,10 +6,12 @@ export function descendantPairKey(firstId, secondId) {
   return `partner:${[String(firstId || ''), String(secondId || '')].sort().join('|')}`;
 }
 
-function addChild(adjacency, parentId, childId, people) {
+function addParentChild(childrenByParent, parentsByChild, parentId, childId, people) {
   if (!parentId || !childId || !people[parentId] || !people[childId]) return;
-  if (!adjacency.has(parentId)) adjacency.set(parentId, new Set());
-  adjacency.get(parentId).add(childId);
+  if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, new Set());
+  if (!parentsByChild.has(childId)) parentsByChild.set(childId, new Set());
+  childrenByParent.get(parentId).add(childId);
+  parentsByChild.get(childId).add(parentId);
 }
 
 /**
@@ -20,16 +22,19 @@ function addChild(adjacency, parentId, childId, people) {
  *   2. formal spouses of those descendants, one affinal layer only.
  *
  * It deliberately does not recurse through a spouse's other marriages,
- * parents, siblings, or children from unrelated unions.
+ * parents, siblings, or children from unrelated unions. Parent/child indexes
+ * are repaired in both directions in memory, so sparse imported records do
+ * not split one descendant tree into detached mini-trees.
  */
 export function computeDescendantScope(people = {}, rootId = '') {
   const records = people && typeof people === 'object' ? people : {};
   const root = String(rootId || '');
   const childrenByParent = new Map();
+  const parentsByChild = new Map();
 
   Object.entries(records).forEach(([id, person]) => {
-    ids(person?.children).forEach(childId => addChild(childrenByParent, id, childId, records));
-    ids(person?.parents).forEach(parentId => addChild(childrenByParent, parentId, id, records));
+    ids(person?.children).forEach(childId => addParentChild(childrenByParent, parentsByChild, id, childId, records));
+    ids(person?.parents).forEach(parentId => addParentChild(childrenByParent, parentsByChild, parentId, id, records));
   });
 
   const descendantIds = new Set();
@@ -77,6 +82,8 @@ export function computeDescendantScope(people = {}, rootId = '') {
     affinalIds,
     allowedIds,
     spousePairs,
-    spouseIdsByPerson
+    spouseIdsByPerson,
+    childrenByParent,
+    parentsByChild
   };
 }

@@ -1,0 +1,62 @@
+name: Apply decade background bands
+
+on:
+  push:
+    branches:
+      - feature/decade-background-bands
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/decade-background-bands
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply timeline patch
+        run: python scripts/apply_decade_bands.py
+
+      - name: Run tests
+        run: npm test
+
+      - name: Check JavaScript syntax
+        run: node --check app.js && node --check timeline-bands.js
+
+      - name: Smoke-test rendered decade layers
+        shell: bash
+        run: |
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [[ -z "$chrome" ]]; then
+            echo "Chrome is not installed on this runner; module and unit checks already passed."
+            exit 0
+          fi
+          python3 -m http.server 4173 > /tmp/lineage-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=6000 --dump-dom http://127.0.0.1:4173/ > /tmp/lineage-dom.html
+          band_count="$(grep -o 'timeline-decade-band tone-' /tmp/lineage-dom.html | wc -l)"
+          test "$band_count" -ge 20
+          grep -q 'timeline-decade-bands ruler-decade-bands' /tmp/lineage-dom.html
+          echo "Rendered $band_count decade rectangles across the canvas and ruler."
+
+      - name: Commit patched application
+        shell: bash
+        run: |
+          rm .github/workflows/apply-decade-background-bands.yml
+          rm scripts/apply_decade_bands.py
+          rmdir scripts 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add alternating decade bands to the timeline"
+          git push origin HEAD:feature/decade-background-bands

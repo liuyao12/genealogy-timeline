@@ -30,6 +30,20 @@ test('keeps one lineal descendant tree plus one formal-spouse layer', () => {
   assert.equal(scope.spousePairs.has(descendantPairKey('root-spouse', 'former-root-spouse')), false);
 });
 
+test('keeps a former formal spouse when only divorce metadata survives', () => {
+  const people = {
+    root: {
+      id: 'root', children: [], parents: [], spouses: [], divorcedSpouses: ['former-spouse'],
+      relationshipEndStatuses: { 'former-spouse': 'divorced' }
+    },
+    'former-spouse': { id: 'former-spouse', children: [], parents: [], spouses: [] },
+    'former-spouse-other-partner': { id: 'former-spouse-other-partner', children: [], parents: [], spouses: ['former-spouse'] }
+  };
+  const scope = computeDescendantScope(people, 'root');
+  assert.equal(scope.allowedIds.has('former-spouse'), true);
+  assert.equal(scope.allowedIds.has('former-spouse-other-partner'), false);
+});
+
 test('repairs sparse parent-child links in both directions for one connected layout', () => {
   const people = {
     root: { id: 'root', children: [], parents: [], spouses: [] },

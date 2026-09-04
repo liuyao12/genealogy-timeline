@@ -23,7 +23,9 @@ jobs:
           node-version: 22
 
       - name: Apply selected-profile family redesign
-        run: python3 .github/scripts/apply_geni_first_family_panel.py
+        run: |
+          python3 .github/scripts/apply_geni_first_family_panel.py
+          python3 .github/scripts/fix_geni_family_oauth.py
 
       - name: Run tests and syntax checks
         run: |

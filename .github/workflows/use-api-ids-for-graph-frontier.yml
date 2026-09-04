@@ -1,0 +1,34 @@
+name: Verify Geni graph frontier IDs
+on:
+  push:
+    branches: [refactor/geni-generation-graph]
+    paths: [.github/workflows/use-api-ids-for-graph-frontier.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/geni-generation-graph
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply API-ID frontier patch
+        run: python3 .github/scripts/use_api_ids_for_graph_frontier.py
+      - name: Test graph traversal
+        run: |
+          npm test
+          node --check geni-import-core.js
+          node --check app.js
+      - name: Commit verified patch
+        run: |
+          rm .github/scripts/use_api_ids_for_graph_frontier.py
+          rm .github/workflows/use-api-ids-for-graph-frontier.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use compact Geni IDs for graph frontiers"
+          git push origin HEAD:refactor/geni-generation-graph

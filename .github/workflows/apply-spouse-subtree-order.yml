@@ -1,0 +1,275 @@
+name: Apply spouse-descendant block ordering
+
+on:
+  push:
+    branches:
+      - fix/spouse-descendant-block-order
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/spouse-descendant-block-order
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply layout and palette changes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_path = Path('app.js')
+          app = app_path.read_text(encoding='utf-8')
+
+          old_household = '''    // Lay out the immediate marriage household before descending into any
+              // child's branch. Without this two-pass order, a prolific first marriage
+              // can push later spouses below the next sibling branch. The spouse rows now
+              // form one chronological block directly below the person; descendants of
+              // each union are expanded only after that block has been established.
+              const preparedGroups = orderedGroups.map(group => ({
+                group,
+                pendingChildren: group.childIds.filter(childId => !expanded.has(childId)),
+                transportedId: group.partnerId ? transportedParent([id, group.partnerId]) : '',
+                householdParentId: id
+              }));
+              const groupedPartners = new Set();
+              preparedGroups.forEach(prepared => {
+                const { group, transportedId } = prepared;
+                // A cousin-marriage household is rendered on the non-transported side.
+                // The transported spouse retains their primary occurrence in the natal
+                // branch; an auxiliary spouse occurrence is inserted below.
+                if (!group.partnerId || transportedId === id) return;
+                groupedPartners.add(group.partnerId);
+                if (transportedId) return;
+                const partnerWasPlaced = placed.has(group.partnerId);
+                place(group.partnerId, true, id);
+                if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
+                if (!partnerWasPlaced) prepared.householdParentId = group.partnerId;
+              });
+              preparedGroups.forEach(({ pendingChildren, transportedId, householdParentId }) => {
+                if (transportedId === id) return;
+                pendingChildren.forEach(childId => visit(childId, householdParentId));
+              });'''
+
+          new_household = '''    // Render each marriage as one chronological block: the spouse first,
+              // then that union's children and all of their descendant subtrees, before
+              // moving to the next spouse. This keeps the vertical reading order aligned
+              // with the genealogical meaning of successive households.
+              const groupedPartners = new Set();
+              orderedGroups.forEach(group => {
+                const transportedId = group.partnerId ? transportedParent([id, group.partnerId]) : '';
+                const pendingChildren = group.childIds.filter(childId => !expanded.has(childId));
+                let householdParentId = id;
+
+                // A cousin-marriage household is rendered on the non-transported side.
+                // The transported spouse retains their primary occurrence in the natal
+                // branch; an auxiliary spouse occurrence is inserted below.
+                if (group.partnerId && transportedId !== id) {
+                  groupedPartners.add(group.partnerId);
+                  if (!transportedId) {
+                    const partnerWasPlaced = placed.has(group.partnerId);
+                    place(group.partnerId, true, id);
+                    if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
+                    if (!partnerWasPlaced) householdParentId = group.partnerId;
+                  }
+                }
+
+                // When this person is the transported side of a cousin marriage, the
+                // other surviving lineage occurrence owns the shared child subtree.
+                if (transportedId === id) return;
+                pendingChildren.forEach(childId => visit(childId, householdParentId));
+              });'''
+
+          if app.count(old_household) != 1:
+              raise SystemExit(f'Expected one old household block, found {app.count(old_household)}')
+          app = app.replace(old_household, new_household)
+
+          old_insert = '''    const otherParentIndex = layoutEntries.findIndex(entry => entry.key === otherParentId);
+              const marriageYear = marriageYearFor(otherParentId, transportedId) ?? Number.POSITIVE_INFINITY;
+              const spouseSlots = layoutEntries.map((entry, index) => ({
+                entry,
+                index,
+                ownerId: displayParentByKey.get(entry.key),
+                marriageYear: marriageYearFor(otherParentId, entry.id) ?? Number.POSITIVE_INFINITY
+              })).filter(slot => slot.entry.isSpouse && slot.ownerId === otherParentId);
+              const laterSpouse = spouseSlots.find(slot => slot.marriageYear > marriageYear);
+              const insertAt = laterSpouse
+                ? laterSpouse.index
+                : spouseSlots.length
+                  ? Math.max(...spouseSlots.map(slot => slot.index)) + 1
+                  : Math.max(0, otherParentIndex + 1);'''
+
+          new_insert = '''    const otherParentIndex = layoutEntries.findIndex(entry => entry.key === otherParentId);
+              const marriageYear = marriageYearFor(otherParentId, transportedId) ?? Number.POSITIVE_INFINITY;
+              const spouseSlots = layoutEntries.map((entry, index) => ({
+                entry,
+                index,
+                ownerId: displayParentByKey.get(entry.key),
+                marriageYear: marriageYearFor(otherParentId, entry.id) ?? Number.POSITIVE_INFINITY
+              })).filter(slot => slot.entry.isSpouse && slot.ownerId === otherParentId);
+              const laterSpouse = spouseSlots.find(slot => slot.marriageYear > marriageYear);
+              const firstFamilyChildIndex = family.children
+                .map(childId => layoutEntries.findIndex(entry => entry.key === childId))
+                .filter(index => index >= 0)
+                .sort((a, b) => a - b)[0] ?? -1;
+              const isInsideOwnerBranch = entryKey => {
+                let currentKey = entryKey;
+                const seen = new Set();
+                while (currentKey && !seen.has(currentKey)) {
+                  if (currentKey === otherParentId) return true;
+                  seen.add(currentKey);
+                  currentKey = displayParentByKey.get(currentKey) || '';
+                }
+                return false;
+              };
+              let ownerBranchEnd = layoutEntries.findIndex((entry, index) =>
+                index > otherParentIndex && !isInsideOwnerBranch(entry.key)
+              );
+              if (ownerBranchEnd < 0) ownerBranchEnd = layoutEntries.length;
+              // A transported spouse belongs immediately before that union's child
+              // subtree. A childless transported marriage is placed before the next
+              // chronological spouse, or at the end of the owner's branch.
+              const insertAt = firstFamilyChildIndex >= 0
+                ? firstFamilyChildIndex
+                : laterSpouse
+                  ? laterSpouse.index
+                  : ownerBranchEnd;'''
+
+          if app.count(old_insert) != 1:
+              raise SystemExit(f'Expected one transported-spouse insertion block, found {app.count(old_insert)}')
+          app = app.replace(old_insert, new_insert)
+          app_path.write_text(app, encoding='utf-8')
+
+          styles_path = Path('styles.css')
+          styles = styles_path.read_text(encoding='utf-8')
+          old_gray = '.timeline-decade-band.tone-1 { fill: #e3e3e3; fill-opacity: .78; }'
+          new_gray = '.timeline-decade-band.tone-1 { fill: #eeeeee; fill-opacity: .78; }'
+          if styles.count(old_gray) != 1:
+              raise SystemExit(f'Expected one old gray rule, found {styles.count(old_gray)}')
+          styles_path.write_text(styles.replace(old_gray, new_gray), encoding='utf-8')
+
+          index_path = Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+          for old, new in [
+              ('./styles.css?v=67', './styles.css?v=68'),
+              ('./app.js?v=119', './app.js?v=120')
+          ]:
+              if index.count(old) != 1:
+                  raise SystemExit(f'Expected one cache key {old}, found {index.count(old)}')
+              index = index.replace(old, new)
+          index_path.write_text(index, encoding='utf-8')
+          PY
+
+      - name: Run unit tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+
+      - name: Smoke-test spouse followed by descendant subtree
+        shell: bash
+        run: |
+          cat > __household_order_smoke.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <iframe id="app" src="./index.html" style="width:1500px;height:1000px"></iframe>
+          <pre id="result">WAIT</pre>
+          <script>
+          const result = document.getElementById('result');
+          const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+          async function waitFor(check, label, attempts = 120) {
+            for (let attempt = 0; attempt < attempts; attempt += 1) {
+              const value = check();
+              if (value) return value;
+              await sleep(100);
+            }
+            throw new Error(`Timed out waiting for ${label}`);
+          }
+          (async () => {
+            try {
+              const frame = document.getElementById('app');
+              await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+              const doc = frame.contentDocument;
+              await waitFor(() => doc.querySelector('.timeline-node'), 'timeline nodes');
+              const filter = doc.getElementById('tree-filter');
+              filter.value = '';
+              filter.dispatchEvent(new Event('input', { bubbles: true }));
+              await sleep(1000);
+
+              const ids = {
+                margaret: 'profile-g6000000003858820967',
+                jamesIV: 'profile-g4229916861440069622',
+                jamesV: 'profile-g6000000003233882803',
+                archibald: 'profile-g6000000003232538566',
+                henryStewart: 'profile-g6000000005412245713',
+                henryVIII: 'profile-g6000000007442241030'
+              };
+              const primaryY = id => {
+                const node = doc.querySelector(`.timeline-node[data-node-key="${id}"]`);
+                const match = /translate\([^ ,]+[ ,]+([^)]+)\)/.exec(node?.getAttribute('transform') || '');
+                return match ? Number(match[1]) : NaN;
+              };
+              const rows = Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, primaryY(id)]));
+              const sequential = [rows.margaret, rows.jamesIV, rows.jamesV, rows.archibald, rows.henryStewart, rows.henryVIII]
+                .every((value, index, values) => Number.isFinite(value) && (index === 0 || values[index - 1] < value));
+
+              const data = await fetch('./data/british-royal-line.json').then(response => response.json());
+              const firstChildren = Object.values(data.people).filter(person =>
+                person.parents?.includes(ids.margaret) && person.parents?.includes(ids.jamesIV)
+              ).map(person => person.id);
+              const firstUnionDescendants = new Set();
+              const queue = [...firstChildren];
+              while (queue.length) {
+                const id = queue.shift();
+                if (firstUnionDescendants.has(id) || !data.people[id]) continue;
+                firstUnionDescendants.add(id);
+                queue.push(...(data.people[id].children || []));
+              }
+              const firstUnionRows = [...firstUnionDescendants]
+                .map(primaryY)
+                .filter(Number.isFinite);
+              const subtreeBeforeNextSpouse = firstUnionRows.length > 0
+                && firstUnionRows.every(y => y > rows.jamesIV && y < rows.archibald);
+
+              const gray = doc.querySelector('.timeline-decade-band.tone-1');
+              const computed = getComputedStyle(gray);
+              const lighterGray = computed.fill === 'rgb(238, 238, 238)' && Number(computed.fillOpacity) === 0.78;
+              const checks = { sequential, subtreeBeforeNextSpouse, lighterGray };
+              const passed = Object.values(checks).every(Boolean);
+              result.textContent = `${passed ? 'PASS' : 'FAIL'} ${JSON.stringify({ checks, rows, firstUnionRows, gray: computed.fill })}`;
+            } catch (error) {
+              result.textContent = `FAIL ${error.stack || error}`;
+            }
+          })();
+          </script>
+          HTML
+
+          python3 -m http.server 4173 > /tmp/lineage-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+          chrome="$(command -v google-chrome || command -v google-chrome-stable)"
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=20000 --dump-dom http://127.0.0.1:4173/__household_order_smoke.html > /tmp/lineage-order-smoke.html
+          grep -o 'PASS {[^<]*' /tmp/lineage-order-smoke.html
+          grep -q 'PASS {' /tmp/lineage-order-smoke.html
+          rm __household_order_smoke.html
+
+      - name: Commit verified changes
+        shell: bash
+        run: |
+          rm .github/workflows/apply-spouse-subtree-order.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Order each spouse before that union's descendant subtree"
+          git push origin HEAD:fix/spouse-descendant-block-order

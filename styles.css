@@ -132,7 +132,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-decade-bands { pointer-events: none; }
 .timeline-decade-band { shape-rendering: crispEdges; }
 .timeline-decade-band.tone-0 { fill: #ffffff; fill-opacity: .92; }
-.timeline-decade-band.tone-1 { fill: #e3e3e3; fill-opacity: .78; }
+.timeline-decade-band.tone-1 { fill: #eeeeee; fill-opacity: .78; }
 .ruler-decade-bands .timeline-decade-band { fill-opacity: .88; }
 .timeline-grid .ruler-band { fill: rgba(255, 255, 255, .84); stroke: none; }
 .timeline-grid .ruler-line { stroke: #555; stroke-width: 1.2; }

@@ -2915,38 +2915,38 @@ const formalMarriagePartnerIds = id => [...(formalMarriagePartnersByPerson.get(i
       }));
     });
     // Marriage stems cross above both spouse boxes, including their borders,
-  // so each stem reads as one uninterrupted line down to its children. Text
-  // and controls are painted afterward to remain legible and interactive.
-  (marriageOverlaysByParent.get(nodeKey) || []).forEach(marriage => {
-    const localX = marriage.x - pos.x;
-    if (localX < 0 || localX > lifespanWidth) return;
-    const overlay = svg('line', {
-      class: `timeline-edge marriage-node-overlay vertical ${marriage.className}`,
-      x1: localX, y1: 0, x2: localX, y2: rowHeight,
-      'data-marriage-year': marriage.year
-    });
-    overlay.append(svg('title', {}, marriage.title));
-    group.append(overlay);
+// so each stem reads as one uninterrupted line down to its children. Text
+// and controls are painted afterward to remain legible and interactive.
+(marriageOverlaysByParent.get(nodeKey) || []).forEach(marriage => {
+  const localX = marriage.x - pos.x;
+  if (localX < 0 || localX > lifespanWidth) return;
+  const overlay = svg('line', {
+    class: `timeline-edge marriage-node-overlay vertical ${marriage.className}`,
+    x1: localX, y1: 0, x2: localX, y2: rowHeight,
+    'data-marriage-year': marriage.year
   });
-  // Each occurrence repeats the complete set of dated formal marriages.
-  // The actual connector is drawn only at its paired household, while
-  // these short white ticks preserve the person's full marital history.
-  formalMarriagePartnerIds(id).forEach(partnerId => {
-    const partner = state.people[partnerId];
-    const marriageYear = marriageYearFor(id, partnerId);
-    if (!partner || marriageYear == null) return;
-    const localX = (marriageYear - birthYear(person)) * yearWidth;
-    if (localX < 0 || localX > lifespanWidth) return;
-    const isDivorced = marriageIsDivorced([id, partnerId]);
-    const marker = svg('line', {
-      class: `timeline-edge marriage-date-marker vertical${isDivorced ? ' divorced' : ''}`,
-      x1: localX, y1: 0, x2: localX, y2: rowHeight,
-      'data-marriage-year': marriageYear,
-      'data-partner-id': partnerId
-    });
-    marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}`));
-    group.append(marker);
+  overlay.append(svg('title', {}, marriage.title));
+  group.append(overlay);
+});
+// Each occurrence repeats the complete set of dated formal marriages.
+// The actual connector is drawn only at its paired household, while
+// these short white ticks preserve the person's full marital history.
+formalMarriagePartnerIds(id).forEach(partnerId => {
+  const partner = state.people[partnerId];
+  const marriageYear = marriageYearFor(id, partnerId);
+  if (!partner || marriageYear == null) return;
+  const localX = (marriageYear - birthYear(person)) * yearWidth;
+  if (localX < 0 || localX > lifespanWidth) return;
+  const isDivorced = marriageIsDivorced([id, partnerId]);
+  const marker = svg('line', {
+    class: `timeline-edge marriage-date-marker vertical${isDivorced ? ' divorced' : ''}`,
+    x1: localX, y1: 0, x2: localX, y2: rowHeight,
+    'data-marriage-year': marriageYear,
+    'data-partner-id': partnerId
   });
+  marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}`));
+  group.append(marker);
+});
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
     const hasChildren = scopedChildIds(id, scope).some(childId =>
       !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)

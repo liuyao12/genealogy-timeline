@@ -7,7 +7,7 @@ Lineage can load a descendant branch directly from Geni while remaining a static
 The public application key is declared in `index.html`:
 
 ```html
-<meta name="geni-app-id" content="Ks7E8mCtICOvVRpmvreTwOZdb4uMIiKNqRmF81II">
+<meta name="geni-app-id" content="zgW8WYPaAaGlYDbHFDhXfJosKALeFPUPczL7Q4bK">
 ```
 
 This value is an application identifier, not the application secret. Never add the secret or a user access token to this repository.

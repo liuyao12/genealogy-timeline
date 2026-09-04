@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decadeBands } from '../timeline-bands.js';
+import { asOfMaskSegments, decadeBandRects, decadeBands } from '../timeline-bands.js';
 
 test('creates alternating bands on fixed calendar decades', () => {
   assert.deepEqual(decadeBands(1420, 1460), [
@@ -27,4 +27,25 @@ test('handles BCE decades and empty ranges', () => {
   ]);
   assert.deepEqual(decadeBands(1500, 1500), []);
   assert.deepEqual(decadeBands('not-a-year', 1500), []);
+});
+
+test('places every colour transition exactly on the matching zero-year tick', () => {
+  const yearWidth = 4;
+  const xForYear = year => 36 + (year - 1480 + 0.5) * yearWidth;
+  const rects = decadeBandRects(1480, 1520, { yearWidth, xForYear });
+  const band1490 = rects.find(rect => rect.decade === 1490);
+  const band1500 = rects.find(rect => rect.decade === 1500);
+  assert.equal(band1500.x, xForYear(1500));
+  assert.equal(band1490.x + band1490.width, xForYear(1500));
+  assert.notEqual(band1500.x, xForYear(1500) - yearWidth / 2);
+});
+
+test('dims only future content with non-overlapping alpha-mask segments', () => {
+  assert.deepEqual(asOfMaskSegments(-220, 1000, 350), [
+    { x: -220, width: 570, opacity: 1 },
+    { x: 350, width: 430, opacity: 0.32 }
+  ]);
+  assert.deepEqual(asOfMaskSegments(0, 100, -20), [{ x: 0, width: 100, opacity: 0.32 }]);
+  assert.deepEqual(asOfMaskSegments(0, 100, 120), [{ x: 0, width: 100, opacity: 1 }]);
+  assert.deepEqual(asOfMaskSegments(0, 0, 50), []);
 });

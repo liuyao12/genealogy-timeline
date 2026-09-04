@@ -131,9 +131,9 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-ruler { position: sticky; top: 0; z-index: 31; display: block; height: 60px; min-width: 100%; margin-bottom: -60px; overflow: visible; cursor: crosshair; pointer-events: auto; transform-origin: 0 0; }
 .timeline-decade-bands { pointer-events: none; }
 .timeline-decade-band { shape-rendering: crispEdges; }
-.timeline-decade-band.tone-0 { fill: #d7e7f0; fill-opacity: .36; }
-.timeline-decade-band.tone-1 { fill: #f2e7d7; fill-opacity: .30; }
-.ruler-decade-bands .timeline-decade-band { fill-opacity: .42; }
+.timeline-decade-band.tone-0 { fill: #e3e9dc; fill-opacity: .42; }
+.timeline-decade-band.tone-1 { fill: #f2e8dc; fill-opacity: .36; }
+.ruler-decade-bands .timeline-decade-band { fill-opacity: .46; }
 .timeline-grid .ruler-band { fill: rgba(255, 255, 255, .84); stroke: none; }
 .timeline-grid .ruler-line { stroke: #555; stroke-width: 1.2; }
 .timeline-grid .year-tick { stroke: #777; stroke-width: 1; }
@@ -157,8 +157,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-as-of-preview .as-of-preview-label { fill: #333; font-weight: 700; }
 .timeline-as-of-preview .as-of-preview-pointer { fill: #666; stroke: none; }
 .timeline-current-year-line { fill: none; stroke: #e65100; stroke-width: 1.5; opacity: .9; vector-effect: non-scaling-stroke; pointer-events: none; }
-.timeline-as-of-layer, .timeline-as-of-dim, .timeline-as-of-line { pointer-events: none; }
-.timeline-as-of-dim { fill: #fff; fill-opacity: .68; }
+.timeline-as-of-layer, .timeline-as-of-line { pointer-events: none; }
 .timeline-as-of-line { fill: none; stroke: var(--as-of); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
 .timeline-as-of-hit { fill: none; stroke: rgba(0,0,0,.001); stroke-width: 14; cursor: none; pointer-events: stroke; vector-effect: non-scaling-stroke; }
 .timeline-as-of-hit:hover + .timeline-as-of-line { stroke-width: 3; }

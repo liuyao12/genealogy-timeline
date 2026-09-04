@@ -1,0 +1,201 @@
+name: Finalize spouse-descendant subtree ordering
+
+on:
+  push:
+    branches:
+      - fix/spouse-descendant-block-order
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/spouse-descendant-block-order
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply the proposed traversal patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          text = Path('.github/workflows/apply-spouse-subtree-order.yml').read_text(encoding='utf-8')
+          start = text.index('      - name: Apply layout and palette changes')
+          run_start = text.index('        run: |\n', start) + len('        run: |\n')
+          end = text.index('\n      - name:', run_start)
+          lines = text[run_start:end].splitlines()
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines) + '\n'
+          Path('/tmp/apply-proposed.sh').write_text(script, encoding='utf-8')
+          PY
+          bash /tmp/apply-proposed.sh
+
+      - name: Preserve each spouse's complete descendant block
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app.js')
+          source = path.read_text(encoding='utf-8')
+          old = '''      // Keep the next sibling below the preceding sibling's immediate
+              // household. Consecutive spouse roots belonging to the same person are
+              // the exception: only the preceding spouse row constrains the next one,
+              // so all marriages remain contiguous before any descendant subtree.
+              // A spouse followed by a different kind of branch still protects its
+              // complete descendant block.
+              for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
+                const precedingRoot = branches[branchIndex - 1].rootIndex;
+                const followingRoot = branches[branchIndex].rootIndex;
+                const precedingHousehold = [precedingRoot];
+                childrenByIndex.get(precedingRoot).forEach(childIndex => {
+                  precedingHousehold.push(childIndex);
+                  if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
+                });
+                const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);
+                const followingOwner = displayParentByKey.get(nodes[followingRoot].key);
+                const sharesMarriageOwner = nodes[precedingRoot].isSpouse
+                  && nodes[followingRoot].isSpouse
+                  && precedingOwner
+                  && precedingOwner === followingOwner;
+                const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
+                const uniquePrecedingHousehold = sharesMarriageOwner
+                  ? [precedingRoot]
+                  : protectsMarriageOrder
+                    ? branches[branchIndex - 1].indexes
+                    : unique(precedingHousehold);'''
+          new = '''      // Keep the next sibling below the preceding sibling's immediate
+              // household. When either sibling is a spouse occurrence, protect the
+              // preceding spouse's complete descendant subtree. This prevents compacting
+              // a later marriage into the middle of an earlier union's descendants.
+              for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
+                const precedingRoot = branches[branchIndex - 1].rootIndex;
+                const followingRoot = branches[branchIndex].rootIndex;
+                const precedingHousehold = [precedingRoot];
+                childrenByIndex.get(precedingRoot).forEach(childIndex => {
+                  precedingHousehold.push(childIndex);
+                  if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
+                });
+                const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
+                const uniquePrecedingHousehold = protectsMarriageOrder
+                  ? branches[branchIndex - 1].indexes
+                  : unique(precedingHousehold);'''
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one spouse-compaction exception, found {source.count(old)}')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Run unit tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+
+      - name: Verify complete spouse subtrees in Chromium
+        shell: bash
+        run: |
+          cat > __household_order_smoke.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <iframe id="app" src="./index.html" style="width:1500px;height:1000px"></iframe>
+          <pre id="result">WAIT</pre>
+          <script>
+          const result = document.getElementById('result');
+          const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+          async function waitFor(check, label, attempts = 150) {
+            for (let attempt = 0; attempt < attempts; attempt += 1) {
+              const value = check();
+              if (value) return value;
+              await sleep(100);
+            }
+            throw new Error(`Timed out waiting for ${label}`);
+          }
+          (async () => {
+            try {
+              const frame = document.getElementById('app');
+              await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+              const doc = frame.contentDocument;
+              await waitFor(() => doc.querySelector('.timeline-node'), 'timeline nodes');
+              const filter = doc.getElementById('tree-filter');
+              filter.value = '';
+              filter.dispatchEvent(new Event('input', { bubbles: true }));
+              await sleep(1200);
+
+              const ids = {
+                margaret: 'profile-g6000000003858820967',
+                jamesIV: 'profile-g4229916861440069622',
+                archibald: 'profile-g6000000003232538566',
+                henryStewart: 'profile-g6000000005412245713',
+                henryVIII: 'profile-g6000000007442241030'
+              };
+              const primaryY = id => {
+                const node = doc.querySelector(`.timeline-node[data-node-key="${id}"]`);
+                const match = /translate\([^ ,]+[ ,]+([^)]+)\)/.exec(node?.getAttribute('transform') || '');
+                return match ? Number(match[1]) : NaN;
+              };
+              const rows = Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, primaryY(id)]));
+
+              const data = await fetch('./data/british-royal-line.json').then(response => response.json());
+              const firstChildren = Object.values(data.people).filter(person =>
+                person.parents?.includes(ids.margaret) && person.parents?.includes(ids.jamesIV)
+              ).map(person => person.id);
+              const firstUnionDescendants = new Set();
+              const queue = [...firstChildren];
+              while (queue.length) {
+                const id = queue.shift();
+                if (firstUnionDescendants.has(id) || !data.people[id]) continue;
+                firstUnionDescendants.add(id);
+                queue.push(...(data.people[id].children || []));
+              }
+              const firstUnionRows = [...firstUnionDescendants].map(primaryY).filter(Number.isFinite);
+              const subtreeBottom = Math.max(...firstUnionRows);
+              const orderedBlocks = Number.isFinite(rows.margaret)
+                && rows.margaret < rows.jamesIV
+                && firstUnionRows.length > 0
+                && firstUnionRows.every(y => y > rows.jamesIV && y < rows.archibald)
+                && subtreeBottom < rows.archibald
+                && rows.archibald < rows.henryStewart
+                && rows.henryStewart < rows.henryVIII;
+
+              const gray = doc.querySelector('.timeline-canvas .timeline-decade-band.tone-1');
+              const computed = getComputedStyle(gray);
+              const lighterGray = computed.fill === 'rgb(238, 238, 238)' && Number(computed.fillOpacity) === 0.78;
+              const checks = { orderedBlocks, lighterGray };
+              const passed = Object.values(checks).every(Boolean);
+              result.textContent = `${passed ? 'PASS' : 'FAIL'} ${JSON.stringify({ checks, rows, firstUnionRows, subtreeBottom, gray: computed.fill, opacity: computed.fillOpacity })}`;
+            } catch (error) {
+              result.textContent = `FAIL ${error.stack || error}`;
+            }
+          })();
+          </script>
+          HTML
+
+          python3 -m http.server 4173 > /tmp/lineage-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+          chrome="$(command -v google-chrome || command -v google-chrome-stable)"
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=25000 --dump-dom http://127.0.0.1:4173/__household_order_smoke.html > /tmp/lineage-order-smoke.html
+          grep -oE '(PASS|FAIL) [^<]*' /tmp/lineage-order-smoke.html | head -1
+          grep -q 'PASS {' /tmp/lineage-order-smoke.html
+          rm __household_order_smoke.html
+
+      - name: Commit verified changes
+        shell: bash
+        run: |
+          rm .github/workflows/apply-spouse-subtree-order.yml
+          rm .github/workflows/diagnose-spouse-subtree-order.yml
+          rm .github/workflows/finalize-spouse-subtree-order.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Keep each spouse with that union's descendant subtree"
+          git push origin HEAD:fix/spouse-descendant-block-order

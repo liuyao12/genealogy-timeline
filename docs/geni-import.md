@@ -36,6 +36,10 @@ Official documentation:
 
 A completed import can become a new tree tab or be stitched into the active tree. The new-tab option is the safer default because it leaves the current tree unchanged.
 
+The selected-profile sidebar uses Geni's `profile/immediate-family` endpoint. Its primary **Load/Refresh immediate family** action is deliberately one API request: Geni returns the focus profile, related profile nodes, and union nodes together. Optional reign-event enrichment is not bundled into that action.
+
+New applications may have an extremely small quota until Geni approves them. Geni's current Help Center says approval is required for higher rate limits and may be required for particular endpoints. Request approval through the [Geni API Project discussions](https://www.geni.com/discussions?discussion_type=project-1124), identifying application 2164 and the public Lineage deployment.
+
 ## Traversal and family reconstruction
 
 The importer traverses breadth-first, one descendant generation at a time. Within each generation it:

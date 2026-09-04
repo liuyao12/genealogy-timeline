@@ -867,6 +867,12 @@ function fetchGeniJsonp(path, params = {}) {
         finish(error);
         return;
       }
+      if (/rate.?limit|too many requests|request limit|throttl/i.test(apiMessage)) {
+        const error = new Error('Geni has rate-limited this application. The application may still need Geni approval for a usable API quota.');
+        error.code = 'GENI_RATE_LIMIT';
+        finish(error);
+        return;
+      }
       finish(null, payload);
     };
     script.onerror = () => finish(new Error('The authorized Geni request could not be loaded.'));
@@ -915,37 +921,35 @@ async function fetchGeniUnionDetails(unionIds) {
 
 async function fetchGeniNeighborhood(id) {
   const requestedFocusId = canonicalGeniProfileId(id);
-  const initialProfiles = await fetchGeniProfileDetails([requestedFocusId]);
-  const focusRaw = initialProfiles[requestedFocusId] || Object.values(initialProfiles)[0];
+  const fields = [
+    'id', 'guid', 'url', 'profile_url', 'public', 'display_name',
+    'first_name', 'middle_name', 'last_name', 'maiden_name', 'title',
+    'gender', 'is_alive', 'birth', 'death', 'birth_date', 'birth_date_parts',
+    'death_date', 'death_date_parts', 'unions', 'partners', 'children',
+    'status', 'marriage', 'divorce', 'marriage_date', 'divorce_date'
+  ].join(',');
+  const payload = await fetchGeniJsonp(`${encodeURIComponent(requestedFocusId)}/immediate-family`, {
+    fields,
+    only_ids: 'true'
+  });
+  if (payload?.error) throw new Error(payload.error.message || 'Geni did not return immediate family.');
+
+  const focusRaw = payload?.focus;
   if (!focusRaw) throw new Error('Geni did not return the selected public profile.');
-
-  const rawFocusId = refId(focusRaw.id || focusRaw.url);
+  const rawFocusId = refId(focusRaw.id || focusRaw.url) || requestedFocusId;
   const focusId = geniProfileIdForApiProfile(focusRaw, requestedFocusId);
-  const unionIds = uniqueRefs(focusRaw.unions);
-  const unionDetails = unionIds.length ? await fetchGeniUnionDetails(unionIds) : {};
-  const relatedProfileIds = unique([
-    rawFocusId,
-    requestedFocusId,
-    ...Object.values(unionDetails).flatMap(union => [
-      ...uniqueRefs(union.partners || union.partner_ids || union.profiles),
-      ...uniqueRefs(union.children || union.child_ids)
-    ])
-  ]).filter(profileId => /^profile-/i.test(profileId));
-  const detailedProfiles = await fetchGeniProfileDetails(relatedProfileIds);
-  const profileRecords = Object.values({ ...initialProfiles, ...detailedProfiles });
-  if (!profileRecords.length) throw new Error('Geni returned no public profiles for the selected profile’s unions.');
+  const graphNodes = payload?.nodes && typeof payload.nodes === 'object'
+    ? { ...payload.nodes }
+    : {};
+  graphNodes[rawFocusId] = { ...focusRaw, id: rawFocusId };
 
-  // A profile's unions include both its parents' family group and each family
-  // group it formed. Union partners and children therefore provide an exact
-  // family structure; individual profile calls supply the names and dates.
-  const preferredIds = rawFocusId ? { [rawFocusId]: focusId } : {};
-  const mapped = inferRelationsFromUnions([
-    ...profileRecords,
-    ...Object.values(unionDetails)
-  ], preferredIds);
+  // Geni provides the focus profile, immediate-family profile nodes, and
+  // union nodes together. One request is sufficient to reconstruct parents,
+  // siblings, spouses or partners, children, and union dates.
+  const mapped = inferRelationsFromUnions(graphNodes, { [rawFocusId]: focusId });
   const canonicalFocus = { ...focusRaw, id: focusId };
   if (!mapped[focusId]) mapped[focusId] = canonicalFocus;
-  if (!Object.keys(mapped).length) throw new Error('Geni returned no verifiable profiles from the selected profile’s unions.');
+  if (!Object.keys(mapped).length) throw new Error('Geni returned no verifiable immediate-family profiles.');
   return { mapped, focusRaw: canonicalFocus };
 }
 
@@ -1110,16 +1114,9 @@ async function loadGeniImmediateFamily(profileId) {
     state.geniImport.loaded = Object.keys(records).length;
     state.geniImport.requests = 1;
   }
-  try {
-    const remoteProfileIds = unique(Object.values(records).map(raw => clean(raw.sourceId)).filter(id => /^profile-/i.test(id)));
-    const eventsByProfile = await fetchGeniReignEvents(remoteProfileIds);
-    Object.entries(eventsByProfile).forEach(([remoteId, events]) => {
-      const id = remapId(remoteId);
-      if (state.people[id] && events.length) {
-        state.people[id].personalEvents = normalizePersonalEvents([...state.people[id].personalEvents, ...events]);
-      }
-    });
-  } catch { /* Optional event enrichment must not block family import. */ }
+  // Keep the primary sidebar action to one Geni request. Reign and other
+  // optional event enrichment is intentionally left to separate research so
+  // an immediate-family refresh cannot consume several rate-limit slots.
   persist('Immediate family imported from Geni');
   render();
   const countSummary = newIds.length

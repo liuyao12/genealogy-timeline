@@ -31,37 +31,22 @@ jobs:
           app_path = Path('app.js')
           app = app_path.read_text(encoding='utf-8')
 
-          replacements = []
-
-          replacements.append((
-          '''function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
-            const unrelatedExtraGutter = 6;
-            return rowStep + (timelineNodesAreImmediateFamily(nodes[firstIndex], nodes[secondIndex]) ? 0 : unrelatedExtraGutter);
-          }''',
-          '''function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
+          # 1. Give unrelated nodes a visibly wider vertical gutter.
+          start = app.index('function timelineVerticalSeparation(')
+          end = app.index('\n\nfunction stabilizeTimelineOrder', start)
+          app = app[:start] + '''function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
             // Direct relatives retain the ordinary six-pixel row gutter. People
             // with no direct relationship—such as two spouses of one person—
             // receive a visibly wider separation without becoming hard blocks.
             const unrelatedExtraGutter = 10;
             return rowStep + (timelineNodesAreImmediateFamily(nodes[firstIndex], nodes[secondIndex]) ? 0 : unrelatedExtraGutter);
-          }'''
-          ))
+          }''' + app[end:]
 
-          replacements.append((
-          '''  nodes.forEach((_, index) => {
-            const currentRun = directRuns.at(-1);
-            const previousIndex = currentRun?.at(-1);
-            const previousOwner = previousIndex == null ? '' : displayParentByKey.get(nodes[previousIndex].key);
-            const currentOwner = displayParentByKey.get(nodes[index].key);
-            const sharesMarriageOwner = previousIndex != null
-              && nodes[previousIndex].isSpouse
-              && nodes[index].isSpouse
-              && previousOwner
-              && previousOwner === currentOwner;
-            if (previousIndex != null && (timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index]) || sharesMarriageOwner)) currentRun.push(index);
-            else directRuns.push([index]);
-          });''',
-          '''  nodes.forEach((_, index) => {
+          # 2. Co-spouses must not be fused into a rigid direct-family run.
+          start = app.index('  const directRuns = [];')
+          end = app.index('  const runByIndex = new Map();', start)
+          app = app[:start] + '''  const directRuns = [];
+          nodes.forEach((_, index) => {
             const currentRun = directRuns.at(-1);
             const previousIndex = currentRun?.at(-1);
             // Co-spouses are not directly related to one another. Keeping them
@@ -69,136 +54,102 @@ jobs:
             // unrelated-person gutter while still reusing open vertical space.
             if (previousIndex != null && timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index])) currentRun.push(index);
             else directRuns.push([index]);
-          });'''
-          ))
+          });
+          ''' + app[end:]
 
-          replacements.append((
-          '''      (siblingHouseholdConstraints.get(index) || []).forEach(precedingIndexes => {
-                const placedIndexes = precedingIndexes.filter(other => !offsetByIndex.has(other) && placedSet.has(other));
-                if (placedIndexes.length) targetTop = Math.max(targetTop, Math.max(...placedIndexes.map(other => nodes[other].y)) + rowStep - offset);
-              });''',
-          '''      (siblingHouseholdConstraints.get(index) || []).forEach(precedingIndexes => {
-                const placedIndexes = precedingIndexes.filter(other => !offsetByIndex.has(other) && placedSet.has(other));
-                if (placedIndexes.length) {
-                  const dependencyBottom = Math.max(...placedIndexes.map(other =>
-                    nodes[other].y + timelineVerticalSeparation(index, other, nodes, rowStep)
-                  ));
-                  targetTop = Math.max(targetTop, dependencyBottom - offset);
-                }
-              });'''
-          ))
+          # 3. Explicit ordering dependencies must also honor relationship gaps,
+          # even when their horizontal spans do not overlap.
+          old_dependency = '        if (placedIndexes.length) targetTop = Math.max(targetTop, Math.max(...placedIndexes.map(other => nodes[other].y)) + rowStep - offset);'
+          new_dependency = '''        if (placedIndexes.length) {
+                    const dependencyBottom = Math.max(...placedIndexes.map(other =>
+                      nodes[other].y + timelineVerticalSeparation(index, other, nodes, rowStep)
+                    ));
+                    targetTop = Math.max(targetTop, dependencyBottom - offset);
+                  }'''
+          if app.count(old_dependency) != 1:
+              raise SystemExit(f'Expected one dependency-spacing line, found {app.count(old_dependency)}')
+          app = app.replace(old_dependency, new_dependency)
 
-          replacements.append((
-          '''  const expandableIds = new Set(visibleIds);
-            const renderedPartnerIds = id => scopedSpouseIds(state.people[id], scope).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
-            // Collapse paths, not people.''',
-          '''  const expandableIds = new Set(visibleIds);
-            const renderedPartnerIds = id => scopedSpouseIds(state.people[id], scope).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
-            // Build one symmetric index of every dated formal marriage retained in
-            // the local graph. It deliberately includes spouses outside the active
-            // descendant projection: their profiles stay hidden, but the marriage
-            // date remains part of the visible person's life history.
-            const formalMarriagePartnersByPerson = new Map();
-            const addFormalMarriagePartner = (firstId, secondId) => {
-              if (!state.people[firstId] || !state.people[secondId] || firstId === secondId) return;
-              if (!formalMarriagePartnersByPerson.has(firstId)) formalMarriagePartnersByPerson.set(firstId, new Set());
-              formalMarriagePartnersByPerson.get(firstId).add(secondId);
-            };
-            Object.values(state.people).forEach(person => {
-              unique([
-                ...(person.spouses || []),
-                ...(person.divorcedSpouses || []),
-                ...Object.keys(person.marriageYears || {})
-              ]).forEach(partnerId => {
-                if (!state.people[partnerId] || marriageYearFor(person.id, partnerId) == null) return;
-                addFormalMarriagePartner(person.id, partnerId);
-                addFormalMarriagePartner(partnerId, person.id);
-              });
+          # 4. Build a symmetric index of every dated formal marriage in the
+          # local graph, including marriages outside the active descendant view.
+          insertion = '  const renderedPartnerIds = id => scopedSpouseIds(state.people[id], scope).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));\n'
+          if app.count(insertion) != 1:
+              raise SystemExit(f'Expected one renderedPartnerIds declaration, found {app.count(insertion)}')
+          marriage_index = insertion + '''  // A hidden spouse does not reopen another descendant tree, but the date of
+          // that marriage still belongs on every occurrence of this person's life bar.
+          const formalMarriagePartnersByPerson = new Map();
+          const addFormalMarriagePartner = (firstId, secondId) => {
+            if (!state.people[firstId] || !state.people[secondId] || firstId === secondId) return;
+            if (!formalMarriagePartnersByPerson.has(firstId)) formalMarriagePartnersByPerson.set(firstId, new Set());
+            formalMarriagePartnersByPerson.get(firstId).add(secondId);
+          };
+          Object.values(state.people).forEach(person => {
+            unique([
+              ...(person.spouses || []),
+              ...(person.divorcedSpouses || []),
+              ...Object.keys(person.marriageYears || {})
+            ]).forEach(partnerId => {
+              if (!state.people[partnerId] || marriageYearFor(person.id, partnerId) == null) return;
+              addFormalMarriagePartner(person.id, partnerId);
+              addFormalMarriagePartner(partnerId, person.id);
             });
-            const formalMarriagePartnerIds = id => [...(formalMarriagePartnersByPerson.get(id) || [])]
-              .sort((firstId, secondId) =>
-                (marriageYearFor(id, firstId) ?? Number.POSITIVE_INFINITY)
-                  - (marriageYearFor(id, secondId) ?? Number.POSITIVE_INFINITY)
-                || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]))
-              );
-            // Collapse paths, not people.'''
-          ))
+          });
+          const formalMarriagePartnerIds = id => [...(formalMarriagePartnersByPerson.get(id) || [])]
+            .sort((firstId, secondId) =>
+              (marriageYearFor(id, firstId) ?? Number.POSITIVE_INFINITY)
+                - (marriageYearFor(id, secondId) ?? Number.POSITIVE_INFINITY)
+              || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]))
+            );
+          '''
+          app = app.replace(insertion, marriage_index)
 
-          replacements.append((
-          '''        marriageOverlaysByParent.get(parentKey).push({
-                  x: trunkX,
-                  year: recordedMarriageYear,
-                  className: marriageClass,
-                  title: `Married ${visibleName(state.people[parentIds.find(id => id !== parentId)])} in ${recordedMarriageYear}`
-                });''',
-          '''        const partnerId = parentIds.find(id => id !== parentId);
-                marriageOverlaysByParent.get(parentKey).push({
-                  x: trunkX,
-                  year: recordedMarriageYear,
-                  partnerId,
-                  className: marriageClass,
-                  title: `Married ${visibleName(state.people[partnerId])} in ${recordedMarriageYear}`
-                });'''
-          ))
-
-          for old, new in replacements:
-              if app.count(old) != 1:
-                  raise SystemExit(f'Expected exactly one app.js replacement target; found {app.count(old)} for:\n{old[:180]}')
-              app = app.replace(old, new)
-
-          start_marker = '''    // Marriage stems cross above both spouse boxes, including their borders,'''
-          end_marker = '''    const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();'''
+          # 5. Keep continuous paired stems, then paint every known marriage date
+          # on every visual occurrence of the person.
+          start_marker = '    // Marriage stems cross above both spouse boxes, including their borders,'
+          end_marker = '    const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();'
           start = app.index(start_marker)
           end = app.index(end_marker, start)
-          overlay_replacement = '''    // Marriage stems cross above both spouse boxes, including their borders,
+          overlay_block = '''    // Marriage stems cross above both spouse boxes, including their borders,
             // so each stem reads as one uninterrupted line down to its children. Text
             // and controls are painted afterward to remain legible and interactive.
-            const displayedMarriagePartners = new Set();
             (marriageOverlaysByParent.get(nodeKey) || []).forEach(marriage => {
               const localX = marriage.x - pos.x;
               if (localX < 0 || localX > lifespanWidth) return;
               const overlay = svg('line', {
                 class: `timeline-edge marriage-node-overlay vertical ${marriage.className}`,
                 x1: localX, y1: 0, x2: localX, y2: rowHeight,
-                'data-marriage-year': marriage.year,
-                'data-partner-id': marriage.partnerId || ''
+                'data-marriage-year': marriage.year
               });
               overlay.append(svg('title', {}, marriage.title));
               group.append(overlay);
-              if (marriage.partnerId) displayedMarriagePartners.add(marriage.partnerId);
             });
-            // Every visual occurrence of a person carries every known formal
-            // marriage date. The one union physically paired to this occurrence
-            // keeps its continuous stem; the other dates remain short markers in
-            // the lifespan bar, whether paired elsewhere or outside this tree.
+            // Each occurrence repeats the complete set of dated formal marriages.
+            // The actual connector is drawn only at its paired household, while
+            // these short white ticks preserve the person's full marital history.
             formalMarriagePartnerIds(id).forEach(partnerId => {
-              if (displayedMarriagePartners.has(partnerId)) return;
               const partner = state.people[partnerId];
               const marriageYear = marriageYearFor(id, partnerId);
               if (!partner || marriageYear == null) return;
               const localX = (marriageYear - birthYear(person)) * yearWidth;
               if (localX < 0 || localX > lifespanWidth) return;
-              const pairKey = partnerRelationKey(id, partnerId);
-              const pairedElsewhere = renderedPartnerPairs.has(pairKey);
               const isDivorced = marriageIsDivorced([id, partnerId]);
               const marker = svg('line', {
-                class: `timeline-edge additional-marriage-marker vertical${isDivorced ? ' divorced' : ''}`,
+                class: `timeline-edge marriage-date-marker vertical${isDivorced ? ' divorced' : ''}`,
                 x1: localX, y1: 0, x2: localX, y2: rowHeight,
                 'data-marriage-year': marriageYear,
-                'data-partner-id': partnerId,
-                'data-paired-elsewhere': pairedElsewhere ? 'true' : 'false'
+                'data-partner-id': partnerId
               });
-              marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}; ${pairedElsewhere ? 'paired at another occurrence' : 'spouse not shown in this descendant tree'}`));
+              marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}`));
               group.append(marker);
             });
           '''
-          app = app[:start] + overlay_replacement + app[end:]
+          app = app[:start] + overlay_block + app[end:]
           app_path.write_text(app, encoding='utf-8')
 
           styles_path = Path('styles.css')
           styles = styles_path.read_text(encoding='utf-8')
           old_style = '.timeline-edge.unconnected-marriage-marker { stroke: #fff; stroke-width: 1.5; pointer-events: none; }'
-          new_style = '.timeline-edge.additional-marriage-marker { stroke: #fff; stroke-width: 1.5; pointer-events: none; }'
+          new_style = '.timeline-edge.marriage-date-marker { stroke: #fff; stroke-width: 1.5; pointer-events: none; }'
           if styles.count(old_style) != 1:
               raise SystemExit(f'Expected one old marriage-marker style; found {styles.count(old_style)}')
           styles_path.write_text(styles.replace(old_style, new_style), encoding='utf-8')
@@ -267,7 +218,7 @@ jobs:
 
               const data = await fetch('./data/british-royal-line.json').then(response => response.json());
               const marriagePartners = id => Object.keys(data.people[id]?.marriageYears || {});
-              const nodeMarriagePartners = node => new Set([...node.querySelectorAll('line[data-marriage-year][data-partner-id]')]
+              const nodeMarriagePartners = node => new Set([...node.querySelectorAll('line.marriage-date-marker[data-partner-id]')]
                 .map(line => line.getAttribute('data-partner-id')).filter(Boolean));
               const catherineExpected = marriagePartners(ids.catherine);
               const catherineNodes = [...doc.querySelectorAll(`.timeline-node[data-person-id="${ids.catherine}"]`)];

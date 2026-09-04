@@ -42,18 +42,20 @@ New applications may have an extremely small quota until Geni approves them. Gen
 
 ## Traversal and family reconstruction
 
-The importer traverses breadth-first, one descendant generation at a time. Within each generation it:
+The descendant importer follows the generation-frontier strategy used by HistoryLinkTools' Ancestor/Descendant Graph:
 
-1. Fetches profiles in groups of at most 25.
-2. Collects and fetches their union records in groups of at most 25.
-3. Identifies unions in which a current-generation person is a partner.
-4. Fetches all partners and children of those unions.
-5. Reconstructs reciprocal partner, spouse, parent, and child links.
-6. Queues the children as the next descendant generation.
+1. Keep one deduplicated breadth-first frontier for the current generation.
+2. Request `profile/immediate-family` graphs for up to 50 focus profiles at once.
+3. Read the profile and union nodes returned in those graphs.
+4. Keep only unions in which the focus profile has the `partner` edge; its parental union is not traversed downward.
+5. Retain the union's other partner and children, reconstruct reciprocal family links, and deduplicate the children into the next frontier.
+6. Save a checkpoint only after the complete generation is assembled.
 
-All returned unions are applied to profiles already retained in the import. This also reconstructs a current person's link to their parents when an import is resumed from a later generation.
+Thus, a generation of 1–50 descendants normally costs one graph request, rather than separate profile, union, and related-profile passes. If one inaccessible profile makes a batch fail, the importer divides that batch until the accessible profiles can still be retained.
 
-Union data, rather than gender assumptions, determines the two parents of each child. The conversion retains formal versus non-marital unions, marriage dates, divorce/end dates, and spouse status. Geni's `adopted_children` and `foster_children` subsets are included; the imported child's profile note records the parentage type.
+The requested graph fields are deliberately small: stable IDs, a display name, public/living/gender flags, and the `birth`, `death`, and `marriage` event objects. Geni's API does not document nested projection such as `birth.date.year`, so those event objects may transiently contain day, month, or location. Lineage immediately extracts only the year and does not store the other values. `marriage_date` and the duplicate `birth_date`/`death_date` fields are not requested.
+
+Marriage belongs to the union, rather than either spouse's profile. Union edges determine the correct two parents and distinguish a focus person's parental union from unions that produce descendants. Adopted and foster edge modifiers are retained when Geni supplies them.
 
 Profiles are keyed by Geni's durable public GUID when Geni returns one, in the form `profile-g600000…`. API node IDs remain aliases used only while resolving a live response. This allows a direct import to merge with existing Lineage records that already use public Geni IDs.
 

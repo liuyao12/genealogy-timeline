@@ -1,5 +1,5 @@
-import { DEFAULT_MAX_REQUESTS, DEFAULT_REQUEST_DELAY_MS } from './geni-config.js?v=1';
-import { canonicalGeniProfileId, clean, refId } from './geni-model.js?v=1';
+import { DEFAULT_MAX_REQUESTS, DEFAULT_REQUEST_DELAY_MS } from './geni-config.js?v=2';
+import { canonicalGeniProfileId, clean, refId } from './geni-model.js?v=2';
 
 function sleep(milliseconds) {
   return new Promise(resolve => globalThis.setTimeout(resolve, milliseconds));

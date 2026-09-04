@@ -900,7 +900,7 @@ async function fetchGeniUnionDetails(unionIds) {
   const ids = unique(unionIds).filter(id => /^union-/i.test(id));
   for (let index = 0; index < ids.length; index += 25) {
     const chunk = ids.slice(index, index + 25);
-    const fields = 'id,url,partners,children,status,marriage,divorce,marriage_date,divorce_date';
+    const fields = 'id,partners,children,status,marriage';
     // Geni's bulk dispatcher returns an empty result for a one-ID request.
     // Use the resource URL directly for singletons, including a final batch
     // containing only one union.
@@ -921,12 +921,11 @@ async function fetchGeniUnionDetails(unionIds) {
 
 async function fetchGeniNeighborhood(id) {
   const requestedFocusId = canonicalGeniProfileId(id);
+  // The graph endpoint cannot project birth.date.year directly, so request
+  // only the three event objects needed and discard their day/month/location.
   const fields = [
-    'id', 'guid', 'url', 'profile_url', 'public', 'display_name',
-    'first_name', 'middle_name', 'last_name', 'maiden_name', 'title',
-    'gender', 'is_alive', 'birth', 'death', 'birth_date', 'birth_date_parts',
-    'death_date', 'death_date_parts', 'unions', 'partners', 'children',
-    'status', 'marriage', 'divorce', 'marriage_date', 'divorce_date'
+    'id', 'guid', 'name', 'display_name', 'profile_url', 'public',
+    'gender', 'is_alive', 'living', 'birth', 'death', 'status', 'marriage'
   ].join(',');
   const payload = await fetchGeniJsonp(`${encodeURIComponent(requestedFocusId)}/immediate-family`, {
     fields,
@@ -968,7 +967,7 @@ async function fetchGeniProfileDetails(profileIds) {
   const ids = unique(profileIds).filter(id => /^profile-/i.test(id));
   for (let index = 0; index < ids.length; index += 25) {
     const chunk = ids.slice(index, index + 25);
-    const fields = 'id,guid,url,profile_url,public,display_name,first_name,middle_name,last_name,maiden_name,title,gender,is_alive,birth,death,birth_date,birth_date_parts,death_date,death_date_parts,unions';
+    const fields = 'id,guid,name,display_name,profile_url,public,gender,is_alive,living,birth,death,unions';
     const payload = chunk.length === 1
       ? await fetchGeniJsonp(encodeURIComponent(chunk[0]), { fields })
       : await fetchGeniJsonp('profile', {

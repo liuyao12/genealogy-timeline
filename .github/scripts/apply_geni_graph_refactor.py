@@ -10,6 +10,16 @@ def replace_once(path: str, old: str, new: str) -> None:
     file.write_text(text.replace(old, new), encoding='utf-8')
 
 
+def replace_section(path: str, start_marker: str, end_marker: str, replacement: str) -> None:
+    file = Path(path)
+    text = file.read_text(encoding='utf-8')
+    start = text.find(start_marker)
+    end = text.find(end_marker, start + len(start_marker))
+    if start < 0 or end < 0:
+        raise SystemExit(f'{path}: could not locate section markers')
+    file.write_text(text[:start] + start_marker + replacement + text[end:], encoding='utf-8')
+
+
 replace_once(
     'geni-api.js',
     "import { DEFAULT_MAX_REQUESTS, DEFAULT_REQUEST_DELAY_MS } from './geni-config.js?v=1';\nimport { canonicalGeniProfileId, clean, refId } from './geni-model.js?v=1';",
@@ -51,21 +61,6 @@ replace_once(
 replace_once('index.html', './geni-import.js?v=1', './geni-import.js?v=2')
 replace_once('index.html', './app.js?v=125', './app.js?v=126')
 
-old_docs = """The importer traverses breadth-first, one descendant generation at a time. Within each generation it:
-
-1. Fetches profiles in groups of at most 25.
-2. Collects and fetches their union records in groups of at most 25.
-3. Identifies unions in which a current-generation person is a partner.
-4. Fetches all partners and children of those unions.
-5. Reconstructs reciprocal partner, spouse, parent, and child links.
-6. Queues the children as the next descendant generation.
-
-All returned unions are applied to profiles already retained in the import. This also reconstructs a current person's link to their parents when an import is resumed at a later generation.
-
-Union data, rather than gender assumptions, determines the two parents of each child. The conversion retains formal versus non-marital unions, marriage dates, divorce/end dates, and spouse status. Geni's `adopted_children` and `foster_children` subsets are included; the imported child's profile note records the parentage type.
-
-Profiles are keyed by Geni's durable public GUID when Geni returns one, in the form `profile-g600000…`. API node IDs remain aliases used only while resolving a live response. This allows a direct import to merge with existing Lineage records that already use public Geni IDs."""
-
 new_docs = """The descendant importer follows the generation-frontier strategy used by HistoryLinkTools' Ancestor/Descendant Graph:
 
 1. Keep one deduplicated breadth-first frontier for the current generation.
@@ -82,4 +77,9 @@ The requested graph fields are deliberately small: stable IDs, a display name, p
 Marriage belongs to the union, rather than either spouse's profile. Union edges determine the correct two parents and distinguish a focus person's parental union from unions that produce descendants. Adopted and foster edge modifiers are retained when Geni supplies them.
 
 Profiles are keyed by Geni's durable public GUID when Geni returns one, in the form `profile-g600000…`. API node IDs remain aliases used only while resolving a live response. This allows a direct import to merge with existing Lineage records that already use public Geni IDs."""
-replace_once('docs/geni-import.md', old_docs, new_docs)
+replace_section(
+    'docs/geni-import.md',
+    '## Traversal and family reconstruction\n\n',
+    '\n\n## Request pacing and limits',
+    new_docs,
+)

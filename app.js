@@ -1885,10 +1885,10 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         branch.indexes.forEach(index => { preferredY[index] += shift; });
       });
       // Preserve the depth-first reading order: every sibling owns its complete
-    // descendant branch, and the next sibling begins only after that block.
-    // This also keeps each spouse followed by that union's descendants.
-    for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
-      const uniquePrecedingHousehold = branches[branchIndex - 1].indexes;
+      // descendant branch, and the next sibling begins only after that block.
+      // This also keeps each spouse followed by that union's descendants.
+      for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
+        const uniquePrecedingHousehold = branches[branchIndex - 1].indexes;
         const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
         const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
         const householdShift = Math.max(0, householdBottom + rowStep - followingTop);

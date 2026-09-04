@@ -1884,11 +1884,32 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         const shift = compactedSlots[branchIndex] - top;
         branch.indexes.forEach(index => { preferredY[index] += shift; });
       });
-      // Preserve the depth-first reading order: every sibling owns its complete
-      // descendant branch, and the next sibling begins only after that block.
-      // This also keeps each spouse followed by that union's descendants.
+      // Keep the next sibling below the preceding sibling's immediate
+      // household. Consecutive spouse roots belonging to the same person are
+      // the exception: only the preceding spouse row constrains the next one,
+      // so compact packing remains free after the depth-first source order is
+      // established. A spouse followed by a different branch still protects
+      // its complete descendant block.
       for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
-        const uniquePrecedingHousehold = branches[branchIndex - 1].indexes;
+        const precedingRoot = branches[branchIndex - 1].rootIndex;
+        const followingRoot = branches[branchIndex].rootIndex;
+        const precedingHousehold = [precedingRoot];
+        childrenByIndex.get(precedingRoot).forEach(childIndex => {
+          precedingHousehold.push(childIndex);
+          if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
+        });
+        const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);
+        const followingOwner = displayParentByKey.get(nodes[followingRoot].key);
+        const sharesMarriageOwner = nodes[precedingRoot].isSpouse
+          && nodes[followingRoot].isSpouse
+          && precedingOwner
+          && precedingOwner === followingOwner;
+        const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
+        const uniquePrecedingHousehold = sharesMarriageOwner
+          ? [precedingRoot]
+          : protectsMarriageOrder
+            ? branches[branchIndex - 1].indexes
+            : unique(precedingHousehold);
         const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
         const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
         const householdShift = Math.max(0, householdBottom + rowStep - followingTop);

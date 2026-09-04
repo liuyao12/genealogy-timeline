@@ -1,0 +1,97 @@
+<!doctype html>
+<meta charset="utf-8">
+<iframe id="app" src="../../index.html" style="width:1500px;height:1000px"></iframe>
+<pre id="result">WAIT</pre>
+<script>
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function waitFor(check, label) {
+  for (let i = 0; i < 180; i += 1) {
+    const value = check();
+    if (value) return value;
+    await sleep(100);
+  }
+  throw new Error(`Timed out waiting for ${label}`);
+}
+(async () => {
+  const result = document.getElementById('result');
+  try {
+    const frame = document.getElementById('app');
+    await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+    await waitFor(() => doc.querySelector('.timeline-node'), 'timeline nodes');
+    await sleep(800);
+
+    const settingsButton = doc.getElementById('global-events-button');
+    settingsButton.click();
+    const dialog = doc.getElementById('events-dialog');
+    await waitFor(() => dialog.open, 'settings dialog');
+    const snapshotToggle = doc.getElementById('timeline-as-of-toggle');
+    const backgroundToggle = doc.getElementById('timeline-background-toggle');
+    const initialBands = doc.querySelectorAll('.timeline-decade-band').length;
+
+    const labelsSimplified = settingsButton.textContent.trim() === 'Settings'
+      && dialog.querySelector('h2')?.textContent.trim() === 'Settings';
+    const oldControlsRemoved = !doc.getElementById('timeline-as-of-year')
+      && !doc.getElementById('set-timeline-as-of')
+      && !doc.getElementById('clear-timeline-as-of');
+    const initialToggles = snapshotToggle.textContent.trim() === 'Off'
+      && snapshotToggle.getAttribute('aria-pressed') === 'false'
+      && backgroundToggle.textContent.trim() === 'On'
+      && backgroundToggle.getAttribute('aria-pressed') === 'true'
+      && initialBands > 0;
+
+    snapshotToggle.click();
+    await sleep(250);
+    const snapshotOn = snapshotToggle.textContent.trim() === 'On'
+      && snapshotToggle.getAttribute('aria-pressed') === 'true'
+      && !!doc.querySelector('.timeline-as-of-line');
+    snapshotToggle.click();
+    await sleep(250);
+    const snapshotOff = snapshotToggle.textContent.trim() === 'Off'
+      && snapshotToggle.getAttribute('aria-pressed') === 'false'
+      && !doc.querySelector('.timeline-as-of-line');
+
+    backgroundToggle.click();
+    await sleep(250);
+    const backgroundOff = backgroundToggle.textContent.trim() === 'Off'
+      && backgroundToggle.getAttribute('aria-pressed') === 'false'
+      && doc.querySelectorAll('.timeline-decade-band').length === 0;
+
+    const workspace = JSON.parse(win.localStorage.getItem('lineage-tree-workspace-v1'));
+    const active = workspace.trees.find(tree => tree.id === workspace.activeTreeId);
+    const persisted = active.showDecadeBands === false
+      && active.asOfYear == null
+      && Number.isFinite(active.lastAsOfYear);
+
+    backgroundToggle.click();
+    await sleep(250);
+    const backgroundOnAgain = backgroundToggle.textContent.trim() === 'On'
+      && backgroundToggle.getAttribute('aria-pressed') === 'true'
+      && doc.querySelectorAll('.timeline-decade-band').length > 0;
+
+    const checks = {
+      labelsSimplified,
+      oldControlsRemoved,
+      initialToggles,
+      snapshotOn,
+      snapshotOff,
+      backgroundOff,
+      persisted,
+      backgroundOnAgain
+    };
+    const pass = Object.values(checks).every(Boolean);
+    result.textContent = `${pass ? 'PASS' : 'FAIL'} ${JSON.stringify({
+      checks,
+      initialBands,
+      persistedState: {
+        showDecadeBands: active.showDecadeBands,
+        asOfYear: active.asOfYear,
+        lastAsOfYear: active.lastAsOfYear
+      }
+    })}`;
+  } catch (error) {
+    result.textContent = `FAIL ${error.stack || error}`;
+  }
+})();
+</script>

@@ -1,10 +1,8 @@
 import {
   DEFAULT_MAX_PROFILES,
-  PROFILE_BATCH_SIZE,
-  PROFILE_FIELDS,
-  UNION_BATCH_SIZE,
-  UNION_FIELDS
-} from './geni-config.js?v=1';
+  FAMILY_GRAPH_BATCH_SIZE,
+  FAMILY_GRAPH_FIELDS
+} from './geni-config.js?v=2';
 import {
   applyUnionToPeople,
   canonicalGeniProfileId,
@@ -17,17 +15,132 @@ import {
   stableProfileId,
   unionChildRefs,
   unique
-} from './geni-model.js?v=1';
+} from './geni-model.js?v=2';
 import {
   GeniApiError,
   apiProfileIdentifier,
   chunk,
   cryptoId,
   payloadClassification,
-  profileRecords,
-  stripResourcePrefix,
-  unionRecords
-} from './geni-api.js?v=1';
+  stripResourcePrefix
+} from './geni-api.js?v=2';
+
+function graphCollection(payload) {
+  if (payload?.focus && payload?.nodes) return [payload];
+  const collection = payload?.results ?? payload?.families ?? payload?.graphs ?? payload;
+  if (Array.isArray(collection)) return collection;
+  if (!collection || typeof collection !== 'object') return [];
+  return Object.values(collection);
+}
+
+export function familyGraphRecords(payload) {
+  return graphCollection(payload).filter(graph => graph && typeof graph === 'object' && graph.focus && graph.nodes);
+}
+
+function graphNodeRecords(graph) {
+  if (!graph?.nodes || typeof graph.nodes !== 'object') return [];
+  return Object.entries(graph.nodes).map(([key, raw]) => {
+    if (!raw || typeof raw !== 'object') return null;
+    const id = refId(raw.id || raw.url || key);
+    return id ? { ...raw, id } : null;
+  }).filter(Boolean);
+}
+
+function mergeGraphProfile(previous, incoming) {
+  if (!previous) return incoming;
+  return {
+    ...previous,
+    ...incoming,
+    edges: incoming.edges || previous.edges,
+    birth: incoming.birth || previous.birth,
+    death: incoming.death || previous.death
+  };
+}
+
+export function graphProfileRecords(graph) {
+  const byId = new Map();
+  const add = raw => {
+    if (!raw || typeof raw !== 'object') return;
+    const id = refId(raw.id || raw.url);
+    if (!/^profile-/i.test(id)) return;
+    byId.set(id, mergeGraphProfile(byId.get(id), { ...raw, id }));
+  };
+  add(graph?.focus);
+  graphNodeRecords(graph).forEach(add);
+  return [...byId.values()];
+}
+
+function edgeEntries(raw) {
+  if (!raw?.edges || typeof raw.edges !== 'object') return [];
+  return Object.entries(raw.edges).map(([key, edge]) => ({
+    id: refId(edge?.id || edge?.url || key),
+    rel: clean(edge?.rel || edge?.relationship).toLowerCase(),
+    modifier: clean(edge?.rel_modifier?.type || edge?.rel_modifier || edge?.modifier).toLowerCase()
+  })).filter(edge => edge.id);
+}
+
+export function graphUnionRecords(graph) {
+  return graphNodeRecords(graph).filter(raw => /^union-/i.test(raw.id)).map(raw => {
+    const partners = [...refs(raw.partners || raw.partner_ids || raw.profiles)];
+    const children = [...refs(raw.children || raw.child_ids)];
+    const adoptedChildren = [...refs(raw.adopted_children)];
+    const fosterChildren = [...refs(raw.foster_children)];
+    for (const edge of edgeEntries(raw)) {
+      if (!/^profile-/i.test(edge.id)) continue;
+      if (edge.rel === 'partner') partners.push(edge.id);
+      if (edge.rel === 'child') {
+        children.push(edge.id);
+        if (edge.modifier.includes('adopt')) adoptedChildren.push(edge.id);
+        if (edge.modifier.includes('foster')) fosterChildren.push(edge.id);
+      }
+    }
+    return {
+      ...raw,
+      id: raw.id,
+      partners: unique(partners),
+      children: unique(children),
+      adopted_children: unique(adoptedChildren),
+      foster_children: unique(fosterChildren)
+    };
+  });
+}
+
+function graphFocusApiId(graph) {
+  return refId(graph?.focus?.id || graph?.focus?.url);
+}
+
+function graphFocusNode(graph) {
+  const focusId = graphFocusApiId(graph);
+  return graphProfileRecords(graph).find(raw => refId(raw.id || raw.url) === focusId) || graph?.focus || null;
+}
+
+export function graphDownwardUnions(graph) {
+  const focusId = graphFocusApiId(graph);
+  if (!focusId) return [];
+  const focusNode = graphFocusNode(graph);
+  const partnerUnionIds = new Set(
+    edgeEntries(focusNode)
+      .filter(edge => /^union-/i.test(edge.id) && edge.rel === 'partner')
+      .map(edge => edge.id)
+  );
+  const unions = graphUnionRecords(graph);
+  if (!partnerUnionIds.size) {
+    unions.forEach(union => {
+      if (refs(union.partners).includes(focusId)) partnerUnionIds.add(union.id);
+    });
+  }
+  return unions.filter(union => partnerUnionIds.has(union.id));
+}
+
+function graphAliases(graph) {
+  const focus = graph?.focus || {};
+  const guid = clean(focus.guid);
+  return unique([
+    refId(focus.id || focus.url),
+    profileIdFromGeniInput(focus.profile_url),
+    /^\d{15,}$/.test(guid) ? `profile-g${guid}` : ''
+  ]);
+}
 
 export class GeniDescendantImporter {
   constructor({ client, rootInput, descendantGenerations = 4, allDescendants = false, maxProfiles = DEFAULT_MAX_PROFILES, destination = 'new', checkpoint = null, onProgress = () => {} } = {}) {
@@ -56,7 +169,6 @@ export class GeniDescendantImporter {
     this.restrictedUnions = new Set(checkpoint?.restrictedUnions || []);
     this.profileCacheByApi = new Map();
     this.profileCacheByStable = new Map();
-    this.unionCache = new Map();
     this.cancelled = false;
     this.pauseReason = '';
   }
@@ -94,123 +206,102 @@ export class GeniDescendantImporter {
     return stableId;
   }
 
-  async fetchProfiles(ids) {
-    const requested = unique(ids.map(apiProfileIdentifier).filter(Boolean));
-    const missing = requested.filter(id => !this.profileCacheByApi.has(id) && !this.profileCacheByStable.has(this.apiToStable[id]));
-    for (const batch of chunk(missing, PROFILE_BATCH_SIZE)) await this.fetchProfileBatchResilient(batch);
-    const result = [];
-    for (const id of requested) {
-      const stableId = this.apiToStable[id] || (this.people[id] ? id : '');
-      const raw = this.profileCacheByApi.get(id) || this.profileCacheByStable.get(stableId);
-      if (raw) result.push(raw);
-    }
-    return [...new Set(result)];
-  }
-
-  async fetchProfileBatchResilient(ids) {
-    if (!ids.length) return;
-    let payload;
-    try {
-      payload = ids.length === 1
-        ? await this.client.request(encodeURIComponent(ids[0]), { fields: PROFILE_FIELDS, only_ids: 'true' })
-        : await this.client.request('profile', {
-          ids: ids.map(id => stripResourcePrefix(id, 'profile')).join(','),
-          fields: PROFILE_FIELDS,
-          only_ids: 'true'
-        });
-    } catch (error) {
-      if (['GENI_INVALID_ACCESS_TOKEN', 'GENI_REQUEST_LIMIT', 'GENI_CANCELLED', 'GENI_RATE_LIMIT'].includes(error?.code)) throw error;
-      if (ids.length > 1) {
-        const middle = Math.ceil(ids.length / 2);
-        await this.fetchProfileBatchResilient(ids.slice(0, middle));
-        await this.fetchProfileBatchResilient(ids.slice(middle));
-        return;
-      }
-      this.restrictedProfiles.add(ids[0]);
-      return;
-    }
-    const classification = payloadClassification(payload);
-    if (classification) {
-      if (classification.code === 'GENI_INVALID_ACCESS_TOKEN') throw new GeniApiError(classification.message, classification.code);
-      if (ids.length > 1) {
-        const middle = Math.ceil(ids.length / 2);
-        await this.fetchProfileBatchResilient(ids.slice(0, middle));
-        await this.fetchProfileBatchResilient(ids.slice(middle));
-      } else this.restrictedProfiles.add(ids[0]);
-      return;
-    }
-    const records = profileRecords(payload);
-    records.forEach(raw => this.registerProfile(raw, ids.length === 1 ? ids[0] : ''));
-    const unresolved = ids.filter(id => !this.profileCacheByApi.has(id) && !this.apiToStable[id]);
-    if (unresolved.length && ids.length > 1) {
-      for (const group of chunk(unresolved, Math.max(1, Math.floor(unresolved.length / 2)))) {
-        await this.fetchProfileBatchResilient(group);
-      }
-    } else unresolved.forEach(id => this.restrictedProfiles.add(id));
-  }
-
-  async fetchUnions(ids) {
-    const requested = unique(ids.map(refId).filter(id => /^union-/i.test(id)));
-    const missing = requested.filter(id => !this.unionCache.has(id));
-    for (const batch of chunk(missing, UNION_BATCH_SIZE)) await this.fetchUnionBatchResilient(batch);
-    return requested.map(id => this.unionCache.get(id)).filter(Boolean);
-  }
-
-  async fetchUnionBatchResilient(ids) {
-    if (!ids.length) return;
-    let payload;
-    try {
-      payload = ids.length === 1
-        ? await this.client.request(encodeURIComponent(ids[0]), { fields: UNION_FIELDS, only_ids: 'true' })
-        : await this.client.request('union', {
-          ids: ids.map(id => stripResourcePrefix(id, 'union')).join(','),
-          fields: UNION_FIELDS,
-          only_ids: 'true'
-        });
-    } catch (error) {
-      if (['GENI_INVALID_ACCESS_TOKEN', 'GENI_REQUEST_LIMIT', 'GENI_CANCELLED', 'GENI_RATE_LIMIT'].includes(error?.code)) throw error;
-      if (ids.length > 1) {
-        const middle = Math.ceil(ids.length / 2);
-        await this.fetchUnionBatchResilient(ids.slice(0, middle));
-        await this.fetchUnionBatchResilient(ids.slice(middle));
-        return;
-      }
-      this.restrictedUnions.add(ids[0]);
-      return;
-    }
-    const classification = payloadClassification(payload);
-    if (classification) {
-      if (classification.code === 'GENI_INVALID_ACCESS_TOKEN') throw new GeniApiError(classification.message, classification.code);
-      if (ids.length > 1) {
-        const middle = Math.ceil(ids.length / 2);
-        await this.fetchUnionBatchResilient(ids.slice(0, middle));
-        await this.fetchUnionBatchResilient(ids.slice(middle));
-      } else this.restrictedUnions.add(ids[0]);
-      return;
-    }
-    unionRecords(payload).forEach(raw => {
-      const id = refId(raw.id || raw.url);
-      if (id) this.unionCache.set(id, { ...raw, id });
-    });
-    const unresolved = ids.filter(id => !this.unionCache.has(id));
-    if (unresolved.length && ids.length > 1) {
-      for (const group of chunk(unresolved, Math.max(1, Math.floor(unresolved.length / 2)))) {
-        await this.fetchUnionBatchResilient(group);
-      }
-    } else unresolved.forEach(id => this.restrictedUnions.add(id));
-  }
-
-  addProfiles(records, requestedIds = []) {
+  addProfiles(records, requestedId = '') {
     const added = [];
-    records.forEach((raw, index) => {
-      const fallback = requestedIds[index] || refId(raw.id || raw.url);
+    for (const raw of records) {
+      const fallback = requestedId || refId(raw?.id || raw?.url);
       const stableId = this.registerProfile(raw, fallback);
-      if (!stableId || raw.public === false) return;
+      if (!stableId || raw?.public === false) continue;
       const incoming = profileToLineagePerson(raw, stableId, this.importedAt);
       this.people[stableId] = mergeLineagePerson(this.people[stableId], incoming);
       added.push(stableId);
-    });
+    }
     return unique(added);
+  }
+
+  async fetchFamilyGraphs(ids) {
+    const requested = unique(ids.map(apiProfileIdentifier).filter(Boolean));
+    const results = [];
+    for (const batch of chunk(requested, FAMILY_GRAPH_BATCH_SIZE)) {
+      results.push(...await this.fetchFamilyGraphBatchResilient(batch));
+    }
+    return results;
+  }
+
+  async fetchFamilyGraphBatchResilient(ids) {
+    if (!ids.length) return [];
+    let payload;
+    try {
+      payload = ids.length === 1
+        ? await this.client.request(`${encodeURIComponent(ids[0])}/immediate-family`, {
+          fields: FAMILY_GRAPH_FIELDS,
+          only_ids: 'true'
+        })
+        : await this.client.request('profile/immediate-family', {
+          ids: ids.map(id => stripResourcePrefix(id, 'profile')).join(','),
+          fields: FAMILY_GRAPH_FIELDS,
+          only_ids: 'true'
+        });
+    } catch (error) {
+      if (['GENI_INVALID_ACCESS_TOKEN', 'GENI_REQUEST_LIMIT', 'GENI_CANCELLED', 'GENI_RATE_LIMIT'].includes(error?.code)) throw error;
+      return this.splitOrRestrictFamilyGraphBatch(ids);
+    }
+
+    const classification = payloadClassification(payload);
+    if (classification) {
+      if (classification.code === 'GENI_INVALID_ACCESS_TOKEN') {
+        throw new GeniApiError(classification.message, classification.code, { payload });
+      }
+      if (classification.code === 'GENI_RATE_LIMIT') {
+        throw new GeniApiError(classification.message, classification.code, { retryable: true, payload });
+      }
+      return this.splitOrRestrictFamilyGraphBatch(ids);
+    }
+
+    const graphs = familyGraphRecords(payload);
+    if (!graphs.length) return this.splitOrRestrictFamilyGraphBatch(ids);
+
+    const remaining = new Set(ids);
+    const matched = [];
+    for (let index = 0; index < graphs.length; index += 1) {
+      const graph = graphs[index];
+      const aliases = new Set(graphAliases(graph));
+      let requestedId = [...remaining].find(id => aliases.has(id));
+      if (!requestedId && graphs.length === ids.length) requestedId = ids[index];
+      if (!requestedId) requestedId = remaining.values().next().value;
+      if (!requestedId) continue;
+      remaining.delete(requestedId);
+      matched.push({ requestedId, graph });
+    }
+
+    if (remaining.size) {
+      const missing = [...remaining];
+      if (ids.length > 1) matched.push(...await this.fetchFamilyGraphs(missing));
+      else missing.forEach(id => this.restrictedProfiles.add(id));
+    }
+    return matched;
+  }
+
+  async splitOrRestrictFamilyGraphBatch(ids) {
+    if (ids.length > 1) {
+      const middle = Math.ceil(ids.length / 2);
+      return [
+        ...await this.fetchFamilyGraphBatchResilient(ids.slice(0, middle)),
+        ...await this.fetchFamilyGraphBatchResilient(ids.slice(middle))
+      ];
+    }
+    this.restrictedProfiles.add(ids[0]);
+    return [];
+  }
+
+  profilesForUnion(graph, union) {
+    const byApiId = new Map(graphProfileRecords(graph).map(raw => [refId(raw.id || raw.url), raw]));
+    const needed = unique([
+      graphFocusApiId(graph),
+      ...refs(union.partners),
+      ...unionChildRefs(union)
+    ]);
+    return needed.map(id => byApiId.get(id)).filter(Boolean);
   }
 
   async processNextGeneration() {
@@ -220,40 +311,51 @@ export class GeniDescendantImporter {
       this.frontier = [];
       return;
     }
-    this.onProgress({ phase: 'generation', generation: this.generation, frontier: currentRequestIds.length, profiles: Object.keys(this.people).length });
-    const currentRawProfiles = await this.fetchProfiles(currentRequestIds);
-    const currentStableIds = this.addProfiles(currentRawProfiles, currentRequestIds);
+
+    this.onProgress({
+      phase: 'generation',
+      generation: this.generation,
+      frontier: currentRequestIds.length,
+      profiles: Object.keys(this.people).length
+    });
+
+    const graphResults = await this.fetchFamilyGraphs(currentRequestIds);
+    const downwardUnions = new Map();
+    const currentStableIds = [];
+
+    for (const { requestedId, graph } of graphResults) {
+      const focusRaw = graphFocusNode(graph);
+      if (!focusRaw) {
+        this.restrictedProfiles.add(requestedId);
+        continue;
+      }
+      const focusIds = this.addProfiles([focusRaw], requestedId);
+      const focusStableId = focusIds[0] || this.resolveStableId(requestedId) || this.registerProfile(focusRaw, requestedId);
+      if (!focusStableId || !this.people[focusStableId]) continue;
+      currentStableIds.push(focusStableId);
+      if (!this.rootId && requestedId === this.rootRequestId) this.rootId = focusStableId;
+
+      for (const union of graphDownwardUnions(graph)) {
+        this.addProfiles(this.profilesForUnion(graph, union));
+        downwardUnions.set(union.id, union);
+      }
+    }
+
     if (!this.rootId) this.rootId = currentStableIds[0] || this.resolveStableId(this.rootRequestId);
-    if (!this.rootId || !this.people[this.rootId]) throw new Error('Geni did not return the selected public profile.');
-
-    const unionIds = unique(currentRawProfiles.flatMap(raw => refs(raw.unions)));
-    const unions = await this.fetchUnions(unionIds);
-    const currentSet = new Set(currentStableIds);
-    const downwardUnions = unions.filter(union => refs(union.partners).some(partnerRef => currentSet.has(this.resolveStableId(partnerRef))));
-    const relatedRequestIds = unique(downwardUnions.flatMap(union => [...refs(union.partners), ...unionChildRefs(union)]).filter(id => /^profile-/i.test(id)));
-    const relatedRawProfiles = await this.fetchProfiles(relatedRequestIds);
-    this.addProfiles(relatedRawProfiles, relatedRequestIds);
-
-    // Apply every returned union that can be resolved among retained profiles.
-    // This includes the current generation's parental unions, which is what
-    // restores parent links when an import resumes at a later generation.
-    const relations = new Map();
-    for (const union of unions) relations.set(refId(union.id || union.url), applyUnionToPeople(this.people, union, this.resolveStableId));
+    if (!this.rootId || !this.people[this.rootId]) {
+      throw new Error('Geni did not return the selected public profile.');
+    }
 
     const nextFrontier = [];
-    for (const union of downwardUnions) {
-      const relation = relations.get(refId(union.id || union.url)) || { partnerIds: [] };
-      for (const childRef of unionChildRefs(union)) {
-        const childStableId = this.resolveStableId(childRef);
-        if (childStableId && this.people[childStableId]) nextFrontier.push(childStableId);
-        else if (/^profile-/i.test(childRef) && !this.restrictedProfiles.has(childRef)) nextFrontier.push(childRef);
-      }
-      for (const partnerId of relation.partnerIds) {
-        if (currentSet.has(partnerId)) {
-          this.people[partnerId].geniImmediateFamilyLoaded = true;
-          this.people[partnerId].geniImmediateFamilyVerifiedAt = this.importedAt;
-        }
-      }
+    for (const union of downwardUnions.values()) {
+      const relation = applyUnionToPeople(this.people, union, this.resolveStableId);
+      nextFrontier.push(...relation.childIds);
+    }
+
+    for (const focusStableId of unique(currentStableIds)) {
+      const focus = this.people[focusStableId];
+      focus.geniImmediateFamilyLoaded = true;
+      focus.geniImmediateFamilyVerifiedAt = this.importedAt;
     }
 
     currentRequestIds.forEach(id => this.processed.add(this.resolveStableId(id) || id));
@@ -263,6 +365,7 @@ export class GeniDescendantImporter {
     this.frontier = continueByDepth
       ? unique(nextFrontier).filter(id => !this.processed.has(this.resolveStableId(id) || id))
       : [];
+
     if (Object.keys(this.people).length >= this.maxProfiles && this.frontier.length) {
       this.pauseReason = `The ${this.maxProfiles}-profile pause target was reached after completing the current generation.`;
     }
@@ -293,7 +396,7 @@ export class GeniDescendantImporter {
 
   checkpoint() {
     return {
-      version: 1,
+      version: 2,
       rootInput: this.rootInput,
       rootRequestId: this.rootRequestId,
       rootId: this.rootId,

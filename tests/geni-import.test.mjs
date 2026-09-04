@@ -412,6 +412,9 @@ test('chunks a 51-profile generation into one 50-ID graph request and one single
   assert.equal(client.requestCount, 3, 'one root graph plus two requests for the 51-profile frontier');
   const secondGenerationCalls = client.calls.slice(1);
   assert.equal(secondGenerationCalls.filter(call => call.path === 'profile/immediate-family').length, 1);
-  assert.equal(String(secondGenerationCalls.find(call => call.path === 'profile/immediate-family')?.params.ids).split(',').length, 50);
+  const bulkIds = String(secondGenerationCalls.find(call => call.path === 'profile/immediate-family')?.params.ids).split(',');
+  assert.equal(bulkIds.length, 50);
+  assert.ok(bulkIds.every(id => /^\d+$/.test(id)), 'bulk frontiers use compact Geni API node IDs');
   assert.equal(secondGenerationCalls.filter(call => call.path !== 'profile/immediate-family').length, 1);
+  assert.match(secondGenerationCalls.find(call => call.path !== 'profile/immediate-family').path, /^profile-\d+\/immediate-family$/);
 });

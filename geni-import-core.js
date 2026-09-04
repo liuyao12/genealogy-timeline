@@ -219,8 +219,16 @@ export class GeniDescendantImporter {
     return unique(added);
   }
 
+  familyGraphRequestId(value) {
+    const stableId = this.resolveStableId(value);
+    return this.stableToApi[stableId] || apiProfileIdentifier(value);
+  }
+
   async fetchFamilyGraphs(ids) {
-    const requested = unique(ids.map(apiProfileIdentifier).filter(Boolean));
+    // After the first graph response, use Geni's compact API node IDs for
+    // every later frontier. This is the same key optimization used by
+    // HistoryLink and avoids relying on public GUIDs in bulk `ids` calls.
+    const requested = unique(ids.map(value => this.familyGraphRequestId(value)).filter(Boolean));
     const results = [];
     for (const batch of chunk(requested, FAMILY_GRAPH_BATCH_SIZE)) {
       results.push(...await this.fetchFamilyGraphBatchResilient(batch));

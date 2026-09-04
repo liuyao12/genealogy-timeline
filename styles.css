@@ -314,13 +314,13 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .dialog-intro { margin: -7px 0 17px; color: #666; font-size: 11px; line-height: 1.5; }
 .new-tree-intro { margin: 8px 0 16px; }
 .timeline-display-settings { display: grid; gap: 8px; margin: -5px 0 16px; padding: 10px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; }
-.timeline-as-of-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid #ddd; color: #222; font-size: 11px; font-weight: 600; }
-.timeline-as-of-controls { width: 190px; display: grid; grid-template-columns: 58px 44px 1fr; gap: 4px; }
-.timeline-as-of-controls input, .timeline-as-of-controls button { box-sizing: border-box; height: 30px; border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; font-size: 9px; }
-.timeline-as-of-controls input { min-width: 0; padding: 5px 7px; }
-.timeline-as-of-controls button { padding: 0 6px; cursor: pointer; }
-.timeline-as-of-controls button:hover:not(:disabled) { background: #eee; }
-.timeline-as-of-controls button:disabled { color: #aaa; cursor: default; }
+.timeline-toggle-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid #ddd; color: #222; font-size: 11px; font-weight: 600; }
+.timeline-toggle-label { display: grid; gap: 2px; }
+.timeline-toggle-label small { color: #777; font-size: 8px; font-weight: 400; line-height: 1.35; }
+.timeline-setting-toggle { box-sizing: border-box; min-width: 64px; height: 30px; padding: 0 12px; border: 1px solid #999; border-radius: 999px; background: #fff; color: #555; cursor: pointer; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.timeline-setting-toggle:hover { border-color: #222; background: #eee; color: #111; }
+.timeline-setting-toggle[aria-pressed="true"] { border-color: #111; background: #111; color: #fff; }
+.timeline-setting-toggle[aria-pressed="true"]:hover { background: #333; }
 .timeline-step-setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #222; font-size: 11px; font-weight: 600; }
 .timeline-stepper { width: 190px; display: grid; grid-template-columns: 28px minmax(0,1fr) 28px; align-items: center; border: 1px solid #999; border-radius: 7px; overflow: hidden; background: #fff; }
 .timeline-stepper button { width: 28px; height: 30px; padding: 0; border: 0; background: #fff; color: #111; cursor: pointer; font: 18px/1 Georgia, serif; }

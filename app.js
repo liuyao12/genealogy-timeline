@@ -62,6 +62,8 @@ const state = {
   timelineYearWidth: DEFAULT_TIMELINE_YEAR_WIDTH,
   timelineNodeHeight: DEFAULT_TIMELINE_NODE_HEIGHT,
   asOfYear: null,
+  lastAsOfYear: null,
+  showDecadeBands: true,
   treeFilter: '',
   relationVisibility: {},
   starterDataVersion: 0,
@@ -91,7 +93,7 @@ const els = Object.fromEntries([
   'relationship-households', 'add-relative',
   'name-periods-list', 'name-period-name', 'name-period-start', 'name-period-end', 'add-name-period',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
-  'events-dialog', 'close-events-dialog', 'timeline-as-of-year', 'set-timeline-as-of', 'clear-timeline-as-of', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
+  'events-dialog', 'close-events-dialog', 'timeline-as-of-toggle', 'timeline-background-toggle', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
   'add-form', 'parent-select', 'relation-type', 'new-tree-button', 'new-tree-dialog', 'new-tree-form', 'toast', 'save-status', 'tree-filter', 'royal-example-button',
   'ai-import-dialog', 'close-ai-import', 'ai-import-prompt', 'copy-ai-import-prompt', 'ai-import-json', 'upload-ai-import', 'stitch-ai-import'
 ].map(id => [id, document.getElementById(id)]));
@@ -492,6 +494,7 @@ function loadBritishRoyalExample({ persistResult = true } = {}) {
   state.people = createBritishRoyalSample();
   state.globalEvents = createBritishHistoryEvents();
   state.asOfYear = null;
+  state.lastAsOfYear = null;
   state.rootId = britishRoyalStarterRootId();
   state.selectedId = '';
   state.ephemeral = false;
@@ -626,7 +629,8 @@ function treeSnapshot(id = treeWorkspace.activeTreeId) {
     id: id || uniqueId('tree'), title: state.title, rootId: state.rootId, people: state.people,
     globalEvents: state.globalEvents, reignColor: state.reignColor,
     timelineYearWidth: state.timelineYearWidth, timelineNodeHeight: state.timelineNodeHeight,
-    asOfYear: state.asOfYear, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
+    asOfYear: state.asOfYear, lastAsOfYear: state.lastAsOfYear,
+    showDecadeBands: state.showDecadeBands, treeFilter: state.treeFilter, relationVisibility: state.relationVisibility,
     starterDataVersion: state.starterDataVersion, manualTree: state.manualTree,
     collapsedIds: [...state.collapsedIds], zoom: state.zoom,
     viewportLeft: viewport?.scrollLeft || 0, viewportTop: viewport?.scrollTop || 0
@@ -655,6 +659,8 @@ function applyTreeSnapshot(saved) {
   state.timelineYearWidth = timelineYearWidth(saved.timelineYearWidth);
   state.timelineNodeHeight = timelineNodeHeight(saved.timelineNodeHeight);
   state.asOfYear = numericYear(saved.asOfYear);
+  state.lastAsOfYear = numericYear(saved.lastAsOfYear ?? saved.asOfYear);
+  state.showDecadeBands = saved.showDecadeBands !== false;
   state.treeFilter = clean(saved.treeFilter);
   if (!state.treeFilter && savedRootId === profileIdFromInput(HENRY_VII_GENI_URL)) state.treeFilter = 'king queen';
   state.relationVisibility = migratedVisibility.relationVisibility;
@@ -2601,16 +2607,18 @@ function renderTimeline() {
   // before it. The background remains outside the historical-content mask.
   const decadeBackground = svg('g', { class: 'timeline-decade-bands', 'aria-hidden': 'true' });
   const rulerDecadeBackground = svg('g', { class: 'timeline-decade-bands ruler-decade-bands', 'aria-hidden': 'true' });
-  decadeBandRects(minYear, maxYear, { yearWidth, xForYear }).forEach(({ decade, x, width: bandWidth, tone }) => {
-    const bandAttributes = {
-      x,
-      width: bandWidth,
-      class: `timeline-decade-band tone-${tone}`,
-      'data-decade': decade
-    };
-    decadeBackground.append(svg('rect', { ...bandAttributes, y: eventTop, height: eventBottom - eventTop }));
-    rulerDecadeBackground.append(svg('rect', { ...bandAttributes, y: 0, height: rulerHeight }));
-  });
+  if (state.showDecadeBands) {
+    decadeBandRects(minYear, maxYear, { yearWidth, xForYear }).forEach(({ decade, x, width: bandWidth, tone }) => {
+      const bandAttributes = {
+        x,
+        width: bandWidth,
+        class: `timeline-decade-band tone-${tone}`,
+        'data-decade': decade
+      };
+      decadeBackground.append(svg('rect', { ...bandAttributes, y: eventTop, height: eventBottom - eventTop }));
+      rulerDecadeBackground.append(svg('rect', { ...bandAttributes, y: 0, height: rulerHeight }));
+    });
+  }
 
   // Dim future timeline content, not the calendar paper beneath it. A mask
   // reproduces the old 32% future-content visibility while leaving both
@@ -3772,17 +3780,45 @@ function syncTimelineSettingControls() {
     down.disabled = index <= 0;
     up.disabled = index < 0 || index >= options.length - 1;
   };
+  const syncToggle = (button, enabled) => {
+    button.setAttribute('aria-pressed', String(enabled));
+    button.textContent = enabled ? 'On' : 'Off';
+  };
   sync(TIMELINE_YEAR_WIDTH_OPTIONS, state.timelineYearWidth, els['timeline-scale-value'], els['timeline-scale-down'], els['timeline-scale-up']);
   sync(TIMELINE_NODE_HEIGHT_OPTIONS, state.timelineNodeHeight, els['timeline-height-value'], els['timeline-height-down'], els['timeline-height-up']);
-  els['timeline-as-of-year'].value = state.asOfYear ?? '';
-  els['clear-timeline-as-of'].disabled = state.asOfYear == null;
+  syncToggle(els['timeline-as-of-toggle'], state.asOfYear != null);
+  syncToggle(els['timeline-background-toggle'], state.showDecadeBands);
 }
 
-function applyHistoricalYear() {
-  const year = numericYear(els['timeline-as-of-year'].value);
-  if (year == null) return toast('Enter a year for the historical snapshot.', true);
-  state.asOfYear = year;
-  persist(`Historical snapshot set to ${year}`);
+function defaultHistoricalSnapshotYear() {
+  const currentYear = new Date().getFullYear();
+  const candidateYears = [...activeDescendantScope().allowedIds].map(id => {
+    const person = state.people[id];
+    if (!person) return null;
+    if (person.isLiving) return currentYear;
+    return numericYear(person.deathYear) ?? numericYear(person.birthYear);
+  }).filter(Number.isFinite);
+  const latestYear = Math.max(...candidateYears);
+  return Number.isFinite(latestYear) ? Math.min(currentYear, latestYear) : currentYear;
+}
+
+function toggleHistoricalSnapshot() {
+  if (state.asOfYear == null) {
+    state.asOfYear = numericYear(state.lastAsOfYear) ?? defaultHistoricalSnapshotYear();
+    state.lastAsOfYear = state.asOfYear;
+    persist(`Historical snapshot turned on at ${state.asOfYear}`);
+  } else {
+    state.lastAsOfYear = state.asOfYear;
+    state.asOfYear = null;
+    persist('Historical snapshot turned off');
+  }
+  render();
+  syncTimelineSettingControls();
+}
+
+function toggleDecadeBackground() {
+  state.showDecadeBands = !state.showDecadeBands;
+  persist(`Decade background turned ${state.showDecadeBands ? 'on' : 'off'}`);
   render();
   syncTimelineSettingControls();
 }
@@ -3809,14 +3845,8 @@ els['global-events-button'].addEventListener('click', () => {
   els['events-dialog'].show();
 });
 els['close-events-dialog'].addEventListener('click', () => els['events-dialog'].close());
-els['set-timeline-as-of'].addEventListener('click', applyHistoricalYear);
-els['timeline-as-of-year'].addEventListener('keydown', event => { if (event.key === 'Enter') applyHistoricalYear(); });
-els['clear-timeline-as-of'].addEventListener('click', () => {
-  state.asOfYear = null;
-  persist('Historical snapshot cleared');
-  render();
-  syncTimelineSettingControls();
-});
+els['timeline-as-of-toggle'].addEventListener('click', toggleHistoricalSnapshot);
+els['timeline-background-toggle'].addEventListener('click', toggleDecadeBackground);
 els['timeline-scale-down'].addEventListener('click', () => stepTimelineSetting('timelineYearWidth', TIMELINE_YEAR_WIDTH_OPTIONS, -1, 'Timeline scale updated'));
 els['timeline-scale-up'].addEventListener('click', () => stepTimelineSetting('timelineYearWidth', TIMELINE_YEAR_WIDTH_OPTIONS, 1, 'Timeline scale updated'));
 els['timeline-height-down'].addEventListener('click', () => stepTimelineSetting('timelineNodeHeight', TIMELINE_NODE_HEIGHT_OPTIONS, -1, 'Node height updated'));
@@ -3880,6 +3910,8 @@ els['new-tree-form'].addEventListener('submit', event => {
   state.people = {};
   state.globalEvents = [];
   state.asOfYear = null;
+  state.lastAsOfYear = null;
+  state.showDecadeBands = true;
   state.rootId = '';
   state.selectedId = '';
   state.editingProfileId = '';
@@ -4012,9 +4044,10 @@ function placeHistoricalYearFromRuler(event) {
   const year = historicalYearFromRulerPointer(event);
   if (year == null) return;
   state.asOfYear = year;
-  els['timeline-as-of-year'].value = year;
+  state.lastAsOfYear = year;
   persist(`Historical snapshot set to ${year}`);
   render();
+  syncTimelineSettingControls();
 }
 els['timeline-ruler'].addEventListener('mousemove', previewHistoricalYear);
 els['timeline-ruler'].addEventListener('mouseleave', hideHistoricalYearPreview);
@@ -4029,8 +4062,9 @@ function updateHistoricalYearFromRuler(event) {
   const year = historicalYearFromRulerPointer(event);
   if (year == null || year === state.asOfYear) return;
   state.asOfYear = year;
-  els['timeline-as-of-year'].value = year;
+  state.lastAsOfYear = year;
   render();
+  syncTimelineSettingControls();
 }
 function beginHistoricalYearSlide(event) {
   event.stopPropagation();

@@ -7,10 +7,10 @@ import {
   GENI_TOKEN_EXPIRY_KEY,
   GENI_TOKEN_SESSION_KEY,
   WORKSPACE_STORAGE_KEY
-} from './geni-config.js?v=1';
-import { clean, profileIdFromGeniInput } from './geni-model.js?v=1';
-import { GeniJsonpClient, cryptoId } from './geni-api.js?v=1';
-import { GeniDescendantImporter, lineageTreeSnapshot } from './geni-import-core.js?v=1';
+} from './geni-config.js?v=2';
+import { clean, profileIdFromGeniInput } from './geni-model.js?v=2';
+import { GeniJsonpClient, cryptoId } from './geni-api.js?v=2';
+import { GeniDescendantImporter, lineageTreeSnapshot } from './geni-import-core.js?v=2';
 
 function storageJson(storage, key, fallback = null) {
   try {

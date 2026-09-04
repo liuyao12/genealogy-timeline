@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { FAMILY_GRAPH_FIELDS } from '../geni-config.js';
 import {
   applyUnionToPeople,
   canonicalGeniProfileId,
@@ -8,7 +9,13 @@ import {
   stableProfileId,
   unionChildRefs
 } from '../geni-model.js';
-import { GeniDescendantImporter, lineageTreeSnapshot } from '../geni-import-core.js';
+import {
+  GeniDescendantImporter,
+  familyGraphRecords,
+  graphDownwardUnions,
+  graphUnionRecords,
+  lineageTreeSnapshot
+} from '../geni-import-core.js';
 
 test('normalizes public Geni profile IDs and URLs', () => {
   assert.equal(canonicalGeniProfileId('6000000003760873898'), 'profile-g6000000003760873898');
@@ -21,17 +28,21 @@ test('normalizes public Geni profile IDs and URLs', () => {
   assert.equal(profileIdFromGeniInput('https://example.com/6000000003760873898'), '');
 });
 
-test('maps a Geni profile to the Lineage schema using the public GUID', () => {
+test('retains only life-event years from a Geni profile', () => {
   const raw = {
     id: 'profile-42',
     guid: '6000000000000000042',
     profile_url: 'https://www.geni.com/people/Test/6000000000000000042',
     display_name: 'Test Person',
-    first_name: 'Test',
-    last_name: 'Person',
     gender: 'female',
-    birth: { date: { year: 1901 }, location: { place_name: 'Beijing' } },
-    death_date_parts: { year: 1988 }
+    birth: {
+      date: { year: 1901, month: 2, day: 3 },
+      location: { place_name: 'Beijing' }
+    },
+    death: {
+      date: { year: 1988, month: 4, day: 5 },
+      location: { place_name: 'San Francisco' }
+    }
   };
   assert.equal(stableProfileId(raw), 'profile-g6000000000000000042');
   const person = profileToLineagePerson(raw, '', '2026-09-03T00:00:00.000Z');
@@ -39,11 +50,11 @@ test('maps a Geni profile to the Lineage schema using the public GUID', () => {
   assert.equal(person.displayName, 'Test Person');
   assert.equal(person.birthYear, '1901');
   assert.equal(person.deathYear, '1988');
-  assert.equal(person.place, 'Beijing');
-  assert.equal(person.sourceProvider, 'geni');
+  assert.equal(person.place, '');
+  assert.doesNotMatch(JSON.stringify(person), /Beijing|San Francisco|"month"|"day"/);
 });
 
-test('reconstructs spouse, child, marriage, and divorce links from a union', () => {
+test('reconstructs spouse, child, and marriage-year links from a union', () => {
   const people = {
     'profile-a': profileToLineagePerson({ id: 'profile-a', name: 'A' }, 'profile-a'),
     'profile-b': profileToLineagePerson({ id: 'profile-b', name: 'B' }, 'profile-b'),
@@ -53,9 +64,11 @@ test('reconstructs spouse, child, marriage, and divorce links from a union', () 
     id: 'union-1',
     partners: ['profile-a', 'profile-b'],
     children: ['profile-c'],
-    status: 'ex_spouse',
-    marriage: { date: { year: 1920 } },
-    divorce: { date: { year: 1930 } }
+    status: 'spouse',
+    marriage: {
+      date: { year: 1920, month: 6, day: 7 },
+      location: { place_name: 'London' }
+    }
   };
   applyUnionToPeople(people, union, value => value);
   assert.deepEqual(people['profile-a'].spouses, ['profile-b']);
@@ -63,8 +76,7 @@ test('reconstructs spouse, child, marriage, and divorce links from a union', () 
   assert.deepEqual(people['profile-c'].parents, ['profile-a', 'profile-b']);
   assert.deepEqual(people['profile-a'].children, ['profile-c']);
   assert.equal(people['profile-a'].marriageYears['profile-b'], '1920');
-  assert.equal(people['profile-a'].relationshipEndYears['profile-b'], '1930');
-  assert.equal(people['profile-a'].relationshipEndStatuses['profile-b'], 'divorced');
+  assert.doesNotMatch(JSON.stringify(people), /London|"month"|"day"/);
 });
 
 test('includes adopted and foster children even when Geni lists them separately', () => {
@@ -87,10 +99,15 @@ test('includes adopted and foster children even when Geni lists them separately'
   assert.match(people['profile-foster'].note, /foster child/);
 });
 
-class FakeClient {
+function idOf(value) {
+  return String(value || '').split('/').filter(Boolean).at(-1) || '';
+}
+
+class FakeGraphClient {
   constructor(resources) {
     this.resources = resources;
     this.requestCount = 0;
+    this.calls = [];
     this.cancelled = false;
   }
 
@@ -98,32 +115,134 @@ class FakeClient {
     this.cancelled = true;
   }
 
-  lookup(id) {
-    if (this.resources[id]) return this.resources[id];
-    const guid = String(id).match(/^profile-g(\d+)$/i)?.[1];
-    return guid ? Object.values(this.resources).find(resource => String(resource?.guid) === guid) : undefined;
+  profileFor(value) {
+    const requested = idOf(value);
+    if (this.resources[requested]) return this.resources[requested];
+    const compact = requested.replace(/^profile-/, '');
+    if (this.resources[`profile-${compact}`]) return this.resources[`profile-${compact}`];
+    const guid = compact.replace(/^g/, '');
+    return Object.values(this.resources).find(resource => String(resource?.guid || '') === guid) || null;
+  }
+
+  unionFor(value) {
+    const id = idOf(value);
+    return this.resources[id] || this.resources[`union-${id.replace(/^union-/, '')}`] || null;
+  }
+
+  graphFor(value) {
+    const focus = this.profileFor(value);
+    if (!focus) return null;
+    const focusId = idOf(focus.id || focus.url);
+    const nodes = {};
+    const ensureProfile = profileId => {
+      const raw = this.profileFor(profileId);
+      if (!raw) return null;
+      const id = idOf(raw.id || raw.url);
+      nodes[id] ||= { ...raw, id, edges: {} };
+      nodes[id].edges ||= {};
+      return nodes[id];
+    };
+    ensureProfile(focusId);
+
+    for (const unionRef of focus.unions || []) {
+      const union = this.unionFor(unionRef);
+      if (!union) continue;
+      const unionId = idOf(union.id || union.url || unionRef);
+      const edges = {};
+      const adopted = new Set((union.adopted_children || []).map(idOf));
+      const foster = new Set((union.foster_children || []).map(idOf));
+      for (const profileId of union.partners || []) {
+        const id = idOf(profileId);
+        edges[id] = { rel: 'partner' };
+        const node = ensureProfile(id);
+        if (node) node.edges[unionId] = { rel: 'partner' };
+      }
+      for (const profileId of [
+        ...(union.children || []),
+        ...(union.adopted_children || []),
+        ...(union.foster_children || [])
+      ]) {
+        const id = idOf(profileId);
+        const edge = { rel: 'child' };
+        if (adopted.has(id)) edge.rel_modifier = 'adopted';
+        if (foster.has(id)) edge.rel_modifier = 'foster';
+        edges[id] = edge;
+        const node = ensureProfile(id);
+        if (node) node.edges[unionId] = { ...edge };
+      }
+      nodes[unionId] = {
+        id: unionId,
+        status: union.status,
+        marriage: union.marriage,
+        edges
+      };
+    }
+    return { focus: { ...focus, id: focusId }, nodes };
   }
 
   async request(path, params = {}) {
     this.requestCount += 1;
+    this.calls.push({ path, params: { ...params } });
     if (this.cancelled) throw Object.assign(new Error('stopped'), { code: 'GENI_CANCELLED' });
-    if (path === 'profile') {
-      const ids = String(params.ids || '').split(',').filter(Boolean).map(id => `profile-${id}`);
-      return { results: ids.map(id => this.lookup(id)).filter(Boolean) };
+    if (path === 'profile/immediate-family') {
+      const ids = String(params.ids || '').split(',').filter(Boolean);
+      return { results: ids.map(id => this.graphFor(`profile-${id}`)).filter(Boolean) };
     }
-    if (path === 'union') {
-      const ids = String(params.ids || '').split(',').filter(Boolean).map(id => `union-${id}`);
-      return { results: ids.map(id => this.lookup(id)).filter(Boolean) };
-    }
-    return this.lookup(decodeURIComponent(path)) || { error: { message: 'not found' } };
+    const match = decodeURIComponent(path).match(/^(profile-[^/]+)\/immediate-family$/i);
+    if (match) return this.graphFor(match[1]) || { error: { message: 'profile not found' } };
+    return { error: { message: `unsupported mocked resource ${path}` } };
   }
 }
 
-test('loads one descendant generation with batched profile and union requests', async () => {
+test('parses family-graph edges and follows only unions formed by the focus person', () => {
+  const graph = {
+    focus: { id: 'profile-3', guid: '6000000000000000003', name: 'Focus' },
+    nodes: {
+      'profile-3': {
+        id: 'profile-3',
+        edges: {
+          'union-10': { rel: 'child' },
+          'union-20': { rel: 'partner' }
+        }
+      },
+      'profile-4': { id: 'profile-4', name: 'Spouse', edges: { 'union-20': { rel: 'partner' } } },
+      'profile-5': { id: 'profile-5', name: 'Child', edges: { 'union-20': { rel: 'child' } } },
+      'union-10': {
+        id: 'union-10',
+        status: 'spouse',
+        edges: {
+          'profile-1': { rel: 'partner' },
+          'profile-2': { rel: 'partner' },
+          'profile-3': { rel: 'child' }
+        }
+      },
+      'union-20': {
+        id: 'union-20',
+        status: 'spouse',
+        marriage: { date: { year: 1950, month: 1, day: 2 } },
+        edges: {
+          'profile-3': { rel: 'partner' },
+          'profile-4': { rel: 'partner' },
+          'profile-5': { rel: 'child' }
+        }
+      }
+    }
+  };
+  assert.equal(familyGraphRecords(graph).length, 1);
+  const unions = graphUnionRecords(graph);
+  assert.deepEqual(unions.map(union => union.id), ['union-10', 'union-20']);
+  assert.deepEqual(graphDownwardUnions(graph).map(union => union.id), ['union-20']);
+  assert.deepEqual(graphDownwardUnions(graph)[0].partners, ['profile-3', 'profile-4']);
+  assert.deepEqual(graphDownwardUnions(graph)[0].children, ['profile-5']);
+});
+
+test('loads one descendant generation with one family-graph request', async () => {
   const resources = {
     'profile-g6000000000000000001': {
       id: 'profile-1', guid: '6000000000000000001', display_name: 'Root', public: true,
-      profile_url: 'https://www.geni.com/people/Root/6000000000000000001', unions: ['union-10']
+      profile_url: 'https://www.geni.com/people/Root/6000000000000000001',
+      birth: { date: { year: 1970, month: 1, day: 2 }, location: { place_name: 'Ignored' } },
+      unions: ['union-10']
     },
     'profile-2': {
       id: 'profile-2', guid: '6000000000000000002', display_name: 'Spouse', public: true,
@@ -139,10 +258,11 @@ test('loads one descendant generation with batched profile and union requests', 
     },
     'union-10': {
       id: 'union-10', partners: ['profile-1', 'profile-2'], children: ['profile-3'],
-      adopted_children: ['profile-4'], status: 'spouse', marriage: { date: { year: 2000 } }
+      adopted_children: ['profile-4'], status: 'spouse',
+      marriage: { date: { year: 2000, month: 5, day: 6 }, location: { place_name: 'Ignored' } }
     }
   };
-  const client = new FakeClient(resources);
+  const client = new FakeGraphClient(resources);
   const importer = new GeniDescendantImporter({
     client,
     rootInput: '6000000000000000001',
@@ -163,8 +283,13 @@ test('loads one descendant generation with batched profile and union requests', 
     'profile-g6000000000000000001',
     'profile-g6000000000000000002'
   ]);
+  assert.equal(root.birthYear, '1970');
+  assert.equal(root.marriageYears['profile-g6000000000000000002'], '2000');
   assert.match(pkg.people['profile-g6000000000000000004'].note, /adopted child/);
-  assert.equal(client.requestCount, 3);
+  assert.equal(client.requestCount, 1);
+  assert.match(client.calls[0].path, /immediate-family$/);
+  assert.equal(client.calls[0].params.fields, FAMILY_GRAPH_FIELDS);
+  assert.doesNotMatch(client.calls[0].params.fields, /location|month|day|birth_date|death_date|marriage_date/);
 });
 
 test('creates a valid Lineage tree-tab snapshot', () => {
@@ -182,7 +307,7 @@ test('creates a valid Lineage tree-tab snapshot', () => {
   assert.equal(snapshot.people[person.id].sourceProvider, 'geni');
 });
 
-test('pauses only after retaining a complete generation and resumes from its checkpoint', async () => {
+test('pauses only after a complete generation and resumes from its graph checkpoint', async () => {
   const resources = {
     'profile-g6000000000000000101': {
       id: 'profile-101', guid: '6000000000000000101', display_name: 'Root', public: true,
@@ -212,8 +337,9 @@ test('pauses only after retaining a complete generation and resumes from its che
     }
   };
 
+  const firstClient = new FakeGraphClient(resources);
   const first = new GeniDescendantImporter({
-    client: new FakeClient(resources),
+    client: firstClient,
     rootInput: '6000000000000000101',
     descendantGenerations: 2,
     maxProfiles: 2
@@ -223,10 +349,12 @@ test('pauses only after retaining a complete generation and resumes from its che
   assert.equal(paused.generations, 1);
   assert.equal(paused.profiles, 3, 'the root generation is retained intact even when it crosses the pause target');
   assert.deepEqual(first.frontier, ['profile-g6000000000000000103']);
+  assert.equal(firstClient.requestCount, 1);
 
   const checkpoint = { ...first.checkpoint(), maxProfiles: 20 };
+  const resumedClient = new FakeGraphClient(resources);
   const resumed = new GeniDescendantImporter({
-    client: new FakeClient(resources),
+    client: resumedClient,
     checkpoint,
     rootInput: checkpoint.rootInput
   });
@@ -239,4 +367,54 @@ test('pauses only after retaining a complete generation and resumes from its che
     'profile-g6000000000000000103',
     'profile-g6000000000000000104'
   ]);
+  assert.equal(resumedClient.requestCount, 1);
+});
+
+test('chunks a 51-profile generation into one 50-ID graph request and one singleton', async () => {
+  const resources = {
+    'profile-g6000000000000000200': {
+      id: 'profile-200', guid: '6000000000000000200', display_name: 'Root', public: true,
+      profile_url: 'https://www.geni.com/people/Root/6000000000000000200', unions: ['union-200']
+    },
+    'profile-201': {
+      id: 'profile-201', guid: '6000000000000000201', display_name: 'Spouse', public: true,
+      profile_url: 'https://www.geni.com/people/Spouse/6000000000000000201', unions: ['union-200']
+    }
+  };
+  const children = [];
+  for (let index = 0; index < 51; index += 1) {
+    const apiId = `profile-${300 + index}`;
+    const guid = String(6000000000000000300n + BigInt(index));
+    children.push(apiId);
+    resources[apiId] = {
+      id: apiId,
+      guid,
+      display_name: `Child ${index + 1}`,
+      public: true,
+      profile_url: `https://www.geni.com/people/Child-${index + 1}/${guid}`,
+      unions: ['union-200']
+    };
+  }
+  resources['union-200'] = {
+    id: 'union-200', partners: ['profile-200', 'profile-201'], children, status: 'spouse'
+  };
+
+  const client = new FakeGraphClient(resources);
+  const importer = new GeniDescendantImporter({
+    client,
+    rootInput: '6000000000000000200',
+    descendantGenerations: 2,
+    maxProfiles: 100
+  });
+  const result = await importer.run();
+  assert.equal(result.completed, true);
+  assert.equal(result.profiles, 53);
+  assert.equal(client.requestCount, 3, 'one root graph plus two requests for the 51-profile frontier');
+  const secondGenerationCalls = client.calls.slice(1);
+  assert.equal(secondGenerationCalls.filter(call => call.path === 'profile/immediate-family').length, 1);
+  const bulkIds = String(secondGenerationCalls.find(call => call.path === 'profile/immediate-family')?.params.ids).split(',');
+  assert.equal(bulkIds.length, 50);
+  assert.ok(bulkIds.every(id => /^\d+$/.test(id)), 'bulk frontiers use compact Geni API node IDs');
+  assert.equal(secondGenerationCalls.filter(call => call.path !== 'profile/immediate-family').length, 1);
+  assert.match(secondGenerationCalls.find(call => call.path !== 'profile/immediate-family').path, /^profile-\d+\/immediate-family$/);
 });

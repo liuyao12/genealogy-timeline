@@ -1,0 +1,117 @@
+name: Diagnose spouse-descendant block ordering
+
+on:
+  push:
+    branches:
+      - fix/spouse-descendant-block-order
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/spouse-descendant-block-order
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extract and apply the proposed patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          text = Path('.github/workflows/apply-spouse-subtree-order.yml').read_text(encoding='utf-8')
+          start = text.index('      - name: Apply layout and palette changes')
+          run_start = text.index('        run: |\n', start) + len('        run: |\n')
+          end = text.index('\n      - name:', run_start)
+          lines = text[run_start:end].splitlines()
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines) + '\n'
+          Path('/tmp/apply-proposed.sh').write_text(script, encoding='utf-8')
+          PY
+          bash /tmp/apply-proposed.sh
+          node --check app.js
+
+      - name: Render and print diagnostic rows
+        shell: bash
+        run: |
+          cat > __diagnose_order.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <iframe id="app" src="./index.html" style="width:1500px;height:1000px"></iframe>
+          <pre id="result">WAIT</pre>
+          <script>
+          const result = document.getElementById('result');
+          const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+          async function waitFor(check, label, attempts = 120) {
+            for (let attempt = 0; attempt < attempts; attempt += 1) {
+              const value = check();
+              if (value) return value;
+              await sleep(100);
+            }
+            throw new Error(`Timed out waiting for ${label}`);
+          }
+          (async () => {
+            try {
+              const frame = document.getElementById('app');
+              await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+              const doc = frame.contentDocument;
+              await waitFor(() => doc.querySelector('.timeline-node'), 'timeline nodes');
+              const filter = doc.getElementById('tree-filter');
+              filter.value = '';
+              filter.dispatchEvent(new Event('input', { bubbles: true }));
+              await sleep(1000);
+
+              const ids = {
+                margaret: 'profile-g6000000003858820967',
+                jamesIV: 'profile-g4229916861440069622',
+                jamesV: 'profile-g6000000003233882803',
+                archibald: 'profile-g6000000003232538566',
+                henryStewart: 'profile-g6000000005412245713',
+                henryVIII: 'profile-g6000000007442241030'
+              };
+              const primaryY = id => {
+                const node = doc.querySelector(`.timeline-node[data-node-key="${id}"]`);
+                const match = /translate\([^ ,]+[ ,]+([^)]+)\)/.exec(node?.getAttribute('transform') || '');
+                return match ? Number(match[1]) : null;
+              };
+              const rows = Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, primaryY(id)]));
+              const data = await fetch('./data/british-royal-line.json').then(response => response.json());
+              const firstChildren = Object.values(data.people).filter(person =>
+                person.parents?.includes(ids.margaret) && person.parents?.includes(ids.jamesIV)
+              ).map(person => person.id);
+              const descendantIds = new Set();
+              const queue = [...firstChildren];
+              while (queue.length) {
+                const id = queue.shift();
+                if (descendantIds.has(id) || !data.people[id]) continue;
+                descendantIds.add(id);
+                queue.push(...(data.people[id].children || []));
+              }
+              const descendantRows = [...descendantIds].map(id => ({
+                id,
+                name: data.people[id]?.displayName,
+                y: primaryY(id)
+              }));
+              const gray = getComputedStyle(doc.querySelector('.timeline-decade-band.tone-1'));
+              result.textContent = `DIAGNOSTIC ${JSON.stringify({ rows, firstChildren, descendantRows, gray: gray.fill, opacity: gray.fillOpacity })}`;
+            } catch (error) {
+              result.textContent = `ERROR ${error.stack || error}`;
+            }
+          })();
+          </script>
+          HTML
+
+          python3 -m http.server 4173 > /tmp/lineage-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+          chrome="$(command -v google-chrome || command -v google-chrome-stable)"
+          "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=20000 --dump-dom http://127.0.0.1:4173/__diagnose_order.html > /tmp/diagnose-order.html
+          grep -oE '(DIAGNOSTIC|ERROR) [^<]*' /tmp/diagnose-order.html || true

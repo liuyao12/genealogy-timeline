@@ -1884,32 +1884,11 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
         const shift = compactedSlots[branchIndex] - top;
         branch.indexes.forEach(index => { preferredY[index] += shift; });
       });
-      // Keep the next sibling below the preceding sibling's immediate
-      // household. Consecutive spouse roots belonging to the same person are
-      // the exception: only the preceding spouse row constrains the next one,
-      // so all marriages remain contiguous before any descendant subtree.
-      // A spouse followed by a different kind of branch still protects its
-      // complete descendant block.
+      // Preserve the depth-first reading order: every sibling owns its complete
+      // descendant branch, and the next sibling begins only after that block.
+      // This also keeps each spouse followed by that union's descendants.
       for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
-        const precedingRoot = branches[branchIndex - 1].rootIndex;
-        const followingRoot = branches[branchIndex].rootIndex;
-        const precedingHousehold = [precedingRoot];
-        childrenByIndex.get(precedingRoot).forEach(childIndex => {
-          precedingHousehold.push(childIndex);
-          if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
-        });
-        const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);
-        const followingOwner = displayParentByKey.get(nodes[followingRoot].key);
-        const sharesMarriageOwner = nodes[precedingRoot].isSpouse
-          && nodes[followingRoot].isSpouse
-          && precedingOwner
-          && precedingOwner === followingOwner;
-        const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
-        const uniquePrecedingHousehold = sharesMarriageOwner
-          ? [precedingRoot]
-          : protectsMarriageOrder
-            ? branches[branchIndex - 1].indexes
-            : unique(precedingHousehold);
+        const uniquePrecedingHousehold = branches[branchIndex - 1].indexes;
         const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
         const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
         const householdShift = Math.max(0, householdBottom + rowStep - followingTop);
@@ -2245,32 +2224,30 @@ function renderTimeline() {
         || byBirth(a.partnerId || a.childIds[0], b.partnerId || b.childIds[0]);
     });
 
-    // Lay out the immediate marriage household before descending into any
-    // child's branch. Without this two-pass order, a prolific first marriage
-    // can push later spouses below the next sibling branch. The spouse rows now
-    // form one chronological block directly below the person; descendants of
-    // each union are expanded only after that block has been established.
-    const preparedGroups = orderedGroups.map(group => ({
-      group,
-      pendingChildren: group.childIds.filter(childId => !expanded.has(childId)),
-      transportedId: group.partnerId ? transportedParent([id, group.partnerId]) : '',
-      householdParentId: id
-    }));
+    // Render each marriage as one chronological block: the spouse first,
+    // then that union's children and all of their descendant subtrees, before
+    // moving to the next spouse. This keeps successive households legible.
     const groupedPartners = new Set();
-    preparedGroups.forEach(prepared => {
-      const { group, transportedId } = prepared;
+    orderedGroups.forEach(group => {
+      const transportedId = group.partnerId ? transportedParent([id, group.partnerId]) : '';
+      const pendingChildren = group.childIds.filter(childId => !expanded.has(childId));
+      let householdParentId = id;
+
       // A cousin-marriage household is rendered on the non-transported side.
-      // The transported spouse retains their primary occurrence in the natal
-      // branch; an auxiliary spouse occurrence is inserted below.
-      if (!group.partnerId || transportedId === id) return;
-      groupedPartners.add(group.partnerId);
-      if (transportedId) return;
-      const partnerWasPlaced = placed.has(group.partnerId);
-      place(group.partnerId, true, id);
-      if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
-      if (!partnerWasPlaced) prepared.householdParentId = group.partnerId;
-    });
-    preparedGroups.forEach(({ pendingChildren, transportedId, householdParentId }) => {
+      // The transported spouse retains a primary occurrence in the natal
+      // branch and receives an auxiliary occurrence for this marriage.
+      if (group.partnerId && transportedId !== id) {
+        groupedPartners.add(group.partnerId);
+        if (!transportedId) {
+          const partnerWasPlaced = placed.has(group.partnerId);
+          place(group.partnerId, true, id);
+          if (partnerWasPlaced && state.collapsedIds.has(group.partnerId)) spouseIds.add(group.partnerId);
+          if (!partnerWasPlaced) householdParentId = group.partnerId;
+        }
+      }
+
+      // When this person is the transported side of a cousin marriage, the
+      // other surviving lineage occurrence owns the shared child subtree.
       if (transportedId === id) return;
       pendingChildren.forEach(childId => visit(childId, householdParentId));
     });
@@ -2407,11 +2384,29 @@ function renderTimeline() {
       marriageYear: marriageYearFor(otherParentId, entry.id) ?? Number.POSITIVE_INFINITY
     })).filter(slot => slot.entry.isSpouse && slot.ownerId === otherParentId);
     const laterSpouse = spouseSlots.find(slot => slot.marriageYear > marriageYear);
-    const insertAt = laterSpouse
-      ? laterSpouse.index
-      : spouseSlots.length
-        ? Math.max(...spouseSlots.map(slot => slot.index)) + 1
-        : Math.max(0, otherParentIndex + 1);
+    const firstFamilyChildIndex = family.children
+      .map(childId => layoutEntries.findIndex(entry => entry.key === childId))
+      .filter(index => index >= 0)
+      .sort((a, b) => a - b)[0] ?? -1;
+    const isInsideOwnerBranch = entryKey => {
+      let currentKey = entryKey;
+      const seen = new Set();
+      while (currentKey && !seen.has(currentKey)) {
+        if (currentKey === otherParentId) return true;
+        seen.add(currentKey);
+        currentKey = displayParentByKey.get(currentKey) || '';
+      }
+      return false;
+    };
+    let ownerBranchEnd = layoutEntries.findIndex((entry, index) =>
+      index > otherParentIndex && !isInsideOwnerBranch(entry.key)
+    );
+    if (ownerBranchEnd < 0) ownerBranchEnd = layoutEntries.length;
+    const insertAt = firstFamilyChildIndex >= 0
+      ? firstFamilyChildIndex
+      : laterSpouse
+        ? laterSpouse.index
+        : ownerBranchEnd;
     layoutEntries.splice(insertAt, 0, { key: copyKey, id: transportedId, isSpouse: true, isTransportedCopy: true, familyKey: key });
     if (otherParentId) displayParentByKey.set(copyKey, otherParentId);
     occurrenceKeyByFamilyPerson.set(associationKey, copyKey);

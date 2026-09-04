@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=70">
+  <link rel="stylesheet" href="./styles.css?v=71">
 </head>
 <body>
   <div class="app-shell">
@@ -135,10 +135,40 @@
             <div class="relationship-section">
               <div class="relationship-heading">
                 <span class="eyebrow">Family</span>
-                <small>All known relatives · eye controls the timeline.</small>
+                <small>Immediate family for this profile</small>
+              </div>
+
+              <div class="geni-family-card" id="geni-family-card">
+                <div class="geni-family-card-heading">
+                  <span class="geni-family-mark" aria-hidden="true">G</span>
+                  <span class="geni-family-card-copy">
+                    <strong id="geni-family-heading">Add immediate family from Geni</strong>
+                    <small id="geni-family-status">Parents, siblings, spouses, and children are merged without replacing local edits.</small>
+                  </span>
+                  <span class="geni-family-badge" id="geni-family-badge">Not checked</span>
+                </div>
+                <button class="button primary grow geni-family-primary" id="geni-family-primary" type="button">Load immediate family from Geni</button>
+                <div class="geni-family-link" id="geni-family-link" hidden>
+                  <label for="geni-family-link-input">Geni profile URL or public ID</label>
+                  <input id="geni-family-link-input" autocomplete="off" placeholder="https://www.geni.com/people/… or g600000…">
+                  <button class="button primary grow" id="geni-family-link-button" type="button">Link &amp; load immediate family</button>
+                </div>
+              </div>
+
+              <div class="known-family-heading">
+                <strong>Known in this tree</strong>
+                <small id="known-family-count">0 relatives</small>
               </div>
               <div class="relationship-households" id="relationship-households"></div>
-              <button class="button secondary grow relationship-add-button" id="add-relative" type="button">Add a relative</button>
+
+              <details class="family-alternatives" id="family-alternatives">
+                <summary>Other ways to add family</summary>
+                <div class="family-alternative-actions">
+                  <button class="button secondary grow" id="add-relative" type="button">Add one person manually</button>
+                  <button class="button secondary grow" id="prepare-ai-person-import" type="button">Research with AI</button>
+                </div>
+                <p id="ai-family-status">AI research can add relatives not available through Geni.</p>
+              </details>
             </div>
 
             <div class="event-editor-section name-period-section">
@@ -174,12 +204,6 @@
                 </div>
               </div>
               <small id="source-updated">Add a source URL to preserve attribution.</small>
-            </div>
-
-            <div class="ai-family-actions">
-              <span class="eyebrow">Extend this branch</span>
-              <p id="ai-family-status">Prepare an AI research prompt anchored to this profile, then stitch the returned JSON into the current tree.</p>
-              <button class="button secondary grow" id="prepare-ai-person-import" type="button">Prepare prompt for this profile</button>
             </div>
 
             <div class="form-actions" id="person-edit-actions" hidden>
@@ -288,6 +312,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./geni-import.js?v=1"></script>
-  <script type="module" src="./app.js?v=123"></script>
+  <script type="module" src="./app.js?v=124"></script>
 </body>
 </html>

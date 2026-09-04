@@ -50,6 +50,9 @@ function oauthCallbackParams() {
   };
 }
 
+const initialGeniOauth = oauthCallbackParams();
+if (initialGeniOauth.accessToken) sessionValue(GENI_TOKEN_SESSION_KEY, initialGeniOauth.accessToken);
+
 const state = {
   title: 'Untitled family',
   people: {},
@@ -68,7 +71,7 @@ const state = {
   relationVisibility: {},
   starterDataVersion: 0,
   manualTree: false,
-  geniAccessToken: '',
+  geniAccessToken: initialGeniOauth.accessToken || sessionValue(GENI_TOKEN_SESSION_KEY),
   geniImport: null,
   collapsedIds: new Set(),
   editingProfileId: ''
@@ -90,7 +93,9 @@ const els = Object.fromEntries([
   'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog', 'add-dialog-heading',
   'prepare-ai-person-import', 'ai-family-status',
-  'relationship-households', 'add-relative',
+  'relationship-households', 'add-relative', 'geni-family-card', 'geni-family-heading', 'geni-family-status',
+  'geni-family-badge', 'geni-family-primary', 'geni-family-link', 'geni-family-link-input', 'geni-family-link-button',
+  'known-family-count', 'family-alternatives',
   'name-periods-list', 'name-period-name', 'name-period-start', 'name-period-end', 'add-name-period',
   'personal-events-list', 'personal-event-name', 'personal-event-start', 'personal-event-end', 'personal-event-color', 'add-personal-event',
   'events-dialog', 'close-events-dialog', 'timeline-as-of-toggle', 'timeline-background-toggle', 'timeline-scale-down', 'timeline-scale-value', 'timeline-scale-up', 'timeline-height-down', 'timeline-height-value', 'timeline-height-up', 'global-events-list', 'global-event-name', 'global-event-start', 'global-event-end', 'global-event-color', 'add-global-event',
@@ -239,6 +244,13 @@ function optionalGeniLink(input) {
     sourceUrl: `https://www.geni.com/profile/index/${geniProfileUrlId(sourceId)}`,
     sourceProvider: 'geni'
   } : null;
+}
+function geniProfileIdForPerson(person) {
+  for (const candidate of [person?.id, person?.sourceId, person?.sourceUrl]) {
+    const id = profileIdFromInput(candidate);
+    if (id) return id;
+  }
+  return '';
 }
 function sourceProviderFromUrl(url) {
   const href = validPublicUrl(url);
@@ -969,10 +981,58 @@ async function fetchGeniProfileDetails(profileIds) {
   return detailsById;
 }
 
+function normalizedGeniReference(value) {
+  const raw = refId(value) || clean(value);
+  return /^profile-/i.test(raw) ? canonicalGeniProfileId(raw) : raw;
+}
+
+function remapGeniImmediateFamily(mapped, focusAliases, localFocusId, remoteFocusId) {
+  const aliases = new Set(focusAliases.map(normalizedGeniReference).filter(Boolean));
+  const remapId = value => {
+    const id = normalizedGeniReference(value);
+    return aliases.has(id) ? localFocusId : id;
+  };
+  const remapMap = value => Object.fromEntries(
+    Object.entries(value || {}).map(([id, detail]) => [remapId(id), detail])
+  );
+  const records = {};
+  Object.entries(mapped || {}).forEach(([key, raw]) => {
+    const originalId = normalizedGeniReference(key || raw?.id);
+    const targetId = remapId(originalId);
+    if (!targetId || !raw) return;
+    const record = {
+      ...raw,
+      id: targetId,
+      parents: unique(uniqueRefs(raw.parents).map(remapId)),
+      children: unique(uniqueRefs(raw.children).map(remapId)),
+      partners: unique(uniqueRefs(raw.partners).map(remapId)),
+      spouses: unique(uniqueRefs(raw.spouses).map(remapId)),
+      nonSpouses: unique(uniqueRefs(raw.nonSpouses).map(remapId)),
+      divorcedSpouses: unique(uniqueRefs(raw.divorcedSpouses).map(remapId)),
+      marriageYears: remapMap(raw.marriageYears),
+      relationshipEndYears: remapMap(raw.relationshipEndYears),
+      relationshipEndStatuses: remapMap(raw.relationshipEndStatuses),
+      sourceId: aliases.has(originalId) ? remoteFocusId : originalId
+    };
+    const previous = records[targetId];
+    if (previous) {
+      ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses'].forEach(field => {
+        record[field] = unique([...(previous[field] || []), ...(record[field] || [])]);
+      });
+      record.marriageYears = { ...(previous.marriageYears || {}), ...(record.marriageYears || {}) };
+      record.relationshipEndYears = { ...(previous.relationshipEndYears || {}), ...(record.relationshipEndYears || {}) };
+      record.relationshipEndStatuses = { ...(previous.relationshipEndStatuses || {}), ...(record.relationshipEndStatuses || {}) };
+    }
+    records[targetId] = record;
+  });
+  return { records, remapId };
+}
+
 async function loadGeniImmediateFamily(profileId) {
   const person = state.people[profileId];
-  if (!person || !/^profile-/i.test(profileId)) {
-    throw new Error('This local profile is not linked to a Geni profile ID.');
+  const requestedFocusId = geniProfileIdForPerson(person);
+  if (!person || !requestedFocusId) {
+    throw new Error('Link this local profile to a public Geni profile first.');
   }
   if (!state.geniAccessToken) {
     beginGeniAuthorization(`family-import:immediate:${profileId}`);
@@ -980,25 +1040,54 @@ async function loadGeniImmediateFamily(profileId) {
   }
   const existingFamilyIds = new Set([...person.parents, ...person.children, ...allPartnerIds(person)]);
   const importedAt = new Date().toISOString();
-  const { mapped } = await fetchGeniNeighborhood(profileId);
+  const { mapped, focusRaw } = await fetchGeniNeighborhood(requestedFocusId);
+  const remoteFocusId = geniProfileIdForPerson(focusRaw) || requestedFocusId;
+  const { records, remapId } = remapGeniImmediateFamily(mapped, [
+    requestedFocusId,
+    remoteFocusId,
+    focusRaw?.id,
+    focusRaw?.profile_url
+  ], profileId, remoteFocusId);
+  if (!records[profileId]) {
+    records[profileId] = {
+      ...focusRaw,
+      id: profileId,
+      sourceId: remoteFocusId,
+      parents: uniqueRefs(focusRaw?.parents).map(remapId),
+      children: uniqueRefs(focusRaw?.children).map(remapId),
+      partners: uniqueRefs(focusRaw?.partners).map(remapId),
+      spouses: uniqueRefs(focusRaw?.spouses).map(remapId),
+      nonSpouses: uniqueRefs(focusRaw?.nonSpouses).map(remapId),
+      divorcedSpouses: uniqueRefs(focusRaw?.divorcedSpouses).map(remapId)
+    };
+  }
+
   const existingIds = new Set(Object.keys(state.people));
-  const existingDateState = new Map(Object.keys(mapped).filter(id => existingIds.has(id)).map(id => [id, {
+  const existingDateState = new Map(Object.keys(records).filter(id => existingIds.has(id)).map(id => [id, {
     birth: numericYear(state.people[id]?.birthYear),
     death: numericYear(state.people[id]?.deathYear)
   }]));
-  Object.entries(mapped).forEach(([id, raw]) => {
+  Object.entries(records).forEach(([id, raw]) => {
     if (raw.public === false) return;
+    const sourceId = clean(raw.sourceId) || (id === profileId ? remoteFocusId : id);
+    const existing = state.people[id];
     const incoming = normalizePerson({
       ...raw,
       id,
-      sourceId: id,
-      sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${geniProfileUrlId(id)}`,
+      sourceId,
+      sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${geniProfileUrlId(sourceId)}`,
       sourceProvider: 'geni',
       importedAt
     }, id);
-    state.people[id] = mergePersonRecords(state.people[id], incoming);
+    // Linking a manually named local profile must not let the remote display
+    // name replace the name the user already sees. Other missing Geni facts
+    // still merge normally, and canonical Geni profiles keep Geni's name.
+    if (id === profileId && existing && id !== sourceId) {
+      incoming.displayName = clean(existing.displayName) || fullName(existing);
+    }
+    state.people[id] = mergePersonRecords(existing, incoming);
   });
-  const receivedIds = Object.keys(mapped).filter(id => state.people[id]);
+  const receivedIds = Object.keys(records).filter(id => state.people[id]);
   const newIds = receivedIds.filter(id => !existingIds.has(id));
   const completedExistingProfiles = [...existingDateState].filter(([id, before]) => (
     (before.birth == null && numericYear(state.people[id]?.birthYear) != null)
@@ -1018,12 +1107,14 @@ async function loadGeniImmediateFamily(profileId) {
     ...receivedIds.filter(id => id !== profileId)
   ]);
   if (state.geniImport?.profileId === profileId) {
-    state.geniImport.loaded = Object.keys(mapped).length;
+    state.geniImport.loaded = Object.keys(records).length;
     state.geniImport.requests = 1;
   }
   try {
-    const eventsByProfile = await fetchGeniReignEvents(Object.keys(mapped));
-    Object.entries(eventsByProfile).forEach(([id, events]) => {
+    const remoteProfileIds = unique(Object.values(records).map(raw => clean(raw.sourceId)).filter(id => /^profile-/i.test(id)));
+    const eventsByProfile = await fetchGeniReignEvents(remoteProfileIds);
+    Object.entries(eventsByProfile).forEach(([remoteId, events]) => {
+      const id = remapId(remoteId);
       if (state.people[id] && events.length) {
         state.people[id].personalEvents = normalizePersonalEvents([...state.people[id].personalEvents, ...events]);
       }
@@ -1043,7 +1134,12 @@ async function loadGeniImmediateFamily(profileId) {
   const updateSummary = completedExistingProfiles
     ? ` ${completedExistingProfiles} existing profile${completedExistingProfiles === 1 ? '' : 's'} received missing date data.`
     : '';
-  toast(`Geni returned ${receivedIds.length} union-linked family profiles; ${countSummary}.${updateSummary} ${dateSummary} All are listed in this profile’s family panel.`, true);
+  const refreshedScope = activeDescendantScope();
+  const outsideCount = receivedIds.filter(id => id !== profileId && !refreshedScope.allowedIds.has(id)).length;
+  const outsideSummary = outsideCount
+    ? ` ${outsideCount} returned profile${outsideCount === 1 ? ' is' : 's are'} saved outside the current descendant view.`
+    : '';
+  toast(`Geni checked ${receivedIds.length} union-linked family profiles; ${countSummary}.${updateSummary} ${dateSummary}${outsideSummary}`, true);
 }
 
 async function fetchGeniReignEvents(profileIds) {
@@ -1222,15 +1318,16 @@ const GENI_FAMILY_IMPORT_SCOPES = {
 function geniFamilyImportIntent(intent) {
   const legacyPrefix = 'immediate-family:';
   if (intent.startsWith(legacyPrefix)) return { scope: 'immediate', profileId: intent.slice(legacyPrefix.length) };
-  const match = intent.match(/^family-import:(immediate|descendants-2|descendants-all):(profile-.+)$/i);
+  const match = intent.match(/^family-import:(immediate|descendants-2|descendants-all):(.+)$/i);
   return match ? { scope: match[1].toLowerCase(), profileId: match[2] } : null;
 }
 
 async function runGeniFamilyImport(profileId, scope) {
   const config = GENI_FAMILY_IMPORT_SCOPES[scope];
   const person = state.people[profileId];
-  if (!config || !person || !/^profile-/i.test(profileId)) {
-    throw new Error('This local profile is not linked to a Geni profile ID.');
+  const geniId = geniProfileIdForPerson(person);
+  if (!config || !person || !geniId) {
+    throw new Error('Link this local profile to a public Geni profile first.');
   }
   if (state.geniImport) return toast('Another Geni import is already running.', true);
   if (!state.geniAccessToken) {
@@ -1241,7 +1338,7 @@ async function runGeniFamilyImport(profileId, scope) {
   render();
   try {
     if (scope === 'immediate') await loadGeniImmediateFamily(profileId);
-    else await importFromGeni(profileId, config.depth, { mode: 'descendants', allDescendants: config.allDescendants === true });
+    else await importFromGeni(geniId, config.depth, { mode: 'descendants', allDescendants: config.allDescendants === true });
   } catch (error) {
     if (error?.code === 'GENI_INVALID_ACCESS_TOKEN') {
       // Resume this exact operation after Geni returns a fresh token. Clear
@@ -3625,6 +3722,87 @@ function renderRelationshipHouseholds(person) {
   container.replaceChildren(...sections);
 }
 
+function formatGeniFamilyCheckedAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'previously';
+  return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function renderGeniFamilyActions(person, scope) {
+  const geniId = geniProfileIdForPerson(person);
+  const linked = Boolean(geniId);
+  const verifiedAt = clean(person.geniImmediateFamilyVerifiedAt);
+  const activeImport = state.geniImport;
+  const importingThisProfile = activeImport?.profileId === person.id && activeImport?.scope === 'immediate';
+  const anotherImportRunning = Boolean(activeImport) && !importingThisProfile;
+  const previousPersonId = els['geni-family-card'].dataset.personId;
+  if (previousPersonId !== person.id) {
+    els['family-alternatives'].open = false;
+    els['geni-family-link-input'].value = '';
+  }
+  els['geni-family-card'].dataset.personId = person.id;
+  els['family-alternatives'].dataset.personId = person.id;
+  els['geni-family-card'].classList.toggle('is-loading', importingThisProfile);
+  els['geni-family-card'].classList.toggle('is-verified', Boolean(verifiedAt));
+  els['geni-family-card'].setAttribute('aria-busy', String(importingThisProfile));
+
+  const returnedIds = unique(person.geniImmediateFamilyIds).filter(id => state.people[id]);
+  const outsideCount = returnedIds.filter(id => !scope.allowedIds.has(id)).length;
+  const outsideNote = outsideCount
+    ? ` ${outsideCount} returned relative${outsideCount === 1 ? ' is' : 's are'} saved outside this descendant view.`
+    : '';
+  if (importingThisProfile) {
+    els['geni-family-heading'].textContent = 'Reading immediate family from Geni';
+    els['geni-family-status'].textContent = activeImport.loaded
+      ? `${activeImport.loaded} profiles received. Merging family links and dates…`
+      : 'Reading family unions, profiles, and dates…';
+    els['geni-family-badge'].textContent = 'Loading';
+  } else if (linked && verifiedAt) {
+    els['geni-family-heading'].textContent = 'Keep immediate family current';
+    els['geni-family-status'].textContent = `Last checked ${formatGeniFamilyCheckedAt(verifiedAt)}. Refresh to merge changes without replacing local edits.${outsideNote}`;
+    els['geni-family-badge'].textContent = 'Checked';
+  } else if (linked) {
+    els['geni-family-heading'].textContent = 'Add immediate family from Geni';
+    els['geni-family-status'].textContent = `Import parents, siblings, spouses, and children. Relatives outside this descendant tree remain saved but hidden.`;
+    els['geni-family-badge'].textContent = 'Ready';
+  } else {
+    els['geni-family-heading'].textContent = 'Connect this profile to Geni';
+    els['geni-family-status'].textContent = 'Paste a public Geni profile URL or ID, then load its immediate family into this local tree.';
+    els['geni-family-badge'].textContent = 'Not linked';
+  }
+
+  els['geni-family-primary'].hidden = !linked;
+  els['geni-family-link'].hidden = linked;
+  els['geni-family-primary'].disabled = importingThisProfile || anotherImportRunning;
+  els['geni-family-primary'].textContent = importingThisProfile
+    ? 'Loading immediate family…'
+    : verifiedAt
+      ? (state.geniAccessToken ? 'Refresh immediate family from Geni' : 'Authorize Geni & refresh family')
+      : (state.geniAccessToken ? 'Load immediate family from Geni' : 'Authorize Geni & load family');
+  els['geni-family-link-input'].disabled = Boolean(activeImport);
+  els['geni-family-link-button'].disabled = Boolean(activeImport);
+  els['geni-family-link-button'].textContent = state.geniAccessToken
+    ? 'Link & load immediate family'
+    : 'Link, authorize & load family';
+
+  const knownIds = unique([
+    ...scopedParentIds(person.id, scope),
+    ...scopedSpouseIds(person, scope),
+    ...scopedChildIds(person.id, scope)
+  ]);
+  els['known-family-count'].textContent = `${knownIds.length} relative${knownIds.length === 1 ? '' : 's'}`;
+
+  const manualNeedsGeniCheck = linked && !verifiedAt;
+  els['add-relative'].disabled = importingThisProfile || anotherImportRunning || manualNeedsGeniCheck;
+  els['add-relative'].title = manualNeedsGeniCheck
+    ? 'Load this profile’s immediate family from Geni first to avoid duplicate relatives.'
+    : '';
+  els['prepare-ai-person-import'].disabled = Boolean(activeImport);
+  els['ai-family-status'].textContent = manualNeedsGeniCheck
+    ? 'Geni is the primary source for this linked profile. Manual additions become available after the first family check; AI research remains available for records Geni does not contain.'
+    : `Manual and AI additions remain available for relatives or evidence not present on Geni. AI will preserve “${fullName(person)}” as anchor ID ${person.id}.`;
+}
+
 function renderDetails() {
   const scope = activeDescendantScope();
   const person = scope.allowedIds.has(state.selectedId) ? state.people[state.selectedId] : null;
@@ -3663,11 +3841,9 @@ function renderDetails() {
     ? `Imported ${new Date(person.importedAt).toLocaleString()}.`
     : person.sourceUrl ? 'Public source linked to this local profile.' : 'No public source is linked.';
   renderRelationshipHouseholds(person);
+  renderGeniFamilyActions(person, scope);
   renderNamePeriods(person);
   renderPersonalEvents(person);
-  els['add-relative'].disabled = false;
-  els['add-relative'].removeAttribute('title');
-  els['ai-family-status'].textContent = `The generated prompt will preserve “${fullName(person)}” as anchor ID ${person.id}.`;
 }
 function renderParentOptions() {
   const scope = activeDescendantScope();
@@ -3872,7 +4048,7 @@ els['add-global-event'].addEventListener('click', () => {
 });
 function openAddPersonDialog(parentId = '') {
   const parent = state.people[parentId];
-  if (/^profile-/i.test(parent?.id) && !parent.geniImmediateFamilyVerifiedAt) {
+  if (geniProfileIdForPerson(parent) && !parent.geniImmediateFamilyVerifiedAt) {
     toast('Verify this Geni profile’s complete immediate family before adding a local relative.', true);
     return;
   }
@@ -4134,6 +4310,38 @@ els['edit-person'].addEventListener('click', () => {
   els['person-form'].elements.displayName.select();
 });
 els['cancel-person-edit'].addEventListener('click', () => { state.editingProfileId = ''; render(); });
+async function loadSelectedImmediateFamilyFromGeni() {
+  const profileId = state.selectedId;
+  if (!profileId || !state.people[profileId]) return;
+  try {
+    await runGeniFamilyImport(profileId, 'immediate');
+  } catch (error) {
+    toast(error?.message || 'Could not load immediate family from Geni.', true);
+  }
+}
+
+async function linkSelectedProfileAndLoadFromGeni() {
+  const person = state.people[state.selectedId];
+  if (!person) return;
+  const link = optionalGeniLink(els['geni-family-link-input'].value);
+  if (!link) {
+    toast('Enter a public Geni profile URL or ID such as g600000…', true);
+    els['geni-family-link-input'].focus();
+    return;
+  }
+  Object.assign(person, link);
+  persist('Geni profile linked');
+  render();
+  await loadSelectedImmediateFamilyFromGeni();
+}
+
+els['geni-family-primary'].addEventListener('click', loadSelectedImmediateFamilyFromGeni);
+els['geni-family-link-button'].addEventListener('click', linkSelectedProfileAndLoadFromGeni);
+els['geni-family-link-input'].addEventListener('keydown', event => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  linkSelectedProfileAndLoadFromGeni();
+});
 els['add-relative'].addEventListener('click', () => openAddPersonDialog(state.selectedId));
 els['add-name-period'].addEventListener('click', () => {
   const person = state.people[state.selectedId];
@@ -4287,6 +4495,27 @@ if (!Object.keys(state.people).length && !state.manualTree && britishRoyalStarte
 }
 els['tree-filter'].value = state.treeFilter;
 render();
+
+// Resume an immediate-family action after Geni redirects back. The separate
+// descendant-import module also records OAuth tokens in sessionStorage; this
+// module reads the same token so both Geni entry points stay authorized.
+const pendingFamilyIntent = geniFamilyImportIntent(sessionValue(GENI_IMPORT_INTENT_KEY));
+if (pendingFamilyIntent) {
+  sessionValue(GENI_IMPORT_INTENT_KEY, null);
+  sessionValue(GENI_OAUTH_PENDING_KEY, null);
+  if (initialGeniOauth.accessToken || initialGeniOauth.status || initialGeniOauth.message || location.hash) {
+    history.replaceState(history.state, '', `${location.pathname}${location.search}`);
+  }
+  if (state.geniAccessToken && state.people[pendingFamilyIntent.profileId]) {
+    state.selectedId = pendingFamilyIntent.profileId;
+    render();
+    requestAnimationFrame(() => runGeniFamilyImport(pendingFamilyIntent.profileId, pendingFamilyIntent.scope)
+      .catch(error => toast(error?.message || 'Could not load immediate family from Geni.', true)));
+  } else if (initialGeniOauth.status === 'unauthorized') {
+    toast(initialGeniOauth.message || 'Geni authorization was not granted.', true);
+  }
+}
+
 if (britishRoyalStarterLoadError) {
   toast(Object.keys(state.people).length
     ? 'The saved tree opened, but the bundled royal example could not be refreshed.'

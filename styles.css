@@ -243,7 +243,32 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .relationship-section { margin: 6px 0 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; background: #fff; }
 .relationship-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .relationship-heading small { color: #777; font-size: 8px; text-align: right; }
-.relationship-add-button { width: 100%; margin-top: 10px; }
+.geni-family-card { margin-top: 11px; padding: 12px; border: 1px solid #b9c0bf; border-radius: 9px; background: #f6f8f7; }
+.geni-family-card.is-loading { border-color: #111; box-shadow: inset 0 0 0 1px #111; }
+.geni-family-card-heading { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: start; gap: 9px; }
+.geni-family-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #111; color: #fff; font: 700 13px Georgia, serif; }
+.geni-family-card-copy { min-width: 0; display: grid; gap: 3px; }
+.geni-family-card-copy strong { color: #111; font-size: 11px; font-weight: 700; line-height: 1.25; }
+.geni-family-card-copy small { color: #626866; font-size: 8px; line-height: 1.45; }
+.geni-family-badge { align-self: start; padding: 3px 6px; border: 1px solid #c4c9c7; border-radius: 999px; background: #fff; color: #5e6462; font-size: 7px; font-weight: 700; letter-spacing: .04em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+.geni-family-card.is-verified .geni-family-badge { border-color: #111; color: #111; }
+.geni-family-card.is-loading .geni-family-badge { border-color: #111; background: #111; color: #fff; }
+.geni-family-primary { width: 100%; justify-content: center; margin-top: 11px; }
+.geni-family-primary[hidden], .geni-family-link[hidden] { display: none; }
+.geni-family-link { display: grid; gap: 7px; margin-top: 11px; }
+.geni-family-link label { color: #555; font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.geni-family-link input { box-sizing: border-box; width: 100%; min-width: 0; margin: 0; padding: 8px 9px; border: 1px solid #999; border-radius: 7px; background: #fff; font-size: 10px; }
+.geni-family-link .button { justify-content: center; }
+.known-family-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 11px; border-top: 1px solid #ddd; }
+.known-family-heading strong { color: #333; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.known-family-heading small { color: #777; font-size: 8px; }
+.family-alternatives { margin-top: 12px; padding-top: 10px; border-top: 1px solid #ddd; }
+.family-alternatives summary { color: #555; cursor: pointer; font-size: 9px; font-weight: 700; letter-spacing: .03em; list-style-position: outside; }
+.family-alternatives summary:hover { color: #111; }
+.family-alternatives[open] summary { margin-bottom: 9px; }
+.family-alternative-actions { display: grid; gap: 6px; }
+.family-alternative-actions .button { width: 100%; justify-content: flex-start; text-align: left; }
+.family-alternatives p { margin: 7px 2px 0; color: #777; font-size: 8px; line-height: 1.45; }
 .relationship-households { display: grid; gap: 10px; margin-top: 10px; }
 .relationship-empty { margin: 0; color: #777; font-size: 10px; }
 .relationship-household { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid #ddd; }

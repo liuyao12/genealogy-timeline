@@ -2,8 +2,7 @@ name: Restore timeline compaction after household ordering
 
 on:
   push:
-    branches:
-      - fix/restore-timeline-compaction
+    branches: [fix/restore-timeline-compaction]
 
 permissions:
   contents: write
@@ -17,7 +16,6 @@ jobs:
         with:
           ref: fix/restore-timeline-compaction
           fetch-depth: 0
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -28,50 +26,47 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          app_path = Path('app.js')
-          app = app_path.read_text(encoding='utf-8')
-          old = '''      // Preserve the depth-first reading order: every sibling owns its complete
-              // descendant branch, and the next sibling begins only after that block.
-              // This also keeps each spouse followed by that union's descendants.
-              for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
-                const uniquePrecedingHousehold = branches[branchIndex - 1].indexes;'''
-          new = '''      // Keep the next sibling below the preceding sibling's immediate
-              // household. Consecutive spouse roots belonging to the same person are
-              // the exception: only the preceding spouse row constrains the next one,
-              // so the compactor can reuse vertical space after the depth-first source
-              // order has been established. A spouse followed by a different kind of
-              // branch still protects its complete descendant block.
-              for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
-                const precedingRoot = branches[branchIndex - 1].rootIndex;
-                const followingRoot = branches[branchIndex].rootIndex;
-                const precedingHousehold = [precedingRoot];
-                childrenByIndex.get(precedingRoot).forEach(childIndex => {
-                  precedingHousehold.push(childIndex);
-                  if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
-                });
-                const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);
-                const followingOwner = displayParentByKey.get(nodes[followingRoot].key);
-                const sharesMarriageOwner = nodes[precedingRoot].isSpouse
-                  && nodes[followingRoot].isSpouse
-                  && precedingOwner
-                  && precedingOwner === followingOwner;
-                const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
-                const uniquePrecedingHousehold = sharesMarriageOwner
-                  ? [precedingRoot]
-                  : protectsMarriageOrder
-                    ? branches[branchIndex - 1].indexes
-                    : unique(precedingHousehold);'''
-          if app.count(old) != 1:
-              raise SystemExit(f'Expected one strict compaction block, found {app.count(old)}')
-          app_path.write_text(app.replace(old, new), encoding='utf-8')
+          path = Path('app.js')
+          source = path.read_text(encoding='utf-8')
+          start_marker = '      // Preserve the depth-first reading order: every sibling owns its complete'
+          end_marker = '        const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));'
+          start = source.index(start_marker)
+          end = source.index(end_marker, start)
+          replacement = '\n'.join([
+              "      // Keep the next sibling below the preceding sibling's immediate",
+              '      // household. Consecutive spouse roots belonging to the same person are',
+              '      // the exception: only the preceding spouse row constrains the next one,',
+              '      // so compact packing remains free after the depth-first source order is',
+              '      // established. A spouse followed by a different branch still protects',
+              '      // its complete descendant block.',
+              '      for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {',
+              '        const precedingRoot = branches[branchIndex - 1].rootIndex;',
+              '        const followingRoot = branches[branchIndex].rootIndex;',
+              '        const precedingHousehold = [precedingRoot];',
+              '        childrenByIndex.get(precedingRoot).forEach(childIndex => {',
+              '          precedingHousehold.push(childIndex);',
+              '          if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));',
+              '        });',
+              '        const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);',
+              '        const followingOwner = displayParentByKey.get(nodes[followingRoot].key);',
+              '        const sharesMarriageOwner = nodes[precedingRoot].isSpouse',
+              '          && nodes[followingRoot].isSpouse',
+              '          && precedingOwner',
+              '          && precedingOwner === followingOwner;',
+              '        const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;',
+              '        const uniquePrecedingHousehold = sharesMarriageOwner',
+              '          ? [precedingRoot]',
+              '          : protectsMarriageOrder',
+              '            ? branches[branchIndex - 1].indexes',
+              '            : unique(precedingHousehold);',
+          ]) + '\n'
+          path.write_text(source[:start] + replacement + source[end:], encoding='utf-8')
 
           index_path = Path('index.html')
           index = index_path.read_text(encoding='utf-8')
-          old_version = './app.js?v=120'
-          new_version = './app.js?v=121'
-          if index.count(old_version) != 1:
-              raise SystemExit(f'Expected one cache key {old_version}, found {index.count(old_version)}')
-          index_path.write_text(index.replace(old_version, new_version), encoding='utf-8')
+          if index.count('./app.js?v=120') != 1:
+              raise SystemExit('Expected app.js cache key v120')
+          index_path.write_text(index.replace('./app.js?v=120', './app.js?v=121'), encoding='utf-8')
           PY
 
       - name: Run tests and syntax checks
@@ -79,36 +74,30 @@ jobs:
           npm test
           node --check app.js
 
-      - name: Verify compacted household ordering in Chromium
+      - name: Verify compaction in Chromium
         shell: bash
         run: |
           cat > __compaction_smoke.html <<'HTML'
-          <!doctype html>
-          <meta charset="utf-8">
+          <!doctype html><meta charset="utf-8">
           <iframe id="app" src="./index.html" style="width:1500px;height:1000px"></iframe>
           <pre id="result">WAIT</pre>
           <script>
-          const result = document.getElementById('result');
-          const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
-          async function waitFor(check, label, attempts = 180) {
-            for (let attempt = 0; attempt < attempts; attempt += 1) {
-              const value = check();
-              if (value) return value;
-              await sleep(100);
-            }
-            throw new Error(`Timed out waiting for ${label}`);
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          async function waitFor(check) {
+            for (let i = 0; i < 180; i += 1) { const value = check(); if (value) return value; await sleep(100); }
+            throw new Error('timeout');
           }
           (async () => {
+            const result = document.getElementById('result');
             try {
               const frame = document.getElementById('app');
               await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
               const doc = frame.contentDocument;
-              await waitFor(() => doc.querySelector('.timeline-node'), 'timeline nodes');
+              await waitFor(() => doc.querySelector('.timeline-node'));
               const filter = doc.getElementById('tree-filter');
               filter.value = '';
               filter.dispatchEvent(new Event('input', { bubbles: true }));
               await sleep(1500);
-
               const ids = {
                 margaret: 'profile-g6000000003858820967',
                 jamesIV: 'profile-g4229916861440069622',
@@ -117,36 +106,30 @@ jobs:
                 henryStewart: 'profile-g6000000005412245713',
                 henryVIII: 'profile-g6000000007442241030'
               };
-              const primaryY = id => {
+              const y = id => {
                 const node = doc.querySelector(`.timeline-node[data-node-key="${id}"]`);
                 const match = /translate\([^ ,]+[ ,]+([^)]+)\)/.exec(node?.getAttribute('transform') || '');
                 return match ? Number(match[1]) : NaN;
               };
-              const rows = Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, primaryY(id)]));
-              const sourceOrderStillVisible = rows.margaret < rows.jamesIV
-                && rows.jamesIV < rows.jamesV
-                && rows.jamesV < rows.archibald
-                && rows.archibald < rows.henryStewart;
-              const compactionRestored = rows.henryVIII < 1200;
-              const checks = { sourceOrderStillVisible, compactionRestored };
-              const passed = Object.values(checks).every(Boolean);
-              result.textContent = `${passed ? 'PASS' : 'FAIL'} ${JSON.stringify({ checks, rows })}`;
-            } catch (error) {
-              result.textContent = `FAIL ${error.stack || error}`;
-            }
+              const rows = Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, y(id)]));
+              const traversalInfluence = rows.margaret < rows.jamesIV && rows.jamesIV < rows.jamesV
+                && rows.jamesV < rows.archibald && rows.archibald < rows.henryStewart;
+              const compact = rows.henryVIII < 1200;
+              const pass = traversalInfluence && compact;
+              result.textContent = `${pass ? 'PASS' : 'FAIL'} ${JSON.stringify({ traversalInfluence, compact, rows })}`;
+            } catch (error) { result.textContent = `FAIL ${error.stack || error}`; }
           })();
           </script>
           HTML
-
-          python3 -m http.server 4173 > /tmp/lineage-http.log 2>&1 &
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           sleep 2
           chrome="$(command -v google-chrome || command -v google-chrome-stable)"
           "$chrome" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
-            --virtual-time-budget=30000 --dump-dom http://127.0.0.1:4173/__compaction_smoke.html > /tmp/lineage-compaction-smoke.html
-          grep -oE '(PASS|FAIL) [^<]*' /tmp/lineage-compaction-smoke.html | head -1
-          grep -q 'PASS {' /tmp/lineage-compaction-smoke.html
+            --virtual-time-budget=30000 --dump-dom http://127.0.0.1:4173/__compaction_smoke.html >/tmp/compaction.html
+          grep -oE '(PASS|FAIL) [^<]*' /tmp/compaction.html | head -1
+          grep -q 'PASS {' /tmp/compaction.html
           rm __compaction_smoke.html
 
       - name: Commit verified fix

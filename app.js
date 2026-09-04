@@ -1833,7 +1833,10 @@ function timelineNodesAreImmediateFamily(firstNode, secondNode) {
 }
 
 function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
-  const unrelatedExtraGutter = 6;
+  // Direct relatives retain the ordinary six-pixel row gutter. People
+  // with no direct relationship—such as two spouses of one person—
+  // receive a visibly wider separation without becoming hard blocks.
+  const unrelatedExtraGutter = 10;
   return rowStep + (timelineNodesAreImmediateFamily(nodes[firstIndex], nodes[secondIndex]) ? 0 : unrelatedExtraGutter);
 }
 
@@ -1929,14 +1932,10 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
   nodes.forEach((_, index) => {
     const currentRun = directRuns.at(-1);
     const previousIndex = currentRun?.at(-1);
-    const previousOwner = previousIndex == null ? '' : displayParentByKey.get(nodes[previousIndex].key);
-    const currentOwner = displayParentByKey.get(nodes[index].key);
-    const sharesMarriageOwner = previousIndex != null
-      && nodes[previousIndex].isSpouse
-      && nodes[index].isSpouse
-      && previousOwner
-      && previousOwner === currentOwner;
-    if (previousIndex != null && (timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index]) || sharesMarriageOwner)) currentRun.push(index);
+    // Co-spouses are not directly related to one another. Keeping them
+    // in separate runs lets the ordinary compactor preserve the wider
+    // unrelated-person gutter while still reusing open vertical space.
+    if (previousIndex != null && timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index])) currentRun.push(index);
     else directRuns.push([index]);
   });
   const runByIndex = new Map();
@@ -1980,7 +1979,12 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
       }
       (siblingHouseholdConstraints.get(index) || []).forEach(precedingIndexes => {
         const placedIndexes = precedingIndexes.filter(other => !offsetByIndex.has(other) && placedSet.has(other));
-        if (placedIndexes.length) targetTop = Math.max(targetTop, Math.max(...placedIndexes.map(other => nodes[other].y)) + rowStep - offset);
+        if (placedIndexes.length) {
+          const dependencyBottom = Math.max(...placedIndexes.map(other =>
+            nodes[other].y + timelineVerticalSeparation(index, other, nodes, rowStep)
+          ));
+          targetTop = Math.max(targetTop, dependencyBottom - offset);
+        }
       });
     });
 
@@ -2085,6 +2089,31 @@ function renderTimeline() {
   // are removed from `visibleIds` below, but its control must remain expandable.
   const expandableIds = new Set(visibleIds);
   const renderedPartnerIds = id => scopedSpouseIds(state.people[id], scope).filter(partnerId => renderedPartnerPairs.has(partnerRelationKey(id, partnerId)));
+  // A hidden spouse does not reopen another descendant tree, but the date of
+  // that marriage still belongs on every occurrence of this person's life bar.
+  const formalMarriagePartnersByPerson = new Map();
+  const addFormalMarriagePartner = (firstId, secondId) => {
+    if (!state.people[firstId] || !state.people[secondId] || firstId === secondId) return;
+    if (!formalMarriagePartnersByPerson.has(firstId)) formalMarriagePartnersByPerson.set(firstId, new Set());
+    formalMarriagePartnersByPerson.get(firstId).add(secondId);
+  };
+  Object.values(state.people).forEach(person => {
+    unique([
+      ...(person.spouses || []),
+      ...(person.divorcedSpouses || []),
+      ...Object.keys(person.marriageYears || {})
+    ]).forEach(partnerId => {
+      if (!state.people[partnerId] || marriageYearFor(person.id, partnerId) == null) return;
+      addFormalMarriagePartner(person.id, partnerId);
+      addFormalMarriagePartner(partnerId, person.id);
+    });
+  });
+  const formalMarriagePartnerIds = id => [...(formalMarriagePartnersByPerson.get(id) || [])]
+    .sort((firstId, secondId) =>
+      (marriageYearFor(id, firstId) ?? Number.POSITIVE_INFINITY)
+        - (marriageYearFor(id, secondId) ?? Number.POSITIVE_INFINITY)
+      || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]))
+    );
   // Collapse paths, not people. A cousin-marriage profile can occur once in
   // its natal branch and again beside a spouse. If one route from the root is
   // collapsed, the other route must keep the shared household alive.
@@ -2899,29 +2928,25 @@ function renderTimeline() {
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
     });
-    // Keep marriage markers inside the root's descendant scope. A spouse's
-    // other family belongs to a different descendant-tree view.
-    if (isSpouseNode) {
-      const attachedKey = displayParentByKey.get(nodeKey);
-      const attachedPartnerId = layoutNodeByKey.get(attachedKey)?.id || attachedKey || '';
-      scopedSpouseIds(person, scope).forEach(partnerId => {
-        const partner = state.people[partnerId];
-        const pairKey = partnerRelationKey(id, partnerId);
-        const isFormal = person.spouses.includes(partnerId) || partner?.spouses?.includes(id);
-        const marriageYear = marriageYearFor(id, partnerId);
-        if (!isFormal || partnerId === attachedPartnerId || renderedPartnerPairs.has(pairKey) || marriageYear == null) return;
-        const localX = (marriageYear - birthYear(person)) * yearWidth;
-        if (localX < 0 || localX > lifespanWidth) return;
-        const marker = svg('line', {
-          class: 'timeline-edge unconnected-marriage-marker vertical',
-          x1: localX, y1: 0, x2: localX, y2: rowHeight,
-          'data-marriage-year': marriageYear,
-          'data-partner-id': partnerId
-        });
-        marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}; profile not shown in this tree`));
-        group.append(marker);
+    // Each occurrence repeats the complete set of dated formal marriages.
+    // The actual connector is drawn only at its paired household, while
+    // these short white ticks preserve the person's full marital history.
+    formalMarriagePartnerIds(id).forEach(partnerId => {
+      const partner = state.people[partnerId];
+      const marriageYear = marriageYearFor(id, partnerId);
+      if (!partner || marriageYear == null) return;
+      const localX = (marriageYear - birthYear(person)) * yearWidth;
+      if (localX < 0 || localX > lifespanWidth) return;
+      const isDivorced = marriageIsDivorced([id, partnerId]);
+      const marker = svg('line', {
+        class: `timeline-edge marriage-date-marker vertical${isDivorced ? ' divorced' : ''}`,
+        x1: localX, y1: 0, x2: localX, y2: rowHeight,
+        'data-marriage-year': marriageYear,
+        'data-partner-id': partnerId
       });
-    }
+      marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}`));
+      group.append(marker);
+    });
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
     const hasChildren = scopedChildIds(id, scope).some(childId =>
       !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)

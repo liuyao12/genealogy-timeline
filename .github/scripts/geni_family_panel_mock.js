@@ -57,8 +57,9 @@ window.__geniMockRequests = 0;
 
   const profileFor = value => {
     const raw = String(value || '').replace(/^profile-/, '');
+    const guid = raw.replace(/^g/i, '');
     if (profiles[`profile-${raw}`]) return profiles[`profile-${raw}`];
-    return Object.values(profiles).find(profile => profile.guid === raw) || null;
+    return Object.values(profiles).find(profile => profile.guid === guid) || null;
   };
   const unionFor = value => unions[`union-${String(value || '').replace(/^union-/, '')}`] || null;
 

@@ -15,11 +15,14 @@ async function waitFor(check, label) {
 
 (async () => {
   const output = document.getElementById('result');
+  let frame;
+  let win;
+  let doc;
   try {
-    const frame = document.getElementById('app');
+    frame = document.getElementById('app');
     await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
-    const win = frame.contentWindow;
-    const doc = frame.contentDocument;
+    win = frame.contentWindow;
+    doc = frame.contentDocument;
     await waitFor(() => doc.querySelector('.timeline-node'), 'starter timeline');
 
     const filter = doc.getElementById('tree-filter');
@@ -69,13 +72,33 @@ async function waitFor(check, label) {
     const localChecks = {
       connectFlowIsPrimary: !linkPanel.hidden && doc.getElementById('geni-family-primary').hidden,
       linkButtonPrimary: linkButton.classList.contains('primary'),
+      tokenRecognizedByApp: !/authorize/i.test(linkButton.textContent),
       manualAvailableWhenUnlinked: !doc.getElementById('add-relative').disabled,
       alternativesResetClosed: !doc.getElementById('family-alternatives').open
     };
+    if (!localChecks.tokenRecognizedByApp) {
+      throw new Error(`App did not recognize mocked session token: ${JSON.stringify({
+        button: linkButton.textContent,
+        sessionToken: win.sessionStorage.getItem('lineage-geni-access-token'),
+        mockRequests: win.__geniMockRequests
+      })}`);
+    }
 
     linkInput.value = 'g6000000000000009001';
     linkButton.click();
-    await waitFor(() => doc.getElementById('geni-family-badge').textContent === 'Checked', 'mocked Geni family import');
+    for (let index = 0; index < 120 && doc.getElementById('geni-family-badge')?.textContent !== 'Checked'; index += 1) await sleep(100);
+    if (doc.getElementById('geni-family-badge')?.textContent !== 'Checked') {
+      throw new Error(`Mocked import did not finish: ${JSON.stringify({
+        badge: doc.getElementById('geni-family-badge')?.textContent,
+        heading: doc.getElementById('geni-family-heading')?.textContent,
+        status: doc.getElementById('geni-family-status')?.textContent,
+        primary: doc.getElementById('geni-family-primary')?.textContent,
+        linkButton: doc.getElementById('geni-family-link-button')?.textContent,
+        toast: doc.getElementById('toast')?.textContent,
+        mockRequests: win.__geniMockRequests,
+        sessionToken: win.sessionStorage.getItem('lineage-geni-access-token')
+      })}`);
+    }
     await sleep(500);
 
     const workspace = JSON.parse(win.localStorage.getItem('lineage-tree-workspace-v1'));

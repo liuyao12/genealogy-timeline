@@ -1,0 +1,124 @@
+<!doctype html>
+<meta charset="utf-8">
+<iframe id="app" src="/__geni-family-panel-app.html" style="width:1500px;height:1050px"></iframe>
+<pre id="result">WAIT</pre>
+<script>
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function waitFor(check, label) {
+  for (let index = 0; index < 240; index += 1) {
+    const value = check();
+    if (value) return value;
+    await sleep(100);
+  }
+  throw new Error(`Timed out waiting for ${label}`);
+}
+
+(async () => {
+  const output = document.getElementById('result');
+  try {
+    const frame = document.getElementById('app');
+    await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+    await waitFor(() => doc.querySelector('.timeline-node'), 'starter timeline');
+
+    const filter = doc.getElementById('tree-filter');
+    filter.value = '';
+    filter.dispatchEvent(new Event('input', { bubbles: true }));
+    await sleep(1000);
+
+    const henryId = 'profile-g6000000003760873898';
+    const henryNode = await waitFor(
+      () => doc.querySelector(`.timeline-node[data-node-key="${henryId}"]`),
+      'Henry VII node'
+    );
+    henryNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await waitFor(() => doc.getElementById('detail-sidebar').classList.contains('open'), 'selected-profile sidebar');
+
+    const initialSection = doc.querySelector('.relationship-section');
+    const initialCard = doc.getElementById('geni-family-card');
+    const initialPrimary = doc.getElementById('geni-family-primary');
+    const initialAlternatives = doc.getElementById('family-alternatives');
+    const initialManual = doc.getElementById('add-relative');
+    const initialAi = doc.getElementById('prepare-ai-person-import');
+    const initialChecks = {
+      geniCardFirst: Boolean(initialCard.compareDocumentPosition(doc.getElementById('relationship-households')) & win.Node.DOCUMENT_POSITION_FOLLOWING),
+      primaryActionVisible: !initialPrimary.hidden && /load immediate family from geni/i.test(initialPrimary.textContent),
+      alternativesCollapsed: !initialAlternatives.open,
+      manualDemotedInsideDisclosure: initialAlternatives.contains(initialManual),
+      aiDemotedInsideDisclosure: initialAlternatives.contains(initialAi),
+      manualWaitsForFirstGeniCheck: initialManual.disabled,
+      oldAiCardRemoved: !doc.querySelector('.ai-family-actions'),
+      onlyOneGeniPrimary: initialSection.querySelectorAll('#geni-family-primary').length === 1
+    };
+
+    doc.getElementById('add-tree-tab').click();
+    const newTreeDialog = await waitFor(() => doc.getElementById('new-tree-dialog').open && doc.getElementById('new-tree-dialog'), 'new-tree dialog');
+    newTreeDialog.querySelector('input[name="title"]').value = 'Local alias test';
+    newTreeDialog.querySelector('button[value="default"]').click();
+    const addDialog = await waitFor(() => doc.getElementById('add-dialog').open && doc.getElementById('add-dialog'), 'first-profile dialog');
+    addDialog.querySelector('input[name="firstName"]').value = 'Ada';
+    addDialog.querySelector('input[name="lastName"]').value = 'Local';
+    addDialog.querySelector('input[name="birthYear"]').value = '1900';
+    addDialog.querySelector('button[value="default"]').click();
+    await waitFor(() => /Ada Local/.test(doc.getElementById('person-heading').textContent), 'local profile sidebar');
+
+    const linkPanel = doc.getElementById('geni-family-link');
+    const linkInput = doc.getElementById('geni-family-link-input');
+    const linkButton = doc.getElementById('geni-family-link-button');
+    const localChecks = {
+      connectFlowIsPrimary: !linkPanel.hidden && doc.getElementById('geni-family-primary').hidden,
+      linkButtonPrimary: linkButton.classList.contains('primary'),
+      manualAvailableWhenUnlinked: !doc.getElementById('add-relative').disabled,
+      alternativesResetClosed: !doc.getElementById('family-alternatives').open
+    };
+
+    linkInput.value = 'g6000000000000009001';
+    linkButton.click();
+    await waitFor(() => doc.getElementById('geni-family-badge').textContent === 'Checked', 'mocked Geni family import');
+    await sleep(500);
+
+    const workspace = JSON.parse(win.localStorage.getItem('lineage-tree-workspace-v1'));
+    const activeTree = workspace.trees.find(tree => tree.id === workspace.activeTreeId);
+    const localRootId = activeTree.rootId;
+    const familyText = doc.getElementById('relationship-households').textContent;
+    const refreshedPrimary = doc.getElementById('geni-family-primary');
+    const finalChecks = {
+      mockedGeniWasCalled: win.__geniMockRequests >= 4,
+      refreshBecomesPrimary: !refreshedPrimary.hidden && /refresh immediate family from geni/i.test(refreshedPrimary.textContent),
+      checkedStatusShown: /last checked/i.test(doc.getElementById('geni-family-status').textContent),
+      partnerShown: /Alex Partner/.test(familyText),
+      childShown: /Bea Child/.test(familyText),
+      knownFamilyCount: doc.getElementById('known-family-count').textContent === '2 relatives',
+      manualAvailableAfterCheck: !doc.getElementById('add-relative').disabled,
+      localIdentityPreserved: /^local-/.test(localRootId),
+      remoteIdentityLinked: activeTree.people[localRootId]?.sourceId === 'profile-g6000000000000009001',
+      noDuplicateRemoteFocus: !activeTree.people['profile-g6000000000000009001'],
+      exactlyThreeProfiles: Object.keys(activeTree.people).length === 3,
+      verificationPersisted: Boolean(activeTree.people[localRootId]?.geniImmediateFamilyVerifiedAt)
+    };
+
+    doc.getElementById('family-alternatives').open = true;
+    const disclosureChecks = {
+      manualAndAiAvailableOnDemand: doc.getElementById('family-alternatives').open
+        && !doc.getElementById('add-relative').disabled
+        && !doc.getElementById('prepare-ai-person-import').disabled,
+      aiAnchorExplained: /Ada Local/.test(doc.getElementById('ai-family-status').textContent)
+    };
+
+    const checks = { ...initialChecks, ...localChecks, ...finalChecks, ...disclosureChecks };
+    const pass = Object.values(checks).every(Boolean);
+    output.textContent = `${pass ? 'PASS' : 'FAIL'} ${JSON.stringify({
+      checks,
+      mockRequests: win.__geniMockRequests,
+      localRootId,
+      people: Object.keys(activeTree.people),
+      familyText: familyText.replace(/\s+/g, ' ').trim(),
+      primaryLabel: refreshedPrimary.textContent,
+      status: doc.getElementById('geni-family-status').textContent
+    })}`;
+  } catch (error) {
+    output.textContent = `FAIL ${error.stack || error}`;
+  }
+})();
+</script>

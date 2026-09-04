@@ -26,6 +26,7 @@ jobs:
         run: |
           python3 .github/scripts/apply_geni_first_family_panel.py
           python3 .github/scripts/fix_geni_family_oauth.py
+          python3 .github/scripts/preserve_local_anchor_name.py
 
       - name: Run tests and syntax checks
         run: |

@@ -1,5 +1,5 @@
 import { computeDescendantScope } from './descendant-scope.js?v=1';
-import { decadeBands } from './timeline-bands.js?v=1';
+import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -2551,24 +2551,54 @@ function renderTimeline() {
   const positions = new Map(layoutNodes.map(node => [node.key, { x: node.x, y: top + node.y }]));
 
   // Alternating calendar decades give each lifespan a quiet visual measure of
-  // age without adding another grid of hard lines. The fills are translucent,
-  // so the canvas texture remains visible and historical event bands retain
-  // visual priority. Using year boundaries rather than year-center positions
-  // keeps every stripe exactly ten years wide.
+  // age without adding another grid of hard lines. Each band begins at the
+  // exact x-coordinate of its zero-ending year tick, rather than half a year
+  // before it. The background remains outside the historical-content mask.
   const decadeBackground = svg('g', { class: 'timeline-decade-bands', 'aria-hidden': 'true' });
   const rulerDecadeBackground = svg('g', { class: 'timeline-decade-bands ruler-decade-bands', 'aria-hidden': 'true' });
-  const yearBoundaryX = year => xForYear(year) - yearWidth / 2;
-  decadeBands(minYear, maxYear).forEach(({ decade, startYear, endYear, tone }) => {
+  decadeBandRects(minYear, maxYear, { yearWidth, xForYear }).forEach(({ decade, x, width: bandWidth, tone }) => {
     const bandAttributes = {
-      x: yearBoundaryX(startYear),
-      width: (endYear - startYear) * yearWidth,
+      x,
+      width: bandWidth,
       class: `timeline-decade-band tone-${tone}`,
       'data-decade': decade
     };
     decadeBackground.append(svg('rect', { ...bandAttributes, y: eventTop, height: eventBottom - eventTop }));
     rulerDecadeBackground.append(svg('rect', { ...bandAttributes, y: 0, height: rulerHeight }));
   });
-  canvas.append(decadeBackground);
+
+  // Dim future timeline content, not the calendar paper beneath it. A mask
+  // reproduces the old 32% future-content visibility while leaving both
+  // decade hues unchanged to the right of the As-of line.
+  const timelineContent = svg('g', { class: 'timeline-content' });
+  if (historicalYear != null) {
+    const maskId = 'timeline-as-of-content-mask';
+    const maskDefinitions = svg('defs');
+    const mask = svg('mask', {
+      id: maskId,
+      x: -TIMELINE_PAN_MARGIN.left,
+      y: eventTop,
+      width,
+      height: eventBottom - eventTop,
+      maskUnits: 'userSpaceOnUse',
+      maskContentUnits: 'userSpaceOnUse',
+      style: 'mask-type: alpha'
+    });
+    asOfMaskSegments(-TIMELINE_PAN_MARGIN.left, width, xForYear(historicalYear)).forEach(segment => {
+      mask.append(svg('rect', {
+        x: segment.x,
+        y: eventTop,
+        width: segment.width,
+        height: eventBottom - eventTop,
+        fill: '#fff',
+        'fill-opacity': segment.opacity
+      }));
+    });
+    maskDefinitions.append(mask);
+    canvas.append(maskDefinitions);
+    timelineContent.setAttribute('mask', `url(#${maskId})`);
+  }
+  canvas.append(decadeBackground, timelineContent);
 
   const rulerMarks = svg('g');
   ruler.append(svg('title', {}, 'Hover to preview a year; click to place the As of line'));
@@ -2578,7 +2608,7 @@ function renderTimeline() {
     const x = xForYear(year);
     const isMajor = year % 20 === 0;
     const isDecade = year % 10 === 0;
-    rulerMarks.append(svg('line', { x1: x, y1: isMajor ? 29 : isDecade ? 33 : 36, x2: x, y2: rulerBaseline, class: `year-tick ${isMajor ? 'major' : isDecade ? 'decade' : 'minor'}` }));
+    rulerMarks.append(svg('line', { x1: x, y1: isMajor ? 29 : isDecade ? 33 : 36, x2: x, y2: rulerBaseline, class: `year-tick ${isMajor ? 'major' : isDecade ? 'decade' : 'minor'}`, 'data-year': year }));
     if (isDecade && Math.abs(year - currentYear) >= 8) rulerMarks.append(svg('text', { x, y: 22, 'text-anchor': 'middle', class: isMajor ? 'major-label' : 'decade-label' }, String(year)));
   }
   const currentYearX = xForYear(currentYear);
@@ -2637,8 +2667,8 @@ function renderTimeline() {
     stickyGlobalEventLabels.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, event.name));
   });
   ruler.append(stickyGlobalEventLabels);
-  canvas.append(globalEvents);
-  canvas.append(svg('line', { class: 'timeline-current-year-line', x1: currentYearX, y1: eventTop, x2: currentYearX, y2: eventBottom, 'aria-label': `Current year ${currentYear}` }));
+  timelineContent.append(globalEvents);
+  timelineContent.append(svg('line', { class: 'timeline-current-year-line', x1: currentYearX, y1: eventTop, x2: currentYearX, y2: eventBottom, 'aria-label': `Current year ${currentYear}` }));
 
   const connectors = svg('g', { class: 'timeline-connectors' });
   const marriageOverlaysByParent = new Map();
@@ -2744,7 +2774,7 @@ function renderTimeline() {
       }));
     });
   });
-  canvas.append(connectors);
+  timelineContent.append(connectors);
 
   const nodeDefs = svg('defs');
   const maleGradient = svg('linearGradient', { id: 'geni-male-gradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
@@ -2932,12 +2962,11 @@ function renderTimeline() {
     if (person.isLiving) group.append(svg('line', { class: 'current-year-edge', x1: lifespanWidth, y1: 0, x2: lifespanWidth, y2: rowHeight }));
     group.addEventListener('click', () => selectPerson(id));
     group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') selectPerson(id); });
-    canvas.append(group);
+    timelineContent.append(group);
   });
   if (historicalYear != null) {
     const historicalX = xForYear(historicalYear);
     const snapshotLayer = svg('g', { class: 'timeline-as-of-layer', 'aria-label': `Historical snapshot at ${historicalYear}` });
-    snapshotLayer.append(svg('rect', { class: 'timeline-as-of-dim', x: historicalX, y: eventTop, width: Math.max(0, xForYear(maxYear) - historicalX + TIMELINE_PAN_MARGIN.right), height: eventBottom - eventTop }));
     const historicalHitLine = svg('line', { class: 'timeline-as-of-hit', x1: historicalX, y1: eventTop, x2: historicalX, y2: eventBottom });
     historicalHitLine.addEventListener('pointerenter', event => updateTimelineAsOfGrip(event.clientY));
     historicalHitLine.addEventListener('pointermove', event => updateTimelineAsOfGrip(event.clientY));

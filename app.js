@@ -989,6 +989,11 @@ function normalizedGeniReference(value) {
   return /^profile-/i.test(raw) ? canonicalGeniProfileId(raw) : raw;
 }
 
+function geniYearOnlyEvent(value) {
+  const year = numericYear(value?.date?.year ?? value?.year ?? value);
+  return year == null ? {} : { date: { year } };
+}
+
 function remapGeniImmediateFamily(mapped, focusAliases, localFocusId, remoteFocusId) {
   const aliases = new Set(focusAliases.map(normalizedGeniReference).filter(Boolean));
   const remapId = value => {
@@ -1077,6 +1082,11 @@ async function loadGeniImmediateFamily(profileId) {
     const incoming = normalizePerson({
       ...raw,
       id,
+      // Geni returns whole event objects even when we only need the year.
+      // Strip month, day, and location before the general normalizer sees it.
+      birth: geniYearOnlyEvent(raw.birth),
+      death: geniYearOnlyEvent(raw.death),
+      place: '',
       sourceId,
       sourceUrl: validGeniUrl(raw.profile_url) || `https://www.geni.com/profile/index/${geniProfileUrlId(sourceId)}`,
       sourceProvider: 'geni',

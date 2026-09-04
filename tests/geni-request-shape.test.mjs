@@ -39,6 +39,16 @@ test('selected-profile graph asks only for year-bearing event objects', () => {
   assert.doesNotMatch(fields, /birth_date|death_date|marriage_date|divorce|location|month|day/);
 });
 
+test('selected-profile merge strips event detail before normalizing', () => {
+  const body = functionBody(
+    'async function loadGeniImmediateFamily(profileId)',
+    'async function fetchGeniReignEvents'
+  );
+  assert.match(body, /birth: geniYearOnlyEvent\(raw\.birth\)/);
+  assert.match(body, /death: geniYearOnlyEvent\(raw\.death\)/);
+  assert.match(body, /place: ''/);
+});
+
 test('immediate-family merge does not make a second optional event request', () => {
   const body = functionBody(
     'async function loadGeniImmediateFamily(profileId)',

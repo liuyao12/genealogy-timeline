@@ -1,0 +1,17 @@
+name: Refactor Geni graph importer
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/geni-immediate-family-rate-limit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: echo placeholder

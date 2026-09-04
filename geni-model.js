@@ -104,10 +104,12 @@ export function profileToLineagePerson(raw, fallbackId = '', importedAt = new Da
     lastName: clean(raw?.last_name || raw?.maiden_name),
     title: clean(raw?.title),
     gender: ['male', 'female'].includes(clean(raw?.gender).toLowerCase()) ? clean(raw.gender).toLowerCase() : 'unknown',
-    birthYear: extractYear(raw?.birth_date_parts) || extractYear(birth) || extractYear(raw?.birth_date),
-    deathYear: extractYear(raw?.death_date_parts) || extractYear(death) || extractYear(raw?.death_date),
-    isLiving: raw?.is_alive === true,
-    place: clean(raw?.birth?.location?.place_name || raw?.birth?.location?.city),
+    // Keep legacy fallbacks for old saved payloads, but new network requests
+    // ask only for the birth/death event objects and retain only their years.
+    birthYear: extractYear(birth) || extractYear(raw?.birth_date_parts) || extractYear(raw?.birth_date),
+    deathYear: extractYear(death) || extractYear(raw?.death_date_parts) || extractYear(raw?.death_date),
+    isLiving: raw?.is_alive === true || raw?.living === true,
+    place: '',
     note: '',
     parents: [],
     children: [],

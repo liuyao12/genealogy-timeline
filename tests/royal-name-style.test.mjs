@@ -27,6 +27,27 @@ const expectedDefaults = {
   'profile-g5466010055340136751': 'Katherine Willoughby, Duchess of Suffolk'
 };
 
+const staleStarterNames = [
+  'Arthur Tudor',
+  'Adolphus of Cambridge',
+  'Augusta of Hesse-Kassel',
+  'Mary Adelaide of Cambridge',
+  'Alice of the United Kingdom',
+  'Louis of Battenberg',
+  'Victoria of Hesse',
+  'Andrew of Greece and Denmark',
+  'Alice of Battenberg',
+  'Ernest Augustus of Hanover',
+  'Sophia of Hanover',
+  'Elizabeth Stuart',
+  'Mary Stuart',
+  'Anne Hyde',
+  'George of Denmark',
+  'Augusta of Saxe-Gotha',
+  'Frances Brandon',
+  'Katherine Willoughby'
+];
+
 function defaultName(person) {
   return person.namePeriods.find(period => period.id === person.defaultNamePeriodId)?.name;
 }
@@ -66,27 +87,13 @@ test('genuine conventional bynames remain unchanged', () => {
 });
 
 test('the known malformed territorial-title forms have been removed', () => {
-  const oldNames = new Set([
-    'Arthur Tudor',
-    'Adolphus of Cambridge',
-    'Mary Adelaide of Cambridge',
-    'Alice of the United Kingdom',
-    'Louis of Battenberg',
-    'Victoria of Hesse',
-    'Andrew of Greece and Denmark',
-    'Alice of Battenberg',
-    'Ernest Augustus of Hanover',
-    'Sophia of Hanover',
-    'Mary Stuart',
-    'George of Denmark'
-  ]);
-  Object.values(people).forEach(person => assert.ok(!oldNames.has(person.displayName), person.displayName));
+  const names = new Set(Object.values(people).map(person => person.displayName));
+  for (const oldName of staleStarterNames) assert.ok(!names.has(oldName), oldName);
 });
 
-test('the starter upgrade repairs exact stale labels without replacing arbitrary local names', () => {
+test('the starter upgrade repairs every exact stale title label without replacing arbitrary local names', () => {
   assert.match(app, /const revisedStarterDisplayNames = \{/);
-  assert.match(app, /'Adolphus of Cambridge'/);
-  assert.match(app, /'Arthur Tudor'/);
+  for (const oldName of staleStarterNames) assert.ok(app.includes(`'${oldName}'`), oldName);
   assert.match(app, /staleStarterNames\.includes\(saved\.displayName\)/);
-  assert.match(app, /period\.source === 'local'/);
+  assert.match(app, /clean\(period\.id\)\.startsWith\('name-'\)/);
 });

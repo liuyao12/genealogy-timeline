@@ -2,7 +2,7 @@ import { computeDescendantScope } from './descendant-scope.js?v=3';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
-import { packTimelineRunsLowerFirst } from './timeline-compaction.js?v=1';
+import { birthOrderPairs, packTimelineRunsLowerFirst } from './timeline-compaction.js?v=2';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -2001,7 +2001,6 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
   // intended six-pixel vertical gutter for the web's 36px boxes on 42px rows.
   const requiredVerticalSeparation = Math.max(rowHeight, rowStep);
   const indexByKey = new Map(nodes.map((node, index) => [node.key, index]));
-  const preferredY = nodes.map(node => Math.max(0, node.y));
   const childrenByIndex = new Map(nodes.map((_, index) => [index, []]));
   const parentIndexByIndex = new Map();
   nodes.forEach((node, index) => {
@@ -2010,71 +2009,49 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
     parentIndexByIndex.set(index, parentIndex);
     childrenByIndex.get(parentIndex).push(index);
   });
-  const subtreeCache = new Map();
-  const subtreeIndexes = rootIndex => {
-    if (subtreeCache.has(rootIndex)) return subtreeCache.get(rootIndex);
-    const indexes = [rootIndex];
-    childrenByIndex.get(rootIndex).forEach(childIndex => indexes.push(...subtreeIndexes(childIndex)));
-    subtreeCache.set(rootIndex, indexes);
-    return indexes;
+
+  // The traversal has already established the intended household sequence.
+  // Preserve only the order of branch roots as a hard vertical invariant. The
+  // descendants inside an earlier branch may then occupy unused rows inside a
+  // later branch, but can never move or spread that already-packed branch.
+  const branchRootPrecedence = [];
+  const branchRootPrecedenceKeys = new Set();
+  const addBranchRootPrecedence = (upper, lower) => {
+    if (upper == null || lower == null || upper === lower) return;
+    const key = `${upper}>${lower}`;
+    if (branchRootPrecedenceKeys.has(key)) return;
+    branchRootPrecedenceKeys.add(key);
+    branchRootPrecedence.push({
+      upper,
+      lower,
+      gap: Math.max(
+        requiredVerticalSeparation,
+        timelineVerticalSeparation(upper, lower, nodes, rowStep)
+      )
+    });
   };
-  const depthOf = index => {
-    let depth = 0;
-    for (let parent = parentIndexByIndex.get(index); parent != null; parent = parentIndexByIndex.get(parent)) depth += 1;
-    return depth;
-  };
-  // A sibling is not just one box: it owns a whole descendant branch. Reassign
-  // the compacted branch slots in birth order, translating every node in each
-  // block together. This keeps the compact layout without leaving one sibling
-  // sitting on top of another sibling's descendants.
-  const siblingHouseholdConstraints = new Map();
-  [...childrenByIndex.entries()]
-    .filter(([, childIndexes]) => childIndexes.length > 1)
-    .sort(([firstParent], [secondParent]) => depthOf(secondParent) - depthOf(firstParent))
-    .forEach(([, childIndexes]) => {
-      const branches = childIndexes.map(rootIndex => ({ rootIndex, indexes: subtreeIndexes(rootIndex) }));
-      const originalSlots = branches.map(branch => Math.min(...branch.indexes.map(index => preferredY[index])));
-      const compactedSlots = [...originalSlots].sort((first, second) => first - second);
-      branches.forEach((branch, branchIndex) => {
-        const top = Math.min(...branch.indexes.map(index => preferredY[index]));
-        const shift = compactedSlots[branchIndex] - top;
-        branch.indexes.forEach(index => { preferredY[index] += shift; });
-      });
-      // Keep the next sibling below the preceding sibling's immediate
-      // household. Consecutive spouse roots belonging to the same person are
-      // the exception: only the preceding spouse row constrains the next one,
-      // so compact packing remains free after the depth-first source order is
-      // established. A spouse followed by a different branch still protects
-      // its complete descendant block.
-      for (let branchIndex = 1; branchIndex < branches.length; branchIndex += 1) {
-        const precedingRoot = branches[branchIndex - 1].rootIndex;
-        const followingRoot = branches[branchIndex].rootIndex;
-        const precedingHousehold = [precedingRoot];
-        childrenByIndex.get(precedingRoot).forEach(childIndex => {
-          precedingHousehold.push(childIndex);
-          if (nodes[childIndex].isSpouse) precedingHousehold.push(...childrenByIndex.get(childIndex));
-        });
-        const precedingOwner = displayParentByKey.get(nodes[precedingRoot].key);
-        const followingOwner = displayParentByKey.get(nodes[followingRoot].key);
-        const sharesMarriageOwner = nodes[precedingRoot].isSpouse
-          && nodes[followingRoot].isSpouse
-          && precedingOwner
-          && precedingOwner === followingOwner;
-        const protectsMarriageOrder = nodes[precedingRoot].isSpouse || nodes[followingRoot].isSpouse;
-        const uniquePrecedingHousehold = sharesMarriageOwner
-          ? [precedingRoot]
-          : protectsMarriageOrder
-            ? branches[branchIndex - 1].indexes
-            : unique(precedingHousehold);
-        const householdBottom = Math.max(...uniquePrecedingHousehold.map(index => preferredY[index]));
-        const followingTop = Math.min(...branches[branchIndex].indexes.map(index => preferredY[index]));
-        const householdShift = Math.max(0, householdBottom + rowStep - followingTop);
-        if (householdShift) branches[branchIndex].indexes.forEach(index => { preferredY[index] += householdShift; });
-        branches[branchIndex].indexes.forEach(index => {
-          if (!siblingHouseholdConstraints.has(index)) siblingHouseholdConstraints.set(index, []);
-          siblingHouseholdConstraints.get(index).push(uniquePrecedingHousehold);
-        });
-      }
+  const nodeBirthYear = index => numericYear(state.people[nodes[index]?.id]?.birthYear);
+
+  childrenByIndex.forEach(childIndexes => {
+    if (childIndexes.length < 2) return;
+    const sourceOrder = [...childIndexes].sort((first, second) => first - second);
+    const siblingRoots = sourceOrder.filter(index => !nodes[index].isSpouse);
+    const siblingRootSet = new Set(siblingRoots);
+
+    // Spouse/household roots retain the chronology produced by the traversal.
+    // Pure sibling roots are handled separately by their actual birth years.
+    for (let index = 1; index < sourceOrder.length; index += 1) {
+      const upper = sourceOrder[index - 1];
+      const lower = sourceOrder[index];
+      if (siblingRootSet.has(upper) && siblingRootSet.has(lower)) continue;
+      addBranchRootPrecedence(upper, lower);
+    }
+
+    // Within every displayed sibling set, vertical order is strictly birth
+    // order. Equal or unknown years retain deterministic source order.
+    birthOrderPairs(siblingRoots, nodeBirthYear).forEach(({ upper, lower }) => {
+      addBranchRootPrecedence(upper, lower);
+    });
   });
   // Consecutive direct relatives form a rigid packing run. Place and move the
   // run as one object so a collision can never insert an unrelated row between
@@ -2106,14 +2083,8 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
   parentIndexByIndex.forEach((parentIndex, childIndex) => {
     addPrecedence(parentIndex, childIndex, rowStep);
   });
-  siblingHouseholdConstraints.forEach((precedingGroups, followingIndex) => {
-    precedingGroups.flat().forEach(precedingIndex => {
-      addPrecedence(
-        precedingIndex,
-        followingIndex,
-        timelineVerticalSeparation(followingIndex, precedingIndex, nodes, rowStep)
-      );
-    });
+  branchRootPrecedence.forEach(({ upper, lower, gap }) => {
+    addPrecedence(upper, lower, gap);
   });
 
   packTimelineRunsLowerFirst({

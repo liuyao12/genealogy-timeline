@@ -42,12 +42,46 @@ export function lowerFirstRunOrder(runs = [], precedencePairs = []) {
 }
 
 /**
+ * Convert sibling indexes into strict birth-order precedence pairs.
+ *
+ * The incoming order is retained for equal or unknown years so the result is
+ * deterministic and remains compatible with the established household order.
+ */
+export function birthOrderPairs(indexes = [], birthYearFor = () => null) {
+  const sourcePosition = new Map();
+  const uniqueIndexes = [];
+  indexes.forEach((index, position) => {
+    if (sourcePosition.has(index)) return;
+    sourcePosition.set(index, position);
+    uniqueIndexes.push(index);
+  });
+  const yearFor = index => {
+    const rawValue = birthYearFor(index);
+    if (rawValue == null || rawValue === '') return null;
+    const value = Number(rawValue);
+    return Number.isFinite(value) ? value : null;
+  };
+  uniqueIndexes.sort((first, second) => {
+    const firstYear = yearFor(first);
+    const secondYear = yearFor(second);
+    if (firstYear != null && secondYear != null && firstYear !== secondYear) return firstYear - secondYear;
+    if (firstYear != null && secondYear == null) return -1;
+    if (firstYear == null && secondYear != null) return 1;
+    return sourcePosition.get(first) - sourcePosition.get(second);
+  });
+  return uniqueIndexes.slice(1).map((lower, index) => ({
+    upper: uniqueIndexes[index],
+    lower
+  }));
+}
+
+/**
  * Pack fixed-order direct-family runs from the bottom upward.
  *
- * The lower source branch claims its compact rows first. Earlier/upper branches
- * then move upward around those rows. This is the dual of an ordinary top-down
- * greedy packer, which gives upper branches priority and can split a lower
- * sibling branch merely to fit a late descendant of an upper branch.
+ * The lower source branch claims and freezes its compact rows first. Earlier
+ * branches may then reuse any genuine holes between those rows, but never move
+ * or widen the lower branch. This is the dual of an ordinary top-down greedy
+ * packer, which gives upper branches priority and can split a lower branch.
  */
 export function packTimelineRunsLowerFirst({
   nodes = [],

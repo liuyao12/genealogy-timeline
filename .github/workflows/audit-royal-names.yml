@@ -1,4 +1,4 @@
-# Retry 3: make the browser regression independent of the initially focused profile.
+# Retry 4: wait for each focus animation before checking the next profile control.
 name: Verify royal names and side-panel tree action
 on:
   push:

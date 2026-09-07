@@ -12,11 +12,11 @@ test('an active search queries every profile stored in the tree tab', () => {
   assert.match(html, /placeholder="Search all stored people"/);
 });
 
-test('search results expose a tree-symbol action', () => {
-  assert.match(app, /const TREE_ACTION_SYMBOL = '🌳'/);
-  assert.match(app, /focus\.className = 'person-list-focus'/);
+test('search results expose a monochrome tree action', () => {
+  assert.doesNotMatch(app, /TREE_ACTION_SYMBOL|🌳/);
+  assert.match(app, /focus\.className = 'person-list-focus tree-action-button'/);
   assert.match(app, /focus\.dataset\.focusPersonId = person\.id/);
-  assert.match(app, /focus\.textContent = TREE_ACTION_SYMBOL/);
+  assert.match(styles, /\.tree-action-button::before/);
   assert.match(app, /focusTreeOn\(person\.id, \{[\s\S]*?clearSearch: true,[\s\S]*?centerIfHidden: !inCurrentScope/);
   assert.match(styles, /\.person-list-focus/);
   assert.match(styles, /\.outside-focus-scope \.person-list-focus/);

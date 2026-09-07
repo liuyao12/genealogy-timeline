@@ -14,7 +14,6 @@ const GENI_TOKEN_SESSION_KEY = 'lineage-geni-access-token';
 const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const TREE_ACTION_SYMBOL = '🌳';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
 const CAMILLA_GENI_PROFILE_ID = 'profile-g6000000003081589893';
 const EVENT_COLOR_PALETTE = [
@@ -3484,10 +3483,9 @@ function renderPersonList() {
     if (searching) {
       const focus = document.createElement('button');
       focus.type = 'button';
-      focus.className = 'person-list-focus';
+      focus.className = 'person-list-focus tree-action-button';
       focus.dataset.focusPersonId = person.id;
       const alreadyRoot = person.id === state.rootId;
-      focus.textContent = TREE_ACTION_SYMBOL;
       focus.disabled = alreadyRoot;
       focus.setAttribute('aria-pressed', String(alreadyRoot));
       focus.title = alreadyRoot
@@ -3848,10 +3846,9 @@ function renderRelationshipHouseholds(person) {
     if (kind === 'spouse') {
       const focus = document.createElement('button');
       focus.type = 'button';
-      focus.className = 'relationship-focus';
+      focus.className = 'relationship-focus tree-action-button';
       focus.dataset.focusPersonId = targetId;
       const alreadyFocused = targetId === state.rootId;
-      focus.textContent = TREE_ACTION_SYMBOL;
       focus.disabled = alreadyFocused || focusTreeTransitionRunning;
       focus.setAttribute('aria-pressed', String(alreadyFocused));
       focus.title = alreadyFocused
@@ -4059,7 +4056,6 @@ function renderDetails() {
   const isTreeFocus = person.id === state.rootId;
   els['focus-tree-button'].disabled = isTreeFocus || focusTreeTransitionRunning;
   els['focus-tree-button'].setAttribute('aria-pressed', String(isTreeFocus));
-  els['focus-tree-button'].textContent = TREE_ACTION_SYMBOL;
   els['focus-tree-button'].title = isTreeFocus
     ? `${visibleName(person)} is the current tree`
     : `Show ${visibleName(person)}'s paternal households and descendants`;

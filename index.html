@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=76">
+  <link rel="stylesheet" href="./styles.css?v=77">
 </head>
 <body>
   <div class="app-shell">
@@ -114,15 +114,19 @@
         </div>
         <form id="person-form" class="person-form" hidden>
           <div class="person-hero">
-            <div class="avatar" id="person-avatar">?</div>
             <button class="button secondary person-edit-button" id="edit-person" type="button">Edit</button>
             <button class="close-detail" id="close-detail" type="button" aria-label="Close profile">×</button>
-            <span class="eyebrow">Selected profile</span>
-            <h2 id="person-heading">Person</h2>
-            <p id="person-life">Life dates unknown</p>
-            <div class="focus-tree-control">
-              <button class="button secondary focus-tree-button" id="focus-tree-button" type="button" aria-pressed="false" aria-label="Show this person’s tree" title="Show this person’s tree">🌳</button>
-              <small id="focus-tree-status">Paternal households above · all descendants below</small>
+            <div class="person-hero-identity">
+              <div class="avatar" id="person-avatar">?</div>
+              <div class="person-hero-copy">
+                <span class="eyebrow">Selected profile</span>
+                <h2 id="person-heading">Person</h2>
+                <p id="person-life">Life dates unknown</p>
+              </div>
+              <div class="focus-tree-control">
+                <button class="button secondary focus-tree-button tree-action-button" id="focus-tree-button" type="button" aria-pressed="false" aria-label="Show this person’s tree" aria-describedby="focus-tree-status" title="Show this person’s tree"></button>
+                <small class="sr-only" id="focus-tree-status">Paternal households above · all descendants below</small>
+              </div>
             </div>
           </div>
 
@@ -316,6 +320,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./geni-import.js?v=2"></script>
-  <script type="module" src="./app.js?v=138"></script>
+  <script type="module" src="./app.js?v=139"></script>
 </body>
 </html>

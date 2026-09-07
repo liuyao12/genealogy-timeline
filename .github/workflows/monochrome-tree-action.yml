@@ -1,0 +1,53 @@
+name: Monochrome compact tree actions
+on:
+  push:
+    branches: [ui/monochrome-tree-action]
+    paths: [.github/workflows/monochrome-tree-action.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/monochrome-tree-action
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply monochrome compact-header patch
+        run: python3 .github/scripts/implement_monochrome_tree_action.py
+      - name: Run automated tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check .github/scripts/check_monochrome_tree_action.mjs
+          git diff --check
+      - name: Start the patched app
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+      - name: Verify the compact header and monochrome icons
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/lineage-monochrome-tree about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          echo $! >/tmp/lineage-chrome.pid
+          node .github/scripts/check_monochrome_tree_action.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit verified implementation
+        run: |
+          rm .github/scripts/implement_monochrome_tree_action.py
+          rm .github/scripts/check_monochrome_tree_action.mjs
+          rm .github/workflows/monochrome-tree-action.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use monochrome tree icons in a compact profile header"
+          git push origin HEAD:ui/monochrome-tree-action

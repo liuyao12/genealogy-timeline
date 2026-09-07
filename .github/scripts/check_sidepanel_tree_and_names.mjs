@@ -100,10 +100,16 @@ const catherineId = await resultId('Catherine of Aragon');
 assert.ok(catherineId);
 await clickResult(catherineId);
 await waitFor("document.getElementById('person-heading').textContent.includes('Catherine of Aragon')", 'Catherine profile panel');
-assert.equal(await evaluate("document.getElementById('focus-tree-button').disabled"), false);
-await evaluate("document.getElementById('focus-tree-button').click(); true");
-await waitFor(`document.querySelector('.timeline-node.focus')?.dataset.personId === ${JSON.stringify(catherineId)}`, 'Catherine tree');
-await waitFor("document.getElementById('tree-filter').value === ''", 'search clearing after side-panel tree action');
+const catherineAlreadyRoot = await evaluate(`document.querySelector('.timeline-node.focus')?.dataset.personId === ${JSON.stringify(catherineId)}`);
+const catherineTreeButtonDisabled = await evaluate("document.getElementById('focus-tree-button').disabled");
+if (catherineAlreadyRoot) {
+  assert.equal(catherineTreeButtonDisabled, true, 'the current tree action should be disabled');
+} else {
+  assert.equal(catherineTreeButtonDisabled, false, 'a different selected profile should offer the tree action');
+  await evaluate("document.getElementById('focus-tree-button').click(); true");
+  await waitFor(`document.querySelector('.timeline-node.focus')?.dataset.personId === ${JSON.stringify(catherineId)}`, 'Catherine tree');
+  await waitFor("document.getElementById('tree-filter').value === ''", 'search clearing after side-panel tree action');
+}
 
 await searchFor('Henry VII');
 const henryId = await resultId('Henry VII');

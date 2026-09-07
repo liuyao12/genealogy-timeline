@@ -532,9 +532,14 @@ function upgradeBundledBritishRoyalLine() {
   const starterVersion = britishRoyalStarterVersion();
   if (!starterVersion || state.starterDataVersion >= starterVersion) return false;
   const starterRootId = britishRoyalStarterRootId();
-  const isBundledLine = state.rootId === starterRootId && (
+  const starterProfiles = Object.values(state.people).filter(person => person.starterProfile);
+  // Refocusing changes state.rootId, but it does not turn the bundled example
+  // into a custom tree. Identify the starter by its retained Henry VII profile
+  // and starter population so versioned additions still merge after a jump.
+  const hasBundledRoot = state.people[starterRootId]?.starterProfile === true;
+  const isBundledLine = hasBundledRoot && (
     state.title === 'The British royal line from Henry VII' ||
-    Object.values(state.people).some(person => person.starterProfile)
+    starterProfiles.length >= 10
   );
   if (!isBundledLine) return false;
 

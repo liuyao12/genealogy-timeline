@@ -1,4 +1,4 @@
-import { computeDescendantScope } from './descendant-scope.js?v=2';
+import { computeDescendantScope } from './descendant-scope.js?v=3';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
@@ -1794,8 +1794,9 @@ function buildTimelineVisibility() {
     return !parentIds.some(id => relationOverride(childRelationKey(id, childId)) === false);
   };
 
-  // Keep this set separate from the full lineal projection. Spouse attachment
-  // belongs to the focus person and descendants, never to paternal ancestors.
+  // Keep descendants separate from the complete paternal-household tree.
+  // Spouses attach to the focus/descendants and to every paternal ancestor,
+  // while siblings remain terminal structural nodes.
   const descendantsOfRoot = new Set();
   const descendantQueue = scope.descendantIds.has(state.rootId) ? [state.rootId] : [];
   while (descendantQueue.length) {
@@ -1807,8 +1808,9 @@ function buildTimelineVisibility() {
     });
   }
 
-  // The visible lineal spine starts with the oldest known father-line ancestor,
-  // reaches the focus person, and then opens into every descendant branch.
+  // The visible structure starts with the oldest known paternal household,
+  // includes every ancestor's spouses and children, reaches the focus person,
+  // and then opens into every descendant branch.
   const linealFromTreeRoot = new Set();
   const lineageQueue = scope.linealIds.has(scope.treeRootId) ? [scope.treeRootId] : [];
   while (lineageQueue.length) {
@@ -1840,11 +1842,11 @@ function buildTimelineVisibility() {
         return;
       }
       if (!scope.affinalIds.has(id)) return;
-      // A matching spouse is attached only to the descendant whom they married.
-      // Their parents, siblings, other spouses, and unrelated children remain
-      // outside this focus tree.
+      // A matching spouse is attached only to the household owner whom they
+      // married. Their own parents, siblings, other spouses, and unrelated
+      // children remain outside this focus tree.
       scopedSpouseIds(state.people[id], scope).forEach(partnerId => {
-        if (!descendantsOfRoot.has(partnerId)) return;
+        if (!scope.spouseOwnerIds.has(partnerId) || !linealFromTreeRoot.has(partnerId)) return;
         const pairKey = partnerRelationKey(id, partnerId);
         visible.add(id);
         visible.add(partnerId);
@@ -1903,8 +1905,9 @@ function buildTimelineVisibility() {
     if (!state.people[firstId] || !state.people[secondId]) return;
     const override = relationOverride(key);
     if (override === false) return;
-    const touchesVisibleDescendant = [firstId, secondId].some(id => descendantsOfRoot.has(id) && visible.has(id));
-    if (!touchesVisibleDescendant) return;
+    const touchesVisibleHouseholdOwner = [firstId, secondId]
+      .some(id => scope.spouseOwnerIds.has(id) && visible.has(id));
+    if (!touchesVisibleHouseholdOwner) return;
     const carriesVisibleChild = unique([
       ...scopedHouseholdChildren(firstId, secondId, scope),
       ...scopedHouseholdChildren(secondId, firstId, scope)
@@ -1922,7 +1925,8 @@ function buildTimelineVisibility() {
   });
 
   // An affinal profile survives only as the spouse occurrence attached to a
-  // visible focus/descendant. This excludes a spouse's unrelated marriage tree.
+  // visible focus, descendant, or paternal ancestor. This still excludes the
+  // spouse's own unrelated marriage tree.
   [...visible].forEach(id => {
     if (!scope.allowedIds.has(id)) {
       visible.delete(id);
@@ -1930,7 +1934,7 @@ function buildTimelineVisibility() {
     }
     if (!scope.affinalIds.has(id)) return;
     const hasRenderedHousehold = scopedSpouseIds(state.people[id], scope).some(partnerId =>
-      descendantsOfRoot.has(partnerId)
+      scope.spouseOwnerIds.has(partnerId)
       && visible.has(partnerId)
       && renderedPartnerPairs.has(partnerRelationKey(id, partnerId))
     );
@@ -2293,14 +2297,14 @@ function renderTimeline() {
     visibleIds.clear();
     activeVisibleIds.forEach(id => visibleIds.add(id));
   }
-  const datedVisibleDescendants = new Set([...descendantsOfRoot].filter(id =>
+  const datedVisibleSpouseOwners = new Set([...scope.spouseOwnerIds].filter(id =>
     visibleIds.has(id) && numericYear(state.people[id]?.birthYear) != null
   ));
   const people = Object.values(state.people).filter(person => {
     if (!visibleIds.has(person.id) || numericYear(person.birthYear) == null) return false;
     if (scope.linealIds.has(person.id)) return true;
     return scopedSpouseIds(person, scope).some(partnerId =>
-      datedVisibleDescendants.has(partnerId)
+      datedVisibleSpouseOwners.has(partnerId)
       && renderedPartnerPairs.has(partnerRelationKey(person.id, partnerId))
     );
   });
@@ -4036,14 +4040,19 @@ function renderDetails() {
   els['person-life'].textContent = life(person);
   const candidateFocusScope = person.id === state.rootId ? scope : computeDescendantScope(state.people, person.id);
   const paternalCount = candidateFocusScope.paternalAncestorIds.size;
+  const paternalSpouseCount = candidateFocusScope.paternalSpouseIds.size;
+  const paternalSiblingCount = candidateFocusScope.paternalSiblingIds.size;
   const descendantCount = Math.max(0, candidateFocusScope.descendantIds.size - 1);
   const isTreeFocus = person.id === state.rootId;
   els['focus-tree-button'].disabled = isTreeFocus || focusTreeTransitionRunning;
   els['focus-tree-button'].setAttribute('aria-pressed', String(isTreeFocus));
   els['focus-tree-button'].textContent = isTreeFocus ? 'Current tree focus' : 'Focus tree here';
+  const paternalSummary = paternalCount
+    ? `${paternalCount} paternal ancestor${paternalCount === 1 ? '' : 's'}, ${paternalSpouseCount} spouse${paternalSpouseCount === 1 ? '' : 's'}, ${paternalSiblingCount} sibling${paternalSiblingCount === 1 ? '' : 's'}`
+    : 'No known paternal households above';
   els['focus-tree-status'].textContent = isTreeFocus
-    ? `${paternalCount ? `${paternalCount} father-line ancestor${paternalCount === 1 ? '' : 's'} above` : 'No known father-line ancestors'} · ${descendantCount} descendant${descendantCount === 1 ? '' : 's'} below`
-    : `Show this person’s father line above and all ${descendantCount} known descendant${descendantCount === 1 ? '' : 's'} below.`;
+    ? `${paternalSummary} · ${descendantCount} descendant${descendantCount === 1 ? '' : 's'} below`
+    : `Show ${paternalSummary.toLowerCase()} and all ${descendantCount} known descendant${descendantCount === 1 ? '' : 's'} below.`;
   els['person-avatar'].textContent = initials(person);
   els['person-avatar'].style.background = '#fff';
   const form = els['person-form'];

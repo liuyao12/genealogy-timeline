@@ -184,9 +184,13 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node.male .lifespan-outline { stroke: #a9cfe7; }
 .timeline-node.female .lifespan-outline { stroke: #f6b8db; }
 .timeline-node.reigned .lifespan-outline { stroke-width: 2.8; }
-.timeline-node.focus .lifespan-outline { stroke: #111; stroke-width: 3.1; }
+.timeline-node.focus .lifespan-outline { stroke-width: 4.4; }
+.timeline-node.focus.male .lifespan-outline { stroke: #69a9cf; }
+.timeline-node.focus.female .lifespan-outline { stroke: #e580b5; }
+.timeline-node.focus.unknown .lifespan-outline { stroke: #777; }
 .timeline-node.focus .timeline-label:not(.timeline-label-halo) { font-weight: 600; }
 .timeline-node.selected .lifespan-outline { stroke-width: 3.4; }
+.timeline-node.focus.selected .lifespan-outline { stroke-width: 4.8; }
 .timeline-node.list-hover .lifespan-outline { stroke-width: 4.4; filter: drop-shadow(0 0 2px var(--as-of)); }
 .timeline-node.list-hover .timeline-label:not(.timeline-label-halo) .timeline-name-match,
 .timeline-snapshot-label.list-hover-label .timeline-label:not(.timeline-label-halo) .timeline-name-match {

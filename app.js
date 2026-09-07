@@ -545,6 +545,14 @@ function upgradeBundledBritishRoyalLine() {
     [canonicalGeniProfileId('5031922362950130285')]: ['edward-viii-name-1936', 'Edward VIII, King of the United Kingdom'],
     [canonicalGeniProfileId('6000000001217955606')]: ['george-vi-name-1936', 'George VI, King of the United Kingdom']
   };
+  const revisedStarterDisplayNames = {
+    [canonicalGeniProfileId('6000000003409427757')]: ['Arthur Tudor'],
+    [canonicalGeniProfileId('6000000000307240333')]: ['Adolphus of Cambridge', 'Prince Adolphus of Cambridge', 'Adolphus Frederick of Cambridge'],
+    [canonicalGeniProfileId('4087038607800049893')]: ['Edward of Kent', 'Prince Edward of Kent'],
+    [canonicalGeniProfileId('6000000001260403655')]: ['Augusta of Cambridge', 'Princess Augusta of Cambridge'],
+    [canonicalGeniProfileId('6000000003245250586')]: ['Mary Adelaide of Cambridge', 'Princess Mary Adelaide of Cambridge'],
+    [canonicalGeniProfileId('6000000001543481636')]: ['Francis of Teck', 'Prince Francis of Teck']
+  };
   Object.entries(bundledPeople).forEach(([id, bundled]) => {
     const saved = state.people[id];
     if (!saved) {
@@ -562,6 +570,16 @@ function upgradeBundledBritishRoyalLine() {
     const wasReducedBySparseGeniRefresh = saved.starterProfile && saved.importedAt && saved.displayName === apiPlainName;
     if (saved.starterProfile && (saved.displayName === oldGeneratedName || wasReducedBySparseGeniRefresh) && bundled.displayName !== saved.displayName) {
       merged.displayName = bundled.displayName;
+    }
+    const staleStarterNames = revisedStarterDisplayNames[id] || [];
+    if (saved.starterProfile && staleStarterNames.includes(saved.displayName)) {
+      merged.displayName = bundled.displayName;
+      merged.title = bundled.title;
+      merged.namePeriods = normalizeNamePeriods([
+        ...bundled.namePeriods,
+        ...(saved.namePeriods || []).filter(period => period.source === 'local')
+      ]);
+      merged.defaultNamePeriodId = bundled.defaultNamePeriodId;
     }
     if (id === CAMILLA_GENI_PROFILE_ID) {
       merged.isLiving = true;
@@ -3464,10 +3482,6 @@ function renderPersonList() {
     }
     button.append(gender, summary);
 
-    const focusFromResult = () => focusTreeOn(person.id, {
-      clearSearch: true,
-      centerIfHidden: !inCurrentScope
-    });
     if (inCurrentScope) {
       button.addEventListener('pointerenter', () => previewTimelinePerson(person.id));
       button.addEventListener('pointerleave', () => clearTimelinePersonPreview(person.id));
@@ -3480,21 +3494,6 @@ function renderPersonList() {
     });
     row.append(button);
 
-    if (searching) {
-      const focus = document.createElement('button');
-      focus.type = 'button';
-      focus.className = 'person-list-focus tree-action-button';
-      focus.dataset.focusPersonId = person.id;
-      const alreadyRoot = person.id === state.rootId;
-      focus.disabled = alreadyRoot;
-      focus.setAttribute('aria-pressed', String(alreadyRoot));
-      focus.title = alreadyRoot
-        ? `${displayedName} is the current tree`
-        : `Show ${displayedName}'s paternal households and descendants`;
-      focus.setAttribute('aria-label', focus.title);
-      if (!alreadyRoot) focus.addEventListener('click', focusFromResult);
-      row.append(focus);
-    }
     return row;
   });
 
@@ -4584,7 +4583,7 @@ async function linkSelectedProfileAndLoadFromGeni() {
   await loadSelectedImmediateFamilyFromGeni();
 }
 
-els['focus-tree-button'].addEventListener('click', () => focusTreeOn(state.selectedId));
+els['focus-tree-button'].addEventListener('click', () => focusTreeOn(state.selectedId, { clearSearch: true, centerIfHidden: true }));
 els['geni-family-primary'].addEventListener('click', loadSelectedImmediateFamilyFromGeni);
 els['geni-family-link-button'].addEventListener('click', linkSelectedProfileAndLoadFromGeni);
 els['geni-family-link-input'].addEventListener('keydown', event => {

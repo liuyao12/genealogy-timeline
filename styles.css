@@ -98,11 +98,10 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
 .person-list-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 400; }
 .person-name-match { padding: 0 1px; color: #000; background: #ffeb3b; box-shadow: 0 0 0 1px #ffeb3b; }
 .person-list-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
-.person-list-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-radius: 8px; }
+.person-list-row { display: block; border-radius: 8px; }
 .person-list-row:hover, .person-list-row:focus-within, .person-list-row.active { background: var(--green-pale); }
 .person-list-row .person-list-item { min-width: 0; background: transparent; }
 .person-list-row .person-list-item:hover, .person-list-row .person-list-item.active { background: transparent; }
-.person-list-row.search-result .person-list-item { border-radius: 8px 0 0 8px; }
 .tree-action-button {
   --tree-action-icon-size: 16px;
   display: grid;
@@ -120,16 +119,6 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 7.5 8h2L6 12.5h2.3L4.5 18h6v4h3v-4h6l-3.8-5.5H18L14.5 8h2Z'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 7.5 8h2L6 12.5h2.3L4.5 18h6v4h3v-4h6l-3.8-5.5H18L14.5 8h2Z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
-.person-list-focus {
-  --tree-action-icon-size: 15px;
-  width: 29px; min-width: 29px; height: 27px; margin-right: 5px;
-  border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; cursor: pointer;
-}
-.person-list-row.outside-focus-scope .person-list-focus { border-color: #000; background: #000; color: #fff; }
-.person-list-focus:hover:not(:disabled) { transform: translateY(-1px); }
-.person-list-focus:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
-.person-list-focus[aria-pressed="true"] { border-color: #111; background: #111; color: #fff; }
-.person-list-focus:disabled { cursor: default; opacity: .68; }
 .person-list-scope { color: #333 !important; font-weight: 650; }
 .people-search-empty { margin: 12px 6px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .source-links { display: flex; gap: 12px; }

@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 25,
+  "version": 26,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -895,7 +895,10 @@
       "isLiving": false,
       "place": "",
       "note": "Elector Palatine; King of Bohemia, 1619–1620",
-      "parents": [],
+      "parents": [
+        "royal-palatinate-frederick-iv-1574",
+        "royal-palatinate-louise-juliana-1576"
+      ],
       "children": [
         "profile-g6000000003879438150"
       ],
@@ -4209,7 +4212,10 @@
       "isLiving": false,
       "place": "",
       "note": "Queen consort; wife of Charles I",
-      "parents": [],
+      "parents": [
+        "royal-france-henry-iv-1553",
+        "royal-france-marie-medici-1575"
+      ],
       "children": [
         "profile-g6000000002529545042",
         "profile-g6000000013038690528",
@@ -4346,8 +4352,15 @@
       "isLiving": false,
       "place": "",
       "note": "King of Spain; husband of Mary I",
-      "parents": [],
-      "children": [],
+      "parents": [
+        "royal-habsburg-charles-v-1500",
+        "royal-habsburg-isabella-portugal-1503"
+      ],
+      "children": [
+        "royal-spain-carlos-asturias-1545",
+        "royal-spain-isabella-clara-eugenia-1566",
+        "royal-spain-philip-iii-1578"
+      ],
       "partners": [
         "profile-g5027356653020040914",
         "profile-g6000000001599879609",
@@ -4556,7 +4569,9 @@
       "place": "",
       "note": "King of France; first husband of Mary Tudor",
       "parents": [],
-      "children": [],
+      "children": [
+        "royal-france-claude-1499"
+      ],
       "partners": [
         "profile-g6000000000307250674",
         "profile-g6000000003122346868",
@@ -4576,9 +4591,32 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
-      "personalEvents": [],
+      "namePeriods": [
+        {
+          "id": "louis-xii-name-1462",
+          "name": "Louis, Duke of Orléans",
+          "startYear": 1462,
+          "endYear": 1498,
+          "sourceUrl": "https://www.geni.com/profile/index/6000000000440363134"
+        },
+        {
+          "id": "louis-xii-name-1498",
+          "name": "Louis XII, King of France",
+          "startYear": 1498,
+          "endYear": 1515,
+          "sourceUrl": "https://www.geni.com/profile/index/6000000000440363134"
+        }
+      ],
+      "defaultNamePeriodId": "louis-xii-name-1498",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1498,
+          "endYear": 1515,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
       "sourceUrl": "https://www.geni.com/profile/index/6000000000440363134",
       "sourceId": "profile-g6000000000440363134",
       "sourceProvider": "geni",
@@ -4652,7 +4690,10 @@
       "isLiving": false,
       "place": "",
       "note": "Grand Duke of Hesse and by Rhine; husband of Princess Alice",
-      "parents": [],
+      "parents": [
+        "royal-hesse-charles-1809",
+        "royal-hesse-elisabeth-prussia-1815"
+      ],
       "children": [
         "profile-g6000000003221554850"
       ],
@@ -4783,7 +4824,10 @@
       "isLiving": false,
       "place": "",
       "note": "Queen consort; wife of Edward VII",
-      "parents": [],
+      "parents": [
+        "royal-denmark-christian-ix-1818",
+        "royal-denmark-louise-hesse-kassel-1817"
+      ],
       "children": [
         "profile-g6000000000701511040"
       ],
@@ -5068,7 +5112,10 @@
       "isLiving": false,
       "place": "",
       "note": "Prince; husband of Alice of Battenberg",
-      "parents": [],
+      "parents": [
+        "royal-greece-george-i-1845",
+        "royal-greece-olga-constantinovna-1851"
+      ],
       "children": [
         "profile-g6000000003075171096"
       ],
@@ -5180,7 +5227,10 @@
       "isLiving": false,
       "place": "",
       "note": "Marquess of Milford Haven; husband of Victoria of Hesse",
-      "parents": [],
+      "parents": [
+        "royal-hesse-alexander-1823",
+        "royal-battenberg-julia-1825"
+      ],
       "children": [
         "profile-g6000000003075330310",
         "profile-g6000000003221652435"
@@ -5378,7 +5428,10 @@
       "isLiving": false,
       "place": "",
       "note": "Queen consort; first wife of James V",
-      "parents": [],
+      "parents": [
+        "royal-france-francis-i-1494",
+        "royal-france-claude-1499"
+      ],
       "children": [],
       "partners": [
         "profile-g6000000003233882803"
@@ -5480,7 +5533,10 @@
       "isLiving": false,
       "place": "",
       "note": "King of France; first husband of Mary, Queen of Scots",
-      "parents": [],
+      "parents": [
+        "royal-france-henry-ii-1519",
+        "royal-france-catherine-medici-1519"
+      ],
       "children": [],
       "partners": [
         "profile-g6000000003234018546"
@@ -5495,9 +5551,32 @@
       },
       "relationshipEndYears": {},
       "relationshipEndStatuses": {},
-      "namePeriods": [],
-      "defaultNamePeriodId": "",
-      "personalEvents": [],
+      "namePeriods": [
+        {
+          "id": "francis-ii-name-1544",
+          "name": "Francis, Dauphin of France",
+          "startYear": 1544,
+          "endYear": 1559,
+          "sourceUrl": "https://www.geni.com/profile/index/6000000003232545902"
+        },
+        {
+          "id": "francis-ii-name-1559",
+          "name": "Francis II, King of France",
+          "startYear": 1559,
+          "endYear": 1560,
+          "sourceUrl": "https://www.geni.com/profile/index/6000000003232545902"
+        }
+      ],
+      "defaultNamePeriodId": "francis-ii-name-1559",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1559,
+          "endYear": 1560,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
       "sourceUrl": "https://www.geni.com/profile/index/6000000003232545902",
       "sourceId": "profile-g6000000003232545902",
       "sourceProvider": "geni",
@@ -5562,7 +5641,10 @@
       "isLiving": false,
       "place": "",
       "note": "Prince consort; husband of Queen Anne",
-      "parents": [],
+      "parents": [
+        "royal-denmark-frederick-iii-1609",
+        "royal-denmark-sophie-amalie-1628"
+      ],
       "children": [],
       "partners": [
         "profile-g6000000003285572645"
@@ -5708,7 +5790,10 @@
       "isLiving": false,
       "place": "",
       "note": "Prince of Orange; husband of Mary Stuart",
-      "parents": [],
+      "parents": [
+        "royal-orange-frederick-henry-1584",
+        "royal-orange-amalia-solms-1602"
+      ],
       "children": [
         "profile-g6000000003285553237"
       ],
@@ -6385,7 +6470,10 @@
       "isLiving": false,
       "place": "",
       "note": "Queen consort; wife of James VI and I",
-      "parents": [],
+      "parents": [
+        "royal-denmark-frederick-ii-1534",
+        "royal-denmark-sophie-mecklenburg-1557"
+      ],
       "children": [
         "profile-4498828",
         "profile-g304430340510004215"
@@ -6659,7 +6747,9 @@
       "place": "",
       "note": "Second wife of Louis XII of France",
       "parents": [],
-      "children": [],
+      "children": [
+        "royal-france-claude-1499"
+      ],
       "partners": [
         "profile-g6000000000440363134"
       ],
@@ -7180,7 +7270,9 @@
       "place": "",
       "note": "Fourth wife of Philip II of Spain",
       "parents": [],
-      "children": [],
+      "children": [
+        "royal-spain-philip-iii-1578"
+      ],
       "partners": [
         "profile-g6000000001600060051"
       ],
@@ -7234,8 +7326,13 @@
       "isLiving": false,
       "place": "",
       "note": "Third wife of Philip II of Spain",
-      "parents": [],
-      "children": [],
+      "parents": [
+        "royal-france-henry-ii-1519",
+        "royal-france-catherine-medici-1519"
+      ],
+      "children": [
+        "royal-spain-isabella-clara-eugenia-1566"
+      ],
       "partners": [
         "profile-g6000000001600060051"
       ],
@@ -7274,8 +7371,13 @@
       "isLiving": false,
       "place": "",
       "note": "First wife of Philip II of Spain",
-      "parents": [],
-      "children": [],
+      "parents": [
+        "royal-portugal-john-iii-1502",
+        "royal-portugal-catherine-austria-1507"
+      ],
+      "children": [
+        "royal-spain-carlos-asturias-1545"
+      ],
       "partners": [
         "profile-g6000000001600060051"
       ],
@@ -7667,6 +7769,2655 @@
       "sourceUrl": "https://www.geni.com/profile/index/6000000042163396821",
       "sourceId": "profile-g6000000042163396821",
       "sourceProvider": "geni",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-claude-1499": {
+      "id": "royal-france-claude-1499",
+      "firstName": "Claude",
+      "lastName": "of France",
+      "displayName": "Claude, Queen of France and Duchess of Brittany",
+      "title": "Queen of France and Duchess of Brittany",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1499",
+      "deathYear": "1524",
+      "isLiving": false,
+      "place": "",
+      "note": "Daughter of Louis XII and Anne of Brittany; wife of Francis I",
+      "parents": [
+        "profile-g6000000000440363134",
+        "profile-g6000000003219788977"
+      ],
+      "children": [
+        "royal-france-henry-ii-1519",
+        "profile-g6000000002322323932"
+      ],
+      "partners": [
+        "royal-france-francis-i-1494"
+      ],
+      "spouses": [
+        "royal-france-francis-i-1494"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-france-francis-i-1494": "1514"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "claude-france-name-1499",
+          "name": "Claude of France",
+          "startYear": 1499,
+          "endYear": 1514,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Claude_of_France"
+        },
+        {
+          "id": "claude-france-name-1514",
+          "name": "Claude, Duchess of Brittany",
+          "startYear": 1514,
+          "endYear": 1515,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Claude_of_France"
+        },
+        {
+          "id": "claude-france-name-1515",
+          "name": "Claude, Queen of France and Duchess of Brittany",
+          "startYear": 1515,
+          "endYear": 1524,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Claude_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "claude-france-name-1515",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Claude_of_France",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-francis-i-1494": {
+      "id": "royal-france-francis-i-1494",
+      "firstName": "Francis",
+      "lastName": "I",
+      "displayName": "Francis I, King of France",
+      "title": "King of France",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1494",
+      "deathYear": "1547",
+      "isLiving": false,
+      "place": "",
+      "note": "First Valois-Angoulême king of France",
+      "parents": [],
+      "children": [
+        "royal-france-henry-ii-1519",
+        "profile-g6000000002322323932"
+      ],
+      "partners": [
+        "royal-france-claude-1499"
+      ],
+      "spouses": [
+        "royal-france-claude-1499"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-france-claude-1499": "1514"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "francis-i-name-1494",
+          "name": "Francis, Count of Angoulême",
+          "startYear": 1494,
+          "endYear": 1515,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Francis_I_of_France"
+        },
+        {
+          "id": "francis-i-name-1515",
+          "name": "Francis I, King of France",
+          "startYear": 1515,
+          "endYear": 1547,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Francis_I_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "francis-i-name-1515",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1515,
+          "endYear": 1547,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Francis_I_of_France",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-henry-ii-1519": {
+      "id": "royal-france-henry-ii-1519",
+      "firstName": "Henry",
+      "lastName": "II",
+      "displayName": "Henry II, King of France",
+      "title": "King of France",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1519",
+      "deathYear": "1559",
+      "isLiving": false,
+      "place": "",
+      "note": "Son of Francis I and Claude of France",
+      "parents": [
+        "royal-france-francis-i-1494",
+        "royal-france-claude-1499"
+      ],
+      "children": [
+        "profile-g6000000003232545902",
+        "profile-g6000000001777536029",
+        "royal-france-charles-ix-1550",
+        "royal-france-henry-iii-1551",
+        "royal-france-margaret-valois-1553"
+      ],
+      "partners": [
+        "royal-france-catherine-medici-1519"
+      ],
+      "spouses": [
+        "royal-france-catherine-medici-1519"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-france-catherine-medici-1519": "1533"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "henry-ii-name-1519",
+          "name": "Prince Henry of France",
+          "startYear": 1519,
+          "endYear": 1536,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_II_of_France"
+        },
+        {
+          "id": "henry-ii-name-1536",
+          "name": "Henry, Dauphin of France",
+          "startYear": 1536,
+          "endYear": 1547,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_II_of_France"
+        },
+        {
+          "id": "henry-ii-name-1547",
+          "name": "Henry II, King of France",
+          "startYear": 1547,
+          "endYear": 1559,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_II_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "henry-ii-name-1547",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1547,
+          "endYear": 1559,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Henry_II_of_France",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-catherine-medici-1519": {
+      "id": "royal-france-catherine-medici-1519",
+      "firstName": "Catherine",
+      "lastName": "de' Medici",
+      "displayName": "Catherine de' Medici, Queen of France",
+      "title": "Queen of France",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1519",
+      "deathYear": "1589",
+      "isLiving": false,
+      "place": "",
+      "note": "Queen consort of Henry II and mother of three kings of France",
+      "parents": [],
+      "children": [
+        "profile-g6000000003232545902",
+        "profile-g6000000001777536029",
+        "royal-france-charles-ix-1550",
+        "royal-france-henry-iii-1551",
+        "royal-france-margaret-valois-1553"
+      ],
+      "partners": [
+        "royal-france-henry-ii-1519"
+      ],
+      "spouses": [
+        "royal-france-henry-ii-1519"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-france-henry-ii-1519": "1533"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "catherine-medici-name-1519",
+          "name": "Catherine de' Medici",
+          "startYear": 1519,
+          "endYear": 1533,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_de%27_Medici"
+        },
+        {
+          "id": "catherine-medici-name-1533",
+          "name": "Catherine de' Medici, Duchess of Orléans",
+          "startYear": 1533,
+          "endYear": 1547,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_de%27_Medici"
+        },
+        {
+          "id": "catherine-medici-name-1547",
+          "name": "Catherine de' Medici, Queen of France",
+          "startYear": 1547,
+          "endYear": 1559,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_de%27_Medici"
+        },
+        {
+          "id": "catherine-medici-name-1559",
+          "name": "Catherine de' Medici, Queen Mother of France",
+          "startYear": 1559,
+          "endYear": 1589,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_de%27_Medici"
+        }
+      ],
+      "defaultNamePeriodId": "catherine-medici-name-1547",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_de%27_Medici",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-charles-ix-1550": {
+      "id": "royal-france-charles-ix-1550",
+      "firstName": "Charles",
+      "lastName": "IX",
+      "displayName": "Charles IX, King of France",
+      "title": "King of France",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1550",
+      "deathYear": "1574",
+      "isLiving": false,
+      "place": "",
+      "note": "Younger brother and successor of Francis II",
+      "parents": [
+        "royal-france-henry-ii-1519",
+        "royal-france-catherine-medici-1519"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "charles-ix-name-1550",
+          "name": "Prince Charles Maximilian of France",
+          "startYear": 1550,
+          "endYear": 1560,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charles_IX_of_France"
+        },
+        {
+          "id": "charles-ix-name-1560",
+          "name": "Charles IX, King of France",
+          "startYear": 1560,
+          "endYear": 1574,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charles_IX_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "charles-ix-name-1560",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1560,
+          "endYear": 1574,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Charles_IX_of_France",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-henry-iii-1551": {
+      "id": "royal-france-henry-iii-1551",
+      "firstName": "Henry",
+      "lastName": "III",
+      "displayName": "Henry III, King of France",
+      "title": "King of France",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1551",
+      "deathYear": "1589",
+      "isLiving": false,
+      "place": "",
+      "note": "Younger brother of Francis II and Charles IX",
+      "parents": [
+        "royal-france-henry-ii-1519",
+        "royal-france-catherine-medici-1519"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "henry-iii-name-1551",
+          "name": "Prince Henry of France, Duke of Anjou",
+          "startYear": 1551,
+          "endYear": 1573,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_III_of_France"
+        },
+        {
+          "id": "henry-iii-name-1573",
+          "name": "Henry, King of Poland and Grand Duke of Lithuania",
+          "startYear": 1573,
+          "endYear": 1574,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_III_of_France"
+        },
+        {
+          "id": "henry-iii-name-1574",
+          "name": "Henry III, King of France",
+          "startYear": 1574,
+          "endYear": 1589,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_III_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "henry-iii-name-1574",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1574,
+          "endYear": 1589,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Henry_III_of_France",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-margaret-valois-1553": {
+      "id": "royal-france-margaret-valois-1553",
+      "firstName": "Margaret",
+      "lastName": "of Valois",
+      "displayName": "Margaret of Valois, Queen of France and Navarre",
+      "title": "Queen of France and Navarre",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1553",
+      "deathYear": "1615",
+      "isLiving": false,
+      "place": "",
+      "note": "Daughter of Henry II and first wife of Henry IV",
+      "parents": [
+        "royal-france-henry-ii-1519",
+        "royal-france-catherine-medici-1519"
+      ],
+      "children": [],
+      "partners": [
+        "royal-france-henry-iv-1553"
+      ],
+      "spouses": [
+        "royal-france-henry-iv-1553"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [
+        "royal-france-henry-iv-1553"
+      ],
+      "marriageYears": {
+        "royal-france-henry-iv-1553": "1572"
+      },
+      "relationshipEndYears": {
+        "royal-france-henry-iv-1553": "1599"
+      },
+      "relationshipEndStatuses": {
+        "royal-france-henry-iv-1553": "annulled"
+      },
+      "namePeriods": [
+        {
+          "id": "margaret-valois-name-1553",
+          "name": "Margaret of Valois",
+          "startYear": 1553,
+          "endYear": 1572,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Margaret_of_Valois"
+        },
+        {
+          "id": "margaret-valois-name-1572",
+          "name": "Margaret of Valois, Queen of Navarre",
+          "startYear": 1572,
+          "endYear": 1589,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Margaret_of_Valois"
+        },
+        {
+          "id": "margaret-valois-name-1589",
+          "name": "Margaret of Valois, Queen of France and Navarre",
+          "startYear": 1589,
+          "endYear": 1599,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Margaret_of_Valois"
+        },
+        {
+          "id": "margaret-valois-name-1599",
+          "name": "Margaret of Valois",
+          "startYear": 1599,
+          "endYear": 1615,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Margaret_of_Valois"
+        }
+      ],
+      "defaultNamePeriodId": "margaret-valois-name-1589",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Margaret_of_Valois",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-henry-iv-1553": {
+      "id": "royal-france-henry-iv-1553",
+      "firstName": "Henry",
+      "lastName": "IV",
+      "displayName": "Henry IV, King of France and Navarre",
+      "title": "King of France and Navarre",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1553",
+      "deathYear": "1610",
+      "isLiving": false,
+      "place": "",
+      "note": "First Bourbon king of France",
+      "parents": [],
+      "children": [
+        "royal-france-louis-xiii-1601",
+        "profile-g6000000000851678345"
+      ],
+      "partners": [
+        "royal-france-margaret-valois-1553",
+        "royal-france-marie-medici-1575"
+      ],
+      "spouses": [
+        "royal-france-margaret-valois-1553",
+        "royal-france-marie-medici-1575"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [
+        "royal-france-margaret-valois-1553"
+      ],
+      "marriageYears": {
+        "royal-france-margaret-valois-1553": "1572",
+        "royal-france-marie-medici-1575": "1600"
+      },
+      "relationshipEndYears": {
+        "royal-france-margaret-valois-1553": "1599"
+      },
+      "relationshipEndStatuses": {
+        "royal-france-margaret-valois-1553": "annulled"
+      },
+      "namePeriods": [
+        {
+          "id": "henry-iv-name-1553",
+          "name": "Henry of Bourbon, Prince of Béarn",
+          "startYear": 1553,
+          "endYear": 1572,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_IV_of_France"
+        },
+        {
+          "id": "henry-iv-name-1572",
+          "name": "Henry III, King of Navarre",
+          "startYear": 1572,
+          "endYear": 1589,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_IV_of_France"
+        },
+        {
+          "id": "henry-iv-name-1589",
+          "name": "Henry IV, King of France and Navarre",
+          "startYear": 1589,
+          "endYear": 1610,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Henry_IV_of_France"
+        }
+      ],
+      "defaultNamePeriodId": "henry-iv-name-1589",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1589,
+          "endYear": 1610,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Henry_IV_of_France",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-marie-medici-1575": {
+      "id": "royal-france-marie-medici-1575",
+      "firstName": "Marie",
+      "lastName": "de' Medici",
+      "displayName": "Marie de' Medici, Queen of France",
+      "title": "Queen of France",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1575",
+      "deathYear": "1642",
+      "isLiving": false,
+      "place": "",
+      "note": "Second wife of Henry IV and mother of Louis XIII and Henrietta Maria",
+      "parents": [],
+      "children": [
+        "royal-france-louis-xiii-1601",
+        "profile-g6000000000851678345"
+      ],
+      "partners": [
+        "royal-france-henry-iv-1553"
+      ],
+      "spouses": [
+        "royal-france-henry-iv-1553"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-france-henry-iv-1553": "1600"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "marie-medici-name-1575",
+          "name": "Marie de' Medici",
+          "startYear": 1575,
+          "endYear": 1600,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Marie_de%27_Medici"
+        },
+        {
+          "id": "marie-medici-name-1600",
+          "name": "Marie de' Medici, Queen of France",
+          "startYear": 1600,
+          "endYear": 1610,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Marie_de%27_Medici"
+        },
+        {
+          "id": "marie-medici-name-1610",
+          "name": "Marie de' Medici, Queen Mother of France",
+          "startYear": 1610,
+          "endYear": 1642,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Marie_de%27_Medici"
+        }
+      ],
+      "defaultNamePeriodId": "marie-medici-name-1600",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Marie_de%27_Medici",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-france-louis-xiii-1601": {
+      "id": "royal-france-louis-xiii-1601",
+      "firstName": "Louis",
+      "lastName": "XIII",
+      "displayName": "Louis XIII, King of France and Navarre",
+      "title": "King of France and Navarre",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1601",
+      "deathYear": "1643",
+      "isLiving": false,
+      "place": "",
+      "note": "Son of Henry IV and Marie de' Medici; brother of Henrietta Maria",
+      "parents": [
+        "royal-france-henry-iv-1553",
+        "royal-france-marie-medici-1575"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "louis-xiii-name-1601",
+          "name": "Louis, Dauphin of France",
+          "startYear": 1601,
+          "endYear": 1610,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_XIII"
+        },
+        {
+          "id": "louis-xiii-name-1610",
+          "name": "Louis XIII, King of France and Navarre",
+          "startYear": 1610,
+          "endYear": 1643,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_XIII"
+        }
+      ],
+      "defaultNamePeriodId": "louis-xiii-name-1610",
+      "personalEvents": [
+        {
+          "name": "Reign as King of France",
+          "startYear": 1610,
+          "endYear": 1643,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Louis_XIII",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-portugal-manuel-i-1469": {
+      "id": "royal-portugal-manuel-i-1469",
+      "firstName": "Manuel",
+      "lastName": "I",
+      "displayName": "Manuel I, King of Portugal",
+      "title": "King of Portugal",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1469",
+      "deathYear": "1521",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of John III and Isabella of Portugal",
+      "parents": [],
+      "children": [
+        "royal-portugal-john-iii-1502",
+        "royal-habsburg-isabella-portugal-1503"
+      ],
+      "partners": [
+        "royal-portugal-maria-aragon-1482"
+      ],
+      "spouses": [
+        "royal-portugal-maria-aragon-1482"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-portugal-maria-aragon-1482": "1500"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "manuel-i-name-1469",
+          "name": "Manuel, Duke of Beja",
+          "startYear": 1469,
+          "endYear": 1495,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Manuel_I_of_Portugal"
+        },
+        {
+          "id": "manuel-i-name-1495",
+          "name": "Manuel I, King of Portugal",
+          "startYear": 1495,
+          "endYear": 1521,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Manuel_I_of_Portugal"
+        }
+      ],
+      "defaultNamePeriodId": "manuel-i-name-1495",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Portugal",
+          "startYear": 1495,
+          "endYear": 1521,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Manuel_I_of_Portugal",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-portugal-maria-aragon-1482": {
+      "id": "royal-portugal-maria-aragon-1482",
+      "firstName": "Maria",
+      "lastName": "of Aragon",
+      "displayName": "Maria of Aragon, Queen of Portugal",
+      "title": "Queen of Portugal",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1482",
+      "deathYear": "1517",
+      "isLiving": false,
+      "place": "",
+      "note": "Second wife of Manuel I of Portugal",
+      "parents": [],
+      "children": [
+        "royal-portugal-john-iii-1502",
+        "royal-habsburg-isabella-portugal-1503"
+      ],
+      "partners": [
+        "royal-portugal-manuel-i-1469"
+      ],
+      "spouses": [
+        "royal-portugal-manuel-i-1469"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-portugal-manuel-i-1469": "1500"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "maria-aragon-name-1482",
+          "name": "Maria of Aragon",
+          "startYear": 1482,
+          "endYear": 1500,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Maria_of_Aragon,_Queen_of_Portugal"
+        },
+        {
+          "id": "maria-aragon-name-1500",
+          "name": "Maria of Aragon, Queen of Portugal",
+          "startYear": 1500,
+          "endYear": 1517,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Maria_of_Aragon,_Queen_of_Portugal"
+        }
+      ],
+      "defaultNamePeriodId": "maria-aragon-name-1500",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Maria_of_Aragon,_Queen_of_Portugal",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-castile-philip-i-1478": {
+      "id": "royal-castile-philip-i-1478",
+      "firstName": "Philip",
+      "lastName": "I",
+      "displayName": "Philip I, King of Castile",
+      "title": "King of Castile",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1478",
+      "deathYear": "1506",
+      "isLiving": false,
+      "place": "",
+      "note": "Habsburg ruler known as Philip the Handsome",
+      "parents": [],
+      "children": [
+        "royal-habsburg-charles-v-1500",
+        "royal-portugal-catherine-austria-1507"
+      ],
+      "partners": [
+        "royal-castile-joanna-i-1479"
+      ],
+      "spouses": [
+        "royal-castile-joanna-i-1479"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-castile-joanna-i-1479": "1496"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "philip-i-castile-name-1478",
+          "name": "Philip the Handsome, Duke of Burgundy",
+          "startYear": 1478,
+          "endYear": 1506,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_the_Handsome"
+        },
+        {
+          "id": "philip-i-castile-name-1506",
+          "name": "Philip I, King of Castile",
+          "startYear": 1506,
+          "endYear": 1506,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_the_Handsome"
+        }
+      ],
+      "defaultNamePeriodId": "philip-i-castile-name-1506",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Castile",
+          "startYear": 1506,
+          "endYear": 1506,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Philip_the_Handsome",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-castile-joanna-i-1479": {
+      "id": "royal-castile-joanna-i-1479",
+      "firstName": "Joanna",
+      "lastName": "I",
+      "displayName": "Joanna I, Queen of Castile and Aragon",
+      "title": "Queen of Castile and Aragon",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1479",
+      "deathYear": "1555",
+      "isLiving": false,
+      "place": "",
+      "note": "Daughter of Isabella I of Castile and Ferdinand II of Aragon",
+      "parents": [],
+      "children": [
+        "royal-habsburg-charles-v-1500",
+        "royal-portugal-catherine-austria-1507"
+      ],
+      "partners": [
+        "royal-castile-philip-i-1478"
+      ],
+      "spouses": [
+        "royal-castile-philip-i-1478"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-castile-philip-i-1478": "1496"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "joanna-i-name-1479",
+          "name": "Infanta Joanna of Castile and Aragon",
+          "startYear": 1479,
+          "endYear": 1504,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Joanna_of_Castile"
+        },
+        {
+          "id": "joanna-i-name-1504",
+          "name": "Joanna I, Queen of Castile",
+          "startYear": 1504,
+          "endYear": 1516,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Joanna_of_Castile"
+        },
+        {
+          "id": "joanna-i-name-1516",
+          "name": "Joanna I, Queen of Castile and Aragon",
+          "startYear": 1516,
+          "endYear": 1555,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Joanna_of_Castile"
+        }
+      ],
+      "defaultNamePeriodId": "joanna-i-name-1516",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Joanna_of_Castile",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-habsburg-charles-v-1500": {
+      "id": "royal-habsburg-charles-v-1500",
+      "firstName": "Charles",
+      "lastName": "V",
+      "displayName": "Charles V, Holy Roman Emperor and King of Spain",
+      "title": "Holy Roman Emperor and King of Spain",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1500",
+      "deathYear": "1558",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Philip II of Spain",
+      "parents": [
+        "royal-castile-philip-i-1478",
+        "royal-castile-joanna-i-1479"
+      ],
+      "children": [
+        "profile-g6000000001600060051"
+      ],
+      "partners": [
+        "royal-habsburg-isabella-portugal-1503"
+      ],
+      "spouses": [
+        "royal-habsburg-isabella-portugal-1503"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-habsburg-isabella-portugal-1503": "1526"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "charles-v-name-1500",
+          "name": "Charles of Habsburg, Duke of Burgundy",
+          "startYear": 1500,
+          "endYear": 1516,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charles_V,_Holy_Roman_Emperor"
+        },
+        {
+          "id": "charles-v-name-1516",
+          "name": "Charles I, King of Spain",
+          "startYear": 1516,
+          "endYear": 1519,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charles_V,_Holy_Roman_Emperor"
+        },
+        {
+          "id": "charles-v-name-1519",
+          "name": "Charles V, Holy Roman Emperor and King of Spain",
+          "startYear": 1519,
+          "endYear": 1556,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charles_V,_Holy_Roman_Emperor"
+        },
+        {
+          "id": "charles-v-name-1556",
+          "name": "Charles V",
+          "startYear": 1556,
+          "endYear": 1558,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Charles_V,_Holy_Roman_Emperor"
+        }
+      ],
+      "defaultNamePeriodId": "charles-v-name-1519",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Spain",
+          "startYear": 1516,
+          "endYear": 1556,
+          "source": "royal",
+          "color": "#c62828"
+        },
+        {
+          "name": "Reign as Holy Roman Emperor",
+          "startYear": 1519,
+          "endYear": 1556,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Charles_V,_Holy_Roman_Emperor",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-portugal-john-iii-1502": {
+      "id": "royal-portugal-john-iii-1502",
+      "firstName": "John",
+      "lastName": "III",
+      "displayName": "John III, King of Portugal",
+      "title": "King of Portugal",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1502",
+      "deathYear": "1557",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Maria Manuela of Portugal",
+      "parents": [
+        "royal-portugal-manuel-i-1469",
+        "royal-portugal-maria-aragon-1482"
+      ],
+      "children": [
+        "profile-g6000000001599879609"
+      ],
+      "partners": [
+        "royal-portugal-catherine-austria-1507"
+      ],
+      "spouses": [
+        "royal-portugal-catherine-austria-1507"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-portugal-catherine-austria-1507": "1525"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "john-iii-name-1502",
+          "name": "Infante John of Portugal",
+          "startYear": 1502,
+          "endYear": 1521,
+          "sourceUrl": "https://en.wikipedia.org/wiki/John_III_of_Portugal"
+        },
+        {
+          "id": "john-iii-name-1521",
+          "name": "John III, King of Portugal",
+          "startYear": 1521,
+          "endYear": 1557,
+          "sourceUrl": "https://en.wikipedia.org/wiki/John_III_of_Portugal"
+        }
+      ],
+      "defaultNamePeriodId": "john-iii-name-1521",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Portugal",
+          "startYear": 1521,
+          "endYear": 1557,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/John_III_of_Portugal",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-habsburg-isabella-portugal-1503": {
+      "id": "royal-habsburg-isabella-portugal-1503",
+      "firstName": "Isabella",
+      "lastName": "of Portugal",
+      "displayName": "Isabella of Portugal, Holy Roman Empress and Queen of Spain",
+      "title": "Holy Roman Empress and Queen of Spain",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1503",
+      "deathYear": "1539",
+      "isLiving": false,
+      "place": "",
+      "note": "Mother of Philip II of Spain",
+      "parents": [
+        "royal-portugal-manuel-i-1469",
+        "royal-portugal-maria-aragon-1482"
+      ],
+      "children": [
+        "profile-g6000000001600060051"
+      ],
+      "partners": [
+        "royal-habsburg-charles-v-1500"
+      ],
+      "spouses": [
+        "royal-habsburg-charles-v-1500"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-habsburg-charles-v-1500": "1526"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "isabella-portugal-name-1503",
+          "name": "Infanta Isabella of Portugal",
+          "startYear": 1503,
+          "endYear": 1526,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Isabella_of_Portugal"
+        },
+        {
+          "id": "isabella-portugal-name-1526",
+          "name": "Isabella of Portugal, Holy Roman Empress and Queen of Spain",
+          "startYear": 1526,
+          "endYear": 1539,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Isabella_of_Portugal"
+        }
+      ],
+      "defaultNamePeriodId": "isabella-portugal-name-1526",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Isabella_of_Portugal",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-portugal-catherine-austria-1507": {
+      "id": "royal-portugal-catherine-austria-1507",
+      "firstName": "Catherine",
+      "lastName": "of Austria",
+      "displayName": "Catherine of Austria, Queen of Portugal",
+      "title": "Queen of Portugal",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1507",
+      "deathYear": "1578",
+      "isLiving": false,
+      "place": "",
+      "note": "Younger sister of Charles V and mother of Maria Manuela",
+      "parents": [
+        "royal-castile-philip-i-1478",
+        "royal-castile-joanna-i-1479"
+      ],
+      "children": [
+        "profile-g6000000001599879609"
+      ],
+      "partners": [
+        "royal-portugal-john-iii-1502"
+      ],
+      "spouses": [
+        "royal-portugal-john-iii-1502"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-portugal-john-iii-1502": "1525"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "catherine-austria-name-1507",
+          "name": "Archduchess Catherine of Austria",
+          "startYear": 1507,
+          "endYear": 1525,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Austria,_Queen_of_Portugal"
+        },
+        {
+          "id": "catherine-austria-name-1525",
+          "name": "Catherine of Austria, Queen of Portugal",
+          "startYear": 1525,
+          "endYear": 1557,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Austria,_Queen_of_Portugal"
+        },
+        {
+          "id": "catherine-austria-name-1557",
+          "name": "Catherine of Austria, Queen Dowager of Portugal",
+          "startYear": 1557,
+          "endYear": 1578,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Austria,_Queen_of_Portugal"
+        }
+      ],
+      "defaultNamePeriodId": "catherine-austria-name-1525",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Catherine_of_Austria,_Queen_of_Portugal",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-spain-carlos-asturias-1545": {
+      "id": "royal-spain-carlos-asturias-1545",
+      "firstName": "Carlos",
+      "lastName": "Prince of Asturias",
+      "displayName": "Carlos, Prince of Asturias",
+      "title": "Prince of Asturias",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1545",
+      "deathYear": "1568",
+      "isLiving": false,
+      "place": "",
+      "note": "Only child of Philip II and Maria Manuela of Portugal",
+      "parents": [
+        "profile-g6000000001600060051",
+        "profile-g6000000001599879609"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "royal-spain-carlos-asturias-1545-name-1545",
+          "name": "Carlos, Prince of Asturias",
+          "startYear": 1545,
+          "endYear": 1568,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Carlos,_Prince_of_Asturias"
+        }
+      ],
+      "defaultNamePeriodId": "royal-spain-carlos-asturias-1545-name-1545",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Carlos,_Prince_of_Asturias",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-spain-isabella-clara-eugenia-1566": {
+      "id": "royal-spain-isabella-clara-eugenia-1566",
+      "firstName": "Isabella Clara Eugenia",
+      "lastName": "of Spain",
+      "displayName": "Infanta Isabella Clara Eugenia of Spain",
+      "title": "Infanta of Spain",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1566",
+      "deathYear": "1633",
+      "isLiving": false,
+      "place": "",
+      "note": "Daughter of Philip II and Elisabeth of Valois",
+      "parents": [
+        "profile-g6000000001600060051",
+        "profile-g6000000001777536029"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "royal-spain-isabella-clara-eugenia-1566-name-1566",
+          "name": "Infanta Isabella Clara Eugenia of Spain",
+          "startYear": 1566,
+          "endYear": 1633,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Isabella_Clara_Eugenia"
+        }
+      ],
+      "defaultNamePeriodId": "royal-spain-isabella-clara-eugenia-1566-name-1566",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Isabella_Clara_Eugenia",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-spain-philip-iii-1578": {
+      "id": "royal-spain-philip-iii-1578",
+      "firstName": "Philip",
+      "lastName": "III",
+      "displayName": "Philip III, King of Spain and Portugal",
+      "title": "King of Spain and Portugal",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1578",
+      "deathYear": "1621",
+      "isLiving": false,
+      "place": "",
+      "note": "Son and successor of Philip II",
+      "parents": [
+        "profile-g6000000001600060051",
+        "profile-g6000000001142154909"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "philip-iii-name-1578",
+          "name": "Prince Philip of Spain",
+          "startYear": 1578,
+          "endYear": 1598,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_III_of_Spain"
+        },
+        {
+          "id": "philip-iii-name-1598",
+          "name": "Philip III, King of Spain and Portugal",
+          "startYear": 1598,
+          "endYear": 1621,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Philip_III_of_Spain"
+        }
+      ],
+      "defaultNamePeriodId": "philip-iii-name-1598",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Spain and Portugal",
+          "startYear": 1598,
+          "endYear": 1621,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Philip_III_of_Spain",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-frederick-ii-1534": {
+      "id": "royal-denmark-frederick-ii-1534",
+      "firstName": "Frederick",
+      "lastName": "II",
+      "displayName": "Frederick II, King of Denmark and Norway",
+      "title": "King of Denmark and Norway",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1534",
+      "deathYear": "1588",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Anne of Denmark and Christian IV",
+      "parents": [],
+      "children": [
+        "profile-4104662",
+        "royal-denmark-christian-iv-1577"
+      ],
+      "partners": [
+        "royal-denmark-sophie-mecklenburg-1557"
+      ],
+      "spouses": [
+        "royal-denmark-sophie-mecklenburg-1557"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-sophie-mecklenburg-1557": "1572"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "frederick-ii-denmark-name-1534",
+          "name": "Prince Frederick of Denmark",
+          "startYear": 1534,
+          "endYear": 1559,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_II_of_Denmark"
+        },
+        {
+          "id": "frederick-ii-denmark-name-1559",
+          "name": "Frederick II, King of Denmark and Norway",
+          "startYear": 1559,
+          "endYear": 1588,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_II_of_Denmark"
+        }
+      ],
+      "defaultNamePeriodId": "frederick-ii-denmark-name-1559",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Denmark and Norway",
+          "startYear": 1559,
+          "endYear": 1588,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_II_of_Denmark",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-sophie-mecklenburg-1557": {
+      "id": "royal-denmark-sophie-mecklenburg-1557",
+      "firstName": "Sophie",
+      "lastName": "of Mecklenburg-Güstrow",
+      "displayName": "Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1557",
+      "deathYear": "1631",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Frederick II of Denmark",
+      "parents": [],
+      "children": [
+        "profile-4104662",
+        "royal-denmark-christian-iv-1577"
+      ],
+      "partners": [
+        "royal-denmark-frederick-ii-1534"
+      ],
+      "spouses": [
+        "royal-denmark-frederick-ii-1534"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-frederick-ii-1534": "1572"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "sophie-mecklenburg-name-1557",
+          "name": "Sophie of Mecklenburg-Güstrow",
+          "startYear": 1557,
+          "endYear": 1572,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_of_Mecklenburg-G%C3%BCstrow"
+        },
+        {
+          "id": "sophie-mecklenburg-name-1572",
+          "name": "Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway",
+          "startYear": 1572,
+          "endYear": 1588,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_of_Mecklenburg-G%C3%BCstrow"
+        },
+        {
+          "id": "sophie-mecklenburg-name-1588",
+          "name": "Sophie of Mecklenburg-Güstrow, Queen Dowager of Denmark and Norway",
+          "startYear": 1588,
+          "endYear": 1631,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_of_Mecklenburg-G%C3%BCstrow"
+        }
+      ],
+      "defaultNamePeriodId": "sophie-mecklenburg-name-1572",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_of_Mecklenburg-G%C3%BCstrow",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-christian-iv-1577": {
+      "id": "royal-denmark-christian-iv-1577",
+      "firstName": "Christian",
+      "lastName": "IV",
+      "displayName": "Christian IV, King of Denmark and Norway",
+      "title": "King of Denmark and Norway",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1577",
+      "deathYear": "1648",
+      "isLiving": false,
+      "place": "",
+      "note": "Brother of Anne of Denmark and grandfather of Prince George of Denmark",
+      "parents": [
+        "royal-denmark-frederick-ii-1534",
+        "royal-denmark-sophie-mecklenburg-1557"
+      ],
+      "children": [
+        "royal-denmark-frederick-iii-1609"
+      ],
+      "partners": [
+        "royal-denmark-anne-catherine-brandenburg-1575"
+      ],
+      "spouses": [
+        "royal-denmark-anne-catherine-brandenburg-1575"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-anne-catherine-brandenburg-1575": "1597"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "christian-iv-name-1577",
+          "name": "Prince Christian of Denmark",
+          "startYear": 1577,
+          "endYear": 1588,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Christian_IV_of_Denmark"
+        },
+        {
+          "id": "christian-iv-name-1588",
+          "name": "Christian IV, King of Denmark and Norway",
+          "startYear": 1588,
+          "endYear": 1648,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Christian_IV_of_Denmark"
+        }
+      ],
+      "defaultNamePeriodId": "christian-iv-name-1588",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Denmark and Norway",
+          "startYear": 1588,
+          "endYear": 1648,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Christian_IV_of_Denmark",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-anne-catherine-brandenburg-1575": {
+      "id": "royal-denmark-anne-catherine-brandenburg-1575",
+      "firstName": "Anne Catherine",
+      "lastName": "of Brandenburg",
+      "displayName": "Anne Catherine of Brandenburg, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1575",
+      "deathYear": "1612",
+      "isLiving": false,
+      "place": "",
+      "note": "First wife of Christian IV of Denmark",
+      "parents": [],
+      "children": [
+        "royal-denmark-frederick-iii-1609"
+      ],
+      "partners": [
+        "royal-denmark-christian-iv-1577"
+      ],
+      "spouses": [
+        "royal-denmark-christian-iv-1577"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-christian-iv-1577": "1597"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "anne-catherine-name-1575",
+          "name": "Anne Catherine of Brandenburg",
+          "startYear": 1575,
+          "endYear": 1597,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_Catherine_of_Brandenburg"
+        },
+        {
+          "id": "anne-catherine-name-1597",
+          "name": "Anne Catherine of Brandenburg, Queen of Denmark and Norway",
+          "startYear": 1597,
+          "endYear": 1612,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Anne_Catherine_of_Brandenburg"
+        }
+      ],
+      "defaultNamePeriodId": "anne-catherine-name-1597",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Anne_Catherine_of_Brandenburg",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-frederick-iii-1609": {
+      "id": "royal-denmark-frederick-iii-1609",
+      "firstName": "Frederick",
+      "lastName": "III",
+      "displayName": "Frederick III, King of Denmark and Norway",
+      "title": "King of Denmark and Norway",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1609",
+      "deathYear": "1670",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Prince George of Denmark",
+      "parents": [
+        "royal-denmark-christian-iv-1577",
+        "royal-denmark-anne-catherine-brandenburg-1575"
+      ],
+      "children": [
+        "profile-g4033341615700026163"
+      ],
+      "partners": [
+        "royal-denmark-sophie-amalie-1628"
+      ],
+      "spouses": [
+        "royal-denmark-sophie-amalie-1628"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-sophie-amalie-1628": "1643"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "frederick-iii-name-1609",
+          "name": "Prince Frederick of Denmark",
+          "startYear": 1609,
+          "endYear": 1648,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_III_of_Denmark"
+        },
+        {
+          "id": "frederick-iii-name-1648",
+          "name": "Frederick III, King of Denmark and Norway",
+          "startYear": 1648,
+          "endYear": 1670,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_III_of_Denmark"
+        }
+      ],
+      "defaultNamePeriodId": "frederick-iii-name-1648",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Denmark and Norway",
+          "startYear": 1648,
+          "endYear": 1670,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_III_of_Denmark",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-sophie-amalie-1628": {
+      "id": "royal-denmark-sophie-amalie-1628",
+      "firstName": "Sophie Amalie",
+      "lastName": "of Brunswick-Lüneburg",
+      "displayName": "Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1628",
+      "deathYear": "1685",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Frederick III and mother of Prince George of Denmark",
+      "parents": [],
+      "children": [
+        "profile-g4033341615700026163"
+      ],
+      "partners": [
+        "royal-denmark-frederick-iii-1609"
+      ],
+      "spouses": [
+        "royal-denmark-frederick-iii-1609"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-frederick-iii-1609": "1643"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "sophie-amalie-name-1628",
+          "name": "Sophie Amalie of Brunswick-Lüneburg",
+          "startYear": 1628,
+          "endYear": 1648,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_Amalie_of_Brunswick-L%C3%BCneburg"
+        },
+        {
+          "id": "sophie-amalie-name-1648",
+          "name": "Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway",
+          "startYear": 1648,
+          "endYear": 1670,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_Amalie_of_Brunswick-L%C3%BCneburg"
+        },
+        {
+          "id": "sophie-amalie-name-1670",
+          "name": "Sophie Amalie of Brunswick-Lüneburg, Queen Dowager of Denmark and Norway",
+          "startYear": 1670,
+          "endYear": 1685,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_Amalie_of_Brunswick-L%C3%BCneburg"
+        }
+      ],
+      "defaultNamePeriodId": "sophie-amalie-name-1648",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Sophie_Amalie_of_Brunswick-L%C3%BCneburg",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-christian-ix-1818": {
+      "id": "royal-denmark-christian-ix-1818",
+      "firstName": "Christian",
+      "lastName": "IX",
+      "displayName": "Christian IX, King of Denmark",
+      "title": "King of Denmark",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1818",
+      "deathYear": "1906",
+      "isLiving": false,
+      "place": "",
+      "note": "Founder of the Glücksburg line on the Danish throne",
+      "parents": [],
+      "children": [
+        "profile-g6000000003070981015",
+        "royal-greece-george-i-1845"
+      ],
+      "partners": [
+        "royal-denmark-louise-hesse-kassel-1817"
+      ],
+      "spouses": [
+        "royal-denmark-louise-hesse-kassel-1817"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-louise-hesse-kassel-1817": "1842"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "christian-ix-name-1818",
+          "name": "Prince Christian of Schleswig-Holstein-Sonderburg-Glücksburg",
+          "startYear": 1818,
+          "endYear": 1863,
+          "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/christian-ix-1818-1906/"
+        },
+        {
+          "id": "christian-ix-name-1863",
+          "name": "Christian IX, King of Denmark",
+          "startYear": 1863,
+          "endYear": 1906,
+          "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/christian-ix-1818-1906/"
+        }
+      ],
+      "defaultNamePeriodId": "christian-ix-name-1863",
+      "personalEvents": [
+        {
+          "name": "Reign as King of Denmark",
+          "startYear": 1863,
+          "endYear": 1906,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/christian-ix-1818-1906/",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-denmark-louise-hesse-kassel-1817": {
+      "id": "royal-denmark-louise-hesse-kassel-1817",
+      "firstName": "Louise",
+      "lastName": "of Hesse-Kassel",
+      "displayName": "Louise of Hesse-Kassel, Queen of Denmark",
+      "title": "Queen of Denmark",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1817",
+      "deathYear": "1898",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Christian IX and mother of Alexandra and George I of Greece",
+      "parents": [],
+      "children": [
+        "profile-g6000000003070981015",
+        "royal-greece-george-i-1845"
+      ],
+      "partners": [
+        "royal-denmark-christian-ix-1818"
+      ],
+      "spouses": [
+        "royal-denmark-christian-ix-1818"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-denmark-christian-ix-1818": "1842"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "louise-hesse-kassel-name-1817",
+          "name": "Princess Louise of Hesse-Kassel",
+          "startYear": 1817,
+          "endYear": 1842,
+          "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/queen-louise-1817-1898/"
+        },
+        {
+          "id": "louise-hesse-kassel-name-1842",
+          "name": "Princess Christian of Glücksburg",
+          "startYear": 1842,
+          "endYear": 1863,
+          "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/queen-louise-1817-1898/"
+        },
+        {
+          "id": "louise-hesse-kassel-name-1863",
+          "name": "Louise of Hesse-Kassel, Queen of Denmark",
+          "startYear": 1863,
+          "endYear": 1898,
+          "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/queen-louise-1817-1898/"
+        }
+      ],
+      "defaultNamePeriodId": "louise-hesse-kassel-name-1863",
+      "personalEvents": [],
+      "sourceUrl": "https://denkongeligesamling.dk/en/the-collection/persons/queen-louise-1817-1898/",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-greece-george-i-1845": {
+      "id": "royal-greece-george-i-1845",
+      "firstName": "George",
+      "lastName": "I",
+      "displayName": "George I, King of the Hellenes",
+      "title": "King of the Hellenes",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1845",
+      "deathYear": "1913",
+      "isLiving": false,
+      "place": "",
+      "note": "Born Prince William of Denmark; father of Prince Andrew of Greece",
+      "parents": [
+        "royal-denmark-christian-ix-1818",
+        "royal-denmark-louise-hesse-kassel-1817"
+      ],
+      "children": [
+        "profile-g5495575341940116659"
+      ],
+      "partners": [
+        "royal-greece-olga-constantinovna-1851"
+      ],
+      "spouses": [
+        "royal-greece-olga-constantinovna-1851"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-greece-olga-constantinovna-1851": "1867"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "george-i-greece-name-1845",
+          "name": "Prince William of Denmark",
+          "startYear": 1845,
+          "endYear": 1863,
+          "sourceUrl": "https://en.wikipedia.org/wiki/George_I_of_Greece"
+        },
+        {
+          "id": "george-i-greece-name-1863",
+          "name": "George I, King of the Hellenes",
+          "startYear": 1863,
+          "endYear": 1913,
+          "sourceUrl": "https://en.wikipedia.org/wiki/George_I_of_Greece"
+        }
+      ],
+      "defaultNamePeriodId": "george-i-greece-name-1863",
+      "personalEvents": [
+        {
+          "name": "Reign as King of the Hellenes",
+          "startYear": 1863,
+          "endYear": 1913,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/George_I_of_Greece",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-greece-olga-constantinovna-1851": {
+      "id": "royal-greece-olga-constantinovna-1851",
+      "firstName": "Olga Constantinovna",
+      "lastName": "of Russia",
+      "displayName": "Olga Constantinovna of Russia, Queen of the Hellenes",
+      "title": "Queen of the Hellenes",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1851",
+      "deathYear": "1926",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of George I of Greece and mother of Prince Andrew",
+      "parents": [],
+      "children": [
+        "profile-g5495575341940116659"
+      ],
+      "partners": [
+        "royal-greece-george-i-1845"
+      ],
+      "spouses": [
+        "royal-greece-george-i-1845"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-greece-george-i-1845": "1867"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "olga-constantinovna-name-1851",
+          "name": "Grand Duchess Olga Constantinovna of Russia",
+          "startYear": 1851,
+          "endYear": 1867,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Olga_Constantinovna_of_Russia"
+        },
+        {
+          "id": "olga-constantinovna-name-1867",
+          "name": "Olga Constantinovna of Russia, Queen of the Hellenes",
+          "startYear": 1867,
+          "endYear": 1913,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Olga_Constantinovna_of_Russia"
+        },
+        {
+          "id": "olga-constantinovna-name-1913",
+          "name": "Olga Constantinovna of Russia, Queen Dowager of the Hellenes",
+          "startYear": 1913,
+          "endYear": 1926,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Olga_Constantinovna_of_Russia"
+        }
+      ],
+      "defaultNamePeriodId": "olga-constantinovna-name-1867",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Olga_Constantinovna_of_Russia",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-palatinate-frederick-iv-1574": {
+      "id": "royal-palatinate-frederick-iv-1574",
+      "firstName": "Frederick",
+      "lastName": "IV",
+      "displayName": "Frederick IV, Elector Palatine",
+      "title": "Elector Palatine",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1574",
+      "deathYear": "1610",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Frederick V, the Winter King",
+      "parents": [],
+      "children": [
+        "profile-g304433105310001815"
+      ],
+      "partners": [
+        "royal-palatinate-louise-juliana-1576"
+      ],
+      "spouses": [
+        "royal-palatinate-louise-juliana-1576"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-palatinate-louise-juliana-1576": "1593"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "frederick-iv-palatine-name-1574",
+          "name": "Prince Frederick of the Palatinate",
+          "startYear": 1574,
+          "endYear": 1583,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_IV,_Elector_Palatine"
+        },
+        {
+          "id": "frederick-iv-palatine-name-1583",
+          "name": "Frederick IV, Elector Palatine",
+          "startYear": 1583,
+          "endYear": 1610,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_IV,_Elector_Palatine"
+        }
+      ],
+      "defaultNamePeriodId": "frederick-iv-palatine-name-1583",
+      "personalEvents": [
+        {
+          "name": "Tenure as Elector Palatine",
+          "startYear": 1583,
+          "endYear": 1610,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_IV,_Elector_Palatine",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-palatinate-louise-juliana-1576": {
+      "id": "royal-palatinate-louise-juliana-1576",
+      "firstName": "Louise Juliana",
+      "lastName": "of Nassau",
+      "displayName": "Louise Juliana of Nassau, Electress Palatine",
+      "title": "Electress Palatine",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1576",
+      "deathYear": "1644",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Frederick IV and mother of Frederick V",
+      "parents": [],
+      "children": [
+        "profile-g304433105310001815"
+      ],
+      "partners": [
+        "royal-palatinate-frederick-iv-1574"
+      ],
+      "spouses": [
+        "royal-palatinate-frederick-iv-1574"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-palatinate-frederick-iv-1574": "1593"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "louise-juliana-name-1576",
+          "name": "Louise Juliana of Nassau",
+          "startYear": 1576,
+          "endYear": 1593,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louise_Juliana_of_Nassau"
+        },
+        {
+          "id": "louise-juliana-name-1593",
+          "name": "Louise Juliana of Nassau, Electress Palatine",
+          "startYear": 1593,
+          "endYear": 1610,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louise_Juliana_of_Nassau"
+        },
+        {
+          "id": "louise-juliana-name-1610",
+          "name": "Louise Juliana of Nassau, Dowager Electress Palatine",
+          "startYear": 1610,
+          "endYear": 1644,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louise_Juliana_of_Nassau"
+        }
+      ],
+      "defaultNamePeriodId": "louise-juliana-name-1593",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Louise_Juliana_of_Nassau",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-orange-frederick-henry-1584": {
+      "id": "royal-orange-frederick-henry-1584",
+      "firstName": "Frederick Henry",
+      "lastName": "Prince of Orange",
+      "displayName": "Frederick Henry, Prince of Orange",
+      "title": "Prince of Orange",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1584",
+      "deathYear": "1647",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of William II, Prince of Orange",
+      "parents": [],
+      "children": [
+        "profile-g6000000001562593113"
+      ],
+      "partners": [
+        "royal-orange-amalia-solms-1602"
+      ],
+      "spouses": [
+        "royal-orange-amalia-solms-1602"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-orange-amalia-solms-1602": "1625"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "frederick-henry-name-1584",
+          "name": "Frederick Henry of Nassau",
+          "startYear": 1584,
+          "endYear": 1625,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_Henry,_Prince_of_Orange"
+        },
+        {
+          "id": "frederick-henry-name-1625",
+          "name": "Frederick Henry, Prince of Orange",
+          "startYear": 1625,
+          "endYear": 1647,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_Henry,_Prince_of_Orange"
+        }
+      ],
+      "defaultNamePeriodId": "frederick-henry-name-1625",
+      "personalEvents": [
+        {
+          "name": "Tenure as Prince of Orange",
+          "startYear": 1625,
+          "endYear": 1647,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Frederick_Henry,_Prince_of_Orange",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-orange-amalia-solms-1602": {
+      "id": "royal-orange-amalia-solms-1602",
+      "firstName": "Amalia",
+      "lastName": "of Solms-Braunfels",
+      "displayName": "Amalia of Solms-Braunfels, Princess of Orange",
+      "title": "Princess of Orange",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1602",
+      "deathYear": "1675",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Frederick Henry and mother of William II",
+      "parents": [],
+      "children": [
+        "profile-g6000000001562593113"
+      ],
+      "partners": [
+        "royal-orange-frederick-henry-1584"
+      ],
+      "spouses": [
+        "royal-orange-frederick-henry-1584"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-orange-frederick-henry-1584": "1625"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "amalia-solms-name-1602",
+          "name": "Amalia of Solms-Braunfels",
+          "startYear": 1602,
+          "endYear": 1625,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Amalia_of_Solms-Braunfels"
+        },
+        {
+          "id": "amalia-solms-name-1625",
+          "name": "Amalia of Solms-Braunfels, Princess of Orange",
+          "startYear": 1625,
+          "endYear": 1647,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Amalia_of_Solms-Braunfels"
+        },
+        {
+          "id": "amalia-solms-name-1647",
+          "name": "Amalia of Solms-Braunfels, Dowager Princess of Orange",
+          "startYear": 1647,
+          "endYear": 1675,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Amalia_of_Solms-Braunfels"
+        }
+      ],
+      "defaultNamePeriodId": "amalia-solms-name-1625",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Amalia_of_Solms-Braunfels",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-hesse-louis-ii-1777": {
+      "id": "royal-hesse-louis-ii-1777",
+      "firstName": "Louis",
+      "lastName": "II",
+      "displayName": "Louis II, Grand Duke of Hesse and by Rhine",
+      "title": "Grand Duke of Hesse and by Rhine",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1777",
+      "deathYear": "1848",
+      "isLiving": false,
+      "place": "",
+      "note": "Dynastic father of Princes Charles and Alexander of Hesse",
+      "parents": [],
+      "children": [
+        "royal-hesse-charles-1809",
+        "royal-hesse-alexander-1823"
+      ],
+      "partners": [
+        "royal-hesse-wilhelmine-baden-1788"
+      ],
+      "spouses": [
+        "royal-hesse-wilhelmine-baden-1788"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-hesse-wilhelmine-baden-1788": "1804"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "louis-ii-hesse-name-1777",
+          "name": "Hereditary Prince Louis of Hesse-Darmstadt",
+          "startYear": 1777,
+          "endYear": 1830,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_II,_Grand_Duke_of_Hesse"
+        },
+        {
+          "id": "louis-ii-hesse-name-1830",
+          "name": "Louis II, Grand Duke of Hesse and by Rhine",
+          "startYear": 1830,
+          "endYear": 1848,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Louis_II,_Grand_Duke_of_Hesse"
+        }
+      ],
+      "defaultNamePeriodId": "louis-ii-hesse-name-1830",
+      "personalEvents": [
+        {
+          "name": "Reign as Grand Duke of Hesse and by Rhine",
+          "startYear": 1830,
+          "endYear": 1848,
+          "source": "royal",
+          "color": "#c62828"
+        }
+      ],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Louis_II,_Grand_Duke_of_Hesse",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-hesse-wilhelmine-baden-1788": {
+      "id": "royal-hesse-wilhelmine-baden-1788",
+      "firstName": "Wilhelmine",
+      "lastName": "of Baden",
+      "displayName": "Wilhelmine of Baden, Grand Duchess of Hesse and by Rhine",
+      "title": "Grand Duchess of Hesse and by Rhine",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1788",
+      "deathYear": "1836",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Louis II and mother of Princes Charles and Alexander",
+      "parents": [],
+      "children": [
+        "royal-hesse-charles-1809",
+        "royal-hesse-alexander-1823"
+      ],
+      "partners": [
+        "royal-hesse-louis-ii-1777"
+      ],
+      "spouses": [
+        "royal-hesse-louis-ii-1777"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-hesse-louis-ii-1777": "1804"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "wilhelmine-baden-name-1788",
+          "name": "Princess Wilhelmine of Baden",
+          "startYear": 1788,
+          "endYear": 1804,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Wilhelmine_of_Baden"
+        },
+        {
+          "id": "wilhelmine-baden-name-1804",
+          "name": "Hereditary Grand Duchess Wilhelmine of Hesse",
+          "startYear": 1804,
+          "endYear": 1830,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Wilhelmine_of_Baden"
+        },
+        {
+          "id": "wilhelmine-baden-name-1830",
+          "name": "Wilhelmine of Baden, Grand Duchess of Hesse and by Rhine",
+          "startYear": 1830,
+          "endYear": 1836,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Wilhelmine_of_Baden"
+        }
+      ],
+      "defaultNamePeriodId": "wilhelmine-baden-name-1830",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Wilhelmine_of_Baden",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-hesse-charles-1809": {
+      "id": "royal-hesse-charles-1809",
+      "firstName": "Charles",
+      "lastName": "of Hesse and by Rhine",
+      "displayName": "Prince Charles of Hesse and by Rhine",
+      "title": "Prince of Hesse and by Rhine",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1809",
+      "deathYear": "1877",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Louis IV, Grand Duke of Hesse and by Rhine",
+      "parents": [
+        "royal-hesse-louis-ii-1777",
+        "royal-hesse-wilhelmine-baden-1788"
+      ],
+      "children": [
+        "profile-g6000000000703378021"
+      ],
+      "partners": [
+        "royal-hesse-elisabeth-prussia-1815"
+      ],
+      "spouses": [
+        "royal-hesse-elisabeth-prussia-1815"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-hesse-elisabeth-prussia-1815": "1836"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "royal-hesse-charles-1809-name-1809",
+          "name": "Prince Charles of Hesse and by Rhine",
+          "startYear": 1809,
+          "endYear": 1877,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Prince_Charles_of_Hesse_and_by_Rhine"
+        }
+      ],
+      "defaultNamePeriodId": "royal-hesse-charles-1809-name-1809",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Prince_Charles_of_Hesse_and_by_Rhine",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-hesse-elisabeth-prussia-1815": {
+      "id": "royal-hesse-elisabeth-prussia-1815",
+      "firstName": "Elisabeth",
+      "lastName": "of Prussia",
+      "displayName": "Princess Elisabeth of Prussia",
+      "title": "Princess of Prussia",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1815",
+      "deathYear": "1885",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Prince Charles of Hesse and mother of Louis IV",
+      "parents": [],
+      "children": [
+        "profile-g6000000000703378021"
+      ],
+      "partners": [
+        "royal-hesse-charles-1809"
+      ],
+      "spouses": [
+        "royal-hesse-charles-1809"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-hesse-charles-1809": "1836"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "royal-hesse-elisabeth-prussia-1815-name-1815",
+          "name": "Princess Elisabeth of Prussia",
+          "startYear": 1815,
+          "endYear": 1885,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Elisabeth_of_Prussia_(1815%E2%80%931885)"
+        }
+      ],
+      "defaultNamePeriodId": "royal-hesse-elisabeth-prussia-1815-name-1815",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Princess_Elisabeth_of_Prussia_(1815%E2%80%931885)",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-hesse-alexander-1823": {
+      "id": "royal-hesse-alexander-1823",
+      "firstName": "Alexander",
+      "lastName": "of Hesse and by Rhine",
+      "displayName": "Prince Alexander of Hesse and by Rhine",
+      "title": "Prince of Hesse and by Rhine",
+      "nameOrder": "western",
+      "gender": "male",
+      "birthYear": "1823",
+      "deathYear": "1888",
+      "isLiving": false,
+      "place": "",
+      "note": "Father of Prince Louis of Battenberg",
+      "parents": [
+        "royal-hesse-louis-ii-1777",
+        "royal-hesse-wilhelmine-baden-1788"
+      ],
+      "children": [
+        "profile-g6000000003221640265"
+      ],
+      "partners": [
+        "royal-battenberg-julia-1825"
+      ],
+      "spouses": [
+        "royal-battenberg-julia-1825"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-battenberg-julia-1825": "1851"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "royal-hesse-alexander-1823-name-1823",
+          "name": "Prince Alexander of Hesse and by Rhine",
+          "startYear": 1823,
+          "endYear": 1888,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Prince_Alexander_of_Hesse_and_by_Rhine"
+        }
+      ],
+      "defaultNamePeriodId": "royal-hesse-alexander-1823-name-1823",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Prince_Alexander_of_Hesse_and_by_Rhine",
+      "sourceId": "",
+      "sourceProvider": "web",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true
+    },
+    "royal-battenberg-julia-1825": {
+      "id": "royal-battenberg-julia-1825",
+      "firstName": "Julia",
+      "lastName": "Princess of Battenberg",
+      "displayName": "Julia, Princess of Battenberg",
+      "title": "Princess of Battenberg",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1825",
+      "deathYear": "1895",
+      "isLiving": false,
+      "place": "",
+      "note": "Wife of Prince Alexander of Hesse and mother of Prince Louis of Battenberg",
+      "parents": [],
+      "children": [
+        "profile-g6000000003221640265"
+      ],
+      "partners": [
+        "royal-hesse-alexander-1823"
+      ],
+      "spouses": [
+        "royal-hesse-alexander-1823"
+      ],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {
+        "royal-hesse-alexander-1823": "1851"
+      },
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "julia-battenberg-name-1825",
+          "name": "Julia Hauke",
+          "startYear": 1825,
+          "endYear": 1851,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Julia,_Princess_of_Battenberg"
+        },
+        {
+          "id": "julia-battenberg-name-1851",
+          "name": "Julia, Countess of Battenberg",
+          "startYear": 1851,
+          "endYear": 1858,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Julia,_Princess_of_Battenberg"
+        },
+        {
+          "id": "julia-battenberg-name-1858",
+          "name": "Julia, Princess of Battenberg",
+          "startYear": 1858,
+          "endYear": 1895,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Julia,_Princess_of_Battenberg"
+        }
+      ],
+      "defaultNamePeriodId": "julia-battenberg-name-1858",
+      "personalEvents": [],
+      "sourceUrl": "https://en.wikipedia.org/wiki/Julia,_Princess_of_Battenberg",
+      "sourceId": "",
+      "sourceProvider": "web",
       "importedAt": "",
       "geniImmediateFamilyLoaded": false,
       "geniImmediateFamilyVerifiedAt": "",

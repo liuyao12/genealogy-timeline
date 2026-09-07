@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply source-order production patch
-        run: python3 .github/scripts/implement_source_first_compaction.py
+        run: |
+          python3 .github/scripts/fix_source_first_patch.py
+          python3 .github/scripts/implement_source_first_compaction.py
       - name: Run automated tests and syntax checks
         run: |
           npm test
@@ -71,6 +73,7 @@ jobs:
           rm -f .github/scripts/measure_royal_compaction.mjs
           rm -f .github/scripts/make_compaction_variants.py
           rm -f .github/scripts/implement_source_first_compaction.py
+          rm -f .github/scripts/fix_source_first_patch.py
           rm -f .github/workflows/royal-compaction-diagnostic.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

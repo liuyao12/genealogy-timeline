@@ -103,10 +103,27 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
 .person-list-row .person-list-item { min-width: 0; background: transparent; }
 .person-list-row .person-list-item:hover, .person-list-row .person-list-item.active { background: transparent; }
 .person-list-row.search-result .person-list-item { border-radius: 8px 0 0 8px; }
+.tree-action-button {
+  --tree-action-icon-size: 16px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #111;
+  line-height: 1;
+}
+.tree-action-button::before {
+  content: '';
+  display: block;
+  width: var(--tree-action-icon-size);
+  height: var(--tree-action-icon-size);
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 7.5 8h2L6 12.5h2.3L4.5 18h6v4h3v-4h6l-3.8-5.5H18L14.5 8h2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 7.5 8h2L6 12.5h2.3L4.5 18h6v4h3v-4h6l-3.8-5.5H18L14.5 8h2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .person-list-focus {
-  display: grid; place-items: center; width: 29px; min-width: 29px; height: 27px; margin-right: 5px; padding: 0;
-  border: 1px solid #999; border-radius: 6px; background: #fff; color: #111;
-  font: 14px/1 "Segoe UI Emoji", "Apple Color Emoji", sans-serif; cursor: pointer;
+  --tree-action-icon-size: 15px;
+  width: 29px; min-width: 29px; height: 27px; margin-right: 5px;
+  border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; cursor: pointer;
 }
 .person-list-row.outside-focus-scope .person-list-focus { border-color: #000; background: #000; color: #fff; }
 .person-list-focus:hover:not(:disabled) { transform: translateY(-1px); }
@@ -254,17 +271,18 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .detail-empty-icon { display: grid; place-items: center; width: 48px; height: 48px; border: 1px dashed #bbb; border-radius: 50%; font-size: 20px; }
 .detail-empty h2 { margin: 15px 0 5px; color: var(--ink); font: 650 17px Georgia, serif; }
 .detail-empty p { margin: 0; font-size: 11px; line-height: 1.5; }
-.person-hero { position: relative; padding: 24px 22px 20px; border-bottom: 1px solid var(--line); background: #fff; text-align: center; }
-.avatar { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 12px; border: 1px solid #000; border-radius: 50%; background: #fff; font: 700 19px Georgia, serif; color: #000; }
+.person-hero { position: relative; padding: 44px 18px 16px; border-bottom: 1px solid var(--line); background: #fff; }
+.person-hero-identity { display: grid; grid-template-columns: 54px minmax(0, 1fr) 36px; align-items: center; gap: 11px; width: 100%; }
+.person-hero-copy { min-width: 0; text-align: left; }
+.avatar { width: 54px; height: 54px; display: grid; place-items: center; margin: 0; border: 1px solid #000; border-radius: 50%; background: #fff; font: 700 18px Georgia, serif; color: #000; }
 .close-detail { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #555; font-size: 21px; cursor: pointer; }
-.person-hero .close-detail { position: absolute; right: 13px; top: 12px; }
-.person-edit-button { position: absolute; left: 13px; top: 12px; min-height: 29px; padding: 0 10px; }
-.person-hero h2 { margin: 6px 0 3px; font: 650 21px Georgia, serif; }
+.person-hero .close-detail { position: absolute; right: 12px; top: 10px; }
+.person-edit-button { position: absolute; left: 12px; top: 10px; min-height: 29px; padding: 0 10px; }
+.person-hero h2 { margin: 4px 0 2px; overflow-wrap: anywhere; font: 650 19px/1.15 Georgia, serif; }
 .person-hero p { margin: 0; color: var(--muted); font-size: 11px; }
-.focus-tree-control { display: grid; justify-items: center; gap: 5px; margin-top: 13px; }
-.focus-tree-button { display: grid; place-items: center; width: 36px; min-width: 36px; min-height: 34px; padding: 0; font: 17px/1 "Segoe UI Emoji", "Apple Color Emoji", sans-serif; }
+.focus-tree-control { display: grid; place-items: center; align-self: center; margin: 0; }
+.focus-tree-button { --tree-action-icon-size: 18px; width: 36px; min-width: 36px; min-height: 34px; }
 .focus-tree-button[aria-pressed="true"] { border-color: #111; background: #111; color: #fff; cursor: default; transform: none; }
-.focus-tree-control small { max-width: 285px; color: #666; font-size: 8px; line-height: 1.35; }
 .focus-tree-transitioning .focus-tree-button,
 .focus-tree-transitioning .relationship-focus { pointer-events: none; }
 .form-content { padding: 18px 20px 25px; }
@@ -318,7 +336,7 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .relationship-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 500; }
 .relationship-copy small { display: block; margin-top: 2px; color: #777; font-size: 8px; }
 .relationship-actions { display: inline-flex; align-items: center; gap: 4px; }
-.relationship-focus { display: grid; place-items: center; width: 27px; min-width: 27px; height: 25px; padding: 0; border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; cursor: pointer; font: 13px/1 "Segoe UI Emoji", "Apple Color Emoji", sans-serif; }
+.relationship-focus { --tree-action-icon-size: 14px; width: 27px; min-width: 27px; height: 25px; border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; cursor: pointer; }
 .relationship-focus:hover { border-color: #000; background: #ededed; }
 .relationship-focus[aria-pressed="true"] { border-color: #111; background: #111; color: #fff; }
 .relationship-focus:disabled { cursor: default; opacity: .68; }

@@ -6,21 +6,31 @@ const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
-test('the selected profile exposes a persistent tree-symbol action', () => {
-  assert.match(html, /id="focus-tree-button"[^>]*>🌳<\/button>/);
-  assert.match(app, /els\['focus-tree-button'\]\.textContent = TREE_ACTION_SYMBOL/);
-  assert.match(html, /id="focus-tree-status"/);
+test('the selected profile exposes a persistent monochrome tree action', () => {
+  assert.match(html, /class="button secondary focus-tree-button tree-action-button"/);
+  assert.match(html, /id="focus-tree-button"[^>]*><\/button>/);
+  assert.match(html, /class="sr-only" id="focus-tree-status"/);
+  assert.doesNotMatch(app, /TREE_ACTION_SYMBOL|🌳/);
+  assert.match(styles, /\.tree-action-button::before/);
+  assert.match(styles, /-webkit-mask: url\("data:image\/svg\+xml/);
   assert.match(app, /function focusTreeOn\(personId\)/);
   assert.match(app, /state\.rootId = id/);
   assert.match(app, /Tree focused on/);
 });
 
-test('spouse rows offer a one-click tree-symbol change', () => {
-  assert.match(app, /className = 'relationship-focus'/);
-  assert.match(app, /focus\.textContent = TREE_ACTION_SYMBOL/);
+test('spouse rows offer a one-click monochrome tree action', () => {
+  assert.match(app, /className = 'relationship-focus tree-action-button'/);
   assert.match(app, /focus\.dataset\.focusPersonId = targetId/);
   assert.match(app, /focusTreeOn\(targetId\)/);
   assert.match(styles, /\.relationship-focus/);
+});
+
+test('the profile hero keeps the tree action beside the identity instead of on its own row', () => {
+  assert.match(html, /class="person-hero-identity"/);
+  assert.match(html, /class="person-hero-copy"/);
+  assert.match(styles, /\.person-hero-identity \{ display: grid; grid-template-columns: 54px minmax\(0, 1fr\) 36px;/);
+  assert.match(styles, /\.focus-tree-control \{ display: grid; place-items: center; align-self: center; margin: 0;/);
+  assert.doesNotMatch(styles, /\.focus-tree-control \{[^}]*margin-top:/);
 });
 
 test('focus changes use named View Transitions and preserve the chosen node position', () => {
@@ -37,7 +47,6 @@ test('the timeline starts at the oldest known paternal ancestor', () => {
   assert.match(app, /const preferredTreeRootId = datedIds\.has\(scope\.treeRootId\)/);
   assert.match(app, /scope\.paternalAncestorIds\.has\(id\)/);
 });
-
 
 test('focus emphasis uses a thicker gender-coloured outline rather than black', () => {
   assert.match(styles, /\.timeline-node\.focus\.male \.lifespan-outline \{ stroke: #69a9cf; \}/);

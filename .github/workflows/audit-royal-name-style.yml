@@ -10,5 +10,5 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: audit/royal-example-name-style
-      - name: Print title-bearing display-name candidates
-        run: python3 .github/scripts/audit_title_bearing_display_names.py
+      - name: Print static territorial display names
+        run: python3 .github/scripts/audit_static_of_names.py

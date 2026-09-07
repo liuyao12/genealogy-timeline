@@ -17,7 +17,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply gap-fitting compaction patch
-        run: python3 .github/scripts/allow_upper_branch_gap_fitting.py
+        run: |
+          python3 .github/scripts/allow_upper_branch_gap_fitting.py
+          python3 .github/scripts/fix_birth_order_null_year.py
       - name: Run tests and syntax checks
         run: |
           npm test
@@ -37,6 +39,7 @@ jobs:
       - name: Commit verified implementation
         run: |
           rm .github/scripts/allow_upper_branch_gap_fitting.py
+          rm .github/scripts/fix_birth_order_null_year.py
           rm .github/workflows/lower-first-gap-fitting.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

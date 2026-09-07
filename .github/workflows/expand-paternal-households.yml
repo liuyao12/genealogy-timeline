@@ -20,6 +20,7 @@ jobs:
         run: |
           python3 .github/scripts/expand_paternal_households.py
           python3 .github/scripts/fix_paternal_household_expectation.py
+          python3 .github/scripts/add_paternal_browser_diagnostics.py
           python3 - <<'PY'
           from pathlib import Path
           path = Path('.github/scripts/check_paternal_households.mjs')
@@ -52,6 +53,7 @@ jobs:
         run: |
           rm .github/scripts/expand_paternal_households.py
           rm .github/scripts/fix_paternal_household_expectation.py
+          rm .github/scripts/add_paternal_browser_diagnostics.py
           rm .github/scripts/check_paternal_households.mjs
           rm .github/workflows/expand-paternal-households.yml
           git config user.name "github-actions[bot]"

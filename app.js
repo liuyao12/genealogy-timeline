@@ -2,7 +2,7 @@ import { computeDescendantScope } from './descendant-scope.js?v=3';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
-import { birthOrderPairs, packTimelineRunsLowerFirst } from './timeline-compaction.js?v=2';
+import { birthOrderPairs, packTimelineRunsSourceFirst } from './timeline-compaction.js?v=3';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -2069,8 +2069,8 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
     else directRuns.push([index]);
   });
   // Convert the structural reading order into explicit precedence pairs.
-  // The source traversal is already top-to-bottom; the lower-first packer
-  // reverses only allocation priority, never genealogical order.
+  // The source-first packer preserves that family reading order while still
+  // allowing unrelated, horizontally disjoint branches to share rows.
   const precedencePairs = [];
   const precedenceKeys = new Set();
   const addPrecedence = (upper, lower, gap) => {
@@ -2087,7 +2087,7 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
     addPrecedence(upper, lower, gap);
   });
 
-  packTimelineRunsLowerFirst({
+  packTimelineRunsSourceFirst({
     nodes,
     runs: directRuns,
     precedencePairs,

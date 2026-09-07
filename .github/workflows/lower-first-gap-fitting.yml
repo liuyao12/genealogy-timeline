@@ -1,0 +1,45 @@
+name: Verify lower-first gap fitting
+on:
+  push:
+    branches: [fix/lower-first-gap-fitting]
+    paths: [.github/workflows/lower-first-gap-fitting.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/lower-first-gap-fitting
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply gap-fitting compaction patch
+        run: python3 .github/scripts/allow_upper_branch_gap_fitting.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check timeline-compaction.js
+          node --check tests/timeline-compaction-priority.test.mjs
+          git diff --check
+      - name: Smoke-test the rendered app
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=7000 --dump-dom http://127.0.0.1:4173/ >/tmp/lineage-dom.html
+          grep -q 'app.js?v=134' /tmp/lineage-dom.html
+          grep -q 'timeline-node' /tmp/lineage-dom.html
+      - name: Commit verified implementation
+        run: |
+          rm .github/scripts/allow_upper_branch_gap_fitting.py
+          rm .github/workflows/lower-first-gap-fitting.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Let upper branches reuse frozen lower gaps"
+          git push origin HEAD:fix/lower-first-gap-fitting

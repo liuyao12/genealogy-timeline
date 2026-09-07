@@ -1,3 +1,4 @@
+# Retry 2: preserve the shared monochrome tree mask while removing search-only controls.
 name: Verify royal names and side-panel tree action
 on:
   push:

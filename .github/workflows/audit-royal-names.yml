@@ -17,7 +17,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply the production cleanup
-        run: python3 .github/scripts/apply_royal_name_and_search_cleanup.py
+        run: |
+          python3 .github/scripts/fix_cleanup_script.py
+          python3 .github/scripts/apply_royal_name_and_search_cleanup.py
       - name: Run automated tests and syntax checks
         run: |
           npm test
@@ -45,6 +47,7 @@ jobs:
       - name: Commit the verified implementation
         run: |
           rm .github/scripts/apply_royal_name_and_search_cleanup.py
+          rm .github/scripts/fix_cleanup_script.py
           rm .github/scripts/check_sidepanel_tree_and_names.mjs
           rm .github/workflows/audit-royal-names.yml
           git config user.name "github-actions[bot]"

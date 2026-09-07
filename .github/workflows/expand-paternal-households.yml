@@ -17,7 +17,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply paternal household projection and focus styling
-        run: python3 .github/scripts/expand_paternal_households.py
+        run: |
+          python3 .github/scripts/expand_paternal_households.py
+          python3 .github/scripts/fix_paternal_household_expectation.py
       - name: Run unit tests and syntax checks
         run: |
           npm test
@@ -39,6 +41,7 @@ jobs:
       - name: Commit verified implementation
         run: |
           rm .github/scripts/expand_paternal_households.py
+          rm .github/scripts/fix_paternal_household_expectation.py
           rm .github/scripts/check_paternal_households.mjs
           rm .github/workflows/expand-paternal-households.yml
           git config user.name "github-actions[bot]"

@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 import {
   birthOrderPairs,
   lowerFirstRunOrder,
-  packTimelineRunsLowerFirst
+  packTimelineRunsLowerFirst,
+  packTimelineRunsSourceFirst,
+  sourceFirstRunOrder
 } from '../timeline-compaction.js';
 
 const appSource = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
@@ -19,6 +21,18 @@ test('orders ready runs from the visually lowest source branch upward', () => {
     { upper: 4, lower: 5, gap: 42 }
   ];
   assert.deepEqual(lowerFirstRunOrder(runs, precedencePairs), [5, 4, 3, 2, 1, 0]);
+});
+
+test('orders ready runs in the established top-to-bottom source order', () => {
+  const runs = [[0], [1], [2], [3], [4], [5]];
+  const precedencePairs = [
+    { upper: 0, lower: 1, gap: 42 },
+    { upper: 1, lower: 2, gap: 42 },
+    { upper: 0, lower: 3, gap: 42 },
+    { upper: 3, lower: 4, gap: 42 },
+    { upper: 4, lower: 5, gap: 42 }
+  ];
+  assert.deepEqual(sourceFirstRunOrder(runs, precedencePairs), [0, 1, 2, 3, 4, 5]);
 });
 
 test('keeps a lower sibling branch compact and makes the upper branch absorb the gap', () => {
@@ -53,6 +67,36 @@ test('keeps a lower sibling branch compact and makes the upper branch absorb the
   assert.equal(nodes[4].y - nodes[3].y, rowStep);
   assert.equal(nodes[5].y - nodes[4].y, rowStep);
   assert.ok(nodes[1].y - nodes[0].y > rowStep, 'the earlier upper branch, not the lower branch, absorbs the extra row');
+});
+
+test('source-first packing keeps the earlier branch compact and lets a later branch absorb a collision', () => {
+  const rowStep = 42;
+  const nodes = Array.from({ length: 6 }, (_, index) => ({ key: String(index), y: index * rowStep }));
+  const runs = [[0], [1], [2], [3], [4], [5]];
+  const precedencePairs = [
+    { upper: 0, lower: 1, gap: rowStep },
+    { upper: 1, lower: 2, gap: rowStep },
+    { upper: 0, lower: 3, gap: rowStep },
+    { upper: 3, lower: 4, gap: rowStep },
+    { upper: 4, lower: 5, gap: rowStep }
+  ];
+  const conflictKey = (first, second) => [first, second].sort((a, b) => a - b).join('|');
+  const conflicts = new Set([conflictKey(2, 4)]);
+
+  const order = packTimelineRunsSourceFirst({
+    nodes,
+    runs,
+    precedencePairs,
+    rowStep,
+    conflicts: (first, second) => conflicts.has(conflictKey(first, second)),
+    separation: () => rowStep
+  });
+
+  assert.deepEqual(order, [0, 1, 2, 3, 4, 5]);
+  assert.deepEqual(nodes.map(node => node.y), [0, 42, 84, 42, 126, 168]);
+  assert.equal(nodes[1].y - nodes[0].y, rowStep);
+  assert.equal(nodes[2].y - nodes[1].y, rowStep, 'the earlier branch remains compact');
+  assert.ok(nodes[4].y - nodes[3].y > rowStep, 'the later branch absorbs the collision row');
 });
 
 test('moves every member of a direct-family run together', () => {
@@ -126,4 +170,10 @@ test('the renderer constrains branch roots, not whole sibling subtrees', () => {
   assert.match(appSource, /const branchRootPrecedence = \[\]/);
   assert.match(appSource, /birthOrderPairs\(siblingRoots, nodeBirthYear\)/);
   assert.doesNotMatch(appSource, /siblingHouseholdConstraints/);
+});
+
+test('the renderer gives established source order priority during compaction', () => {
+  assert.match(appSource, /import \{ birthOrderPairs, packTimelineRunsSourceFirst \}/);
+  assert.match(appSource, /packTimelineRunsSourceFirst\(\{/);
+  assert.doesNotMatch(appSource, /packTimelineRunsLowerFirst\(\{/);
 });

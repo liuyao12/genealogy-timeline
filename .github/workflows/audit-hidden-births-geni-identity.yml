@@ -1,0 +1,109 @@
+name: Audit noisy births and Geni identity
+on:
+  push:
+    branches: [feature/hide-noisy-births-and-dedupe-geni]
+    paths: [.github/workflows/audit-hidden-births-geni-identity.yml]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/hide-noisy-births-and-dedupe-geni
+      - name: Audit bundled profiles and identity collisions
+        run: |
+          python3 - <<'PY'
+          import json, re
+          from collections import defaultdict
+          from pathlib import Path
+
+          data = json.loads(Path('data/british-royal-line.json').read_text())
+          people = data['people']
+
+          def ids(p, key):
+              return [str(x) for x in p.get(key, []) if str(x) in people]
+
+          def formal_pair(a, b):
+              pa, pb = people[a], people[b]
+              return (
+                  b in ids(pa, 'spouses') or a in ids(pb, 'spouses')
+                  or b in ids(pa, 'divorcedSpouses') or a in ids(pb, 'divorcedSpouses')
+                  or b in pa.get('marriageYears', {}) or a in pb.get('marriageYears', {})
+                  or pa.get('relationshipEndStatuses', {}).get(b) in ('annulled','divorced')
+                  or pb.get('relationshipEndStatuses', {}).get(a) in ('annulled','divorced')
+              )
+
+          def partner_pair(a, b):
+              pa, pb = people[a], people[b]
+              return (
+                  b in ids(pa, 'partners') or a in ids(pb, 'partners')
+                  or b in ids(pa, 'nonSpouses') or a in ids(pb, 'nonSpouses')
+              )
+
+          print('VERSION', data['version'], 'PROFILES', len(people))
+          print('\nNN / UNKNOWN-NAME CANDIDATES')
+          for pid, p in people.items():
+              name = p.get('displayName','')
+              if re.search(r'(^|[\s,;()\[\]–—-])(?:NN|N\.N\.|unknown|unnamed)(?=$|[\s,;()\[\]–—-])', name, re.I):
+                  print(pid, '|', name, '|', p.get('birthYear'), p.get('deathYear'), '| parents', p.get('parents'))
+
+          print('\nMISSING-PARENT CANDIDATES (non-root profiles with <2 stored parents)')
+          for pid, p in sorted(people.items(), key=lambda kv: (int(kv[1].get('birthYear') or 99999), kv[1].get('displayName',''))):
+              parents = ids(p, 'parents')
+              if len(parents) < 2:
+                  print(pid, '|', p.get('displayName'), '|', p.get('birthYear'), p.get('deathYear'), '| parents', [people[x]['displayName'] for x in parents])
+
+          print('\nINFANT-DEATH CANDIDATES (known death <= birth + 2)')
+          for pid, p in sorted(people.items(), key=lambda kv: (int(kv[1].get('birthYear') or 99999), kv[1].get('displayName',''))):
+              try: b, d = int(p.get('birthYear')), int(p.get('deathYear'))
+              except (TypeError, ValueError): continue
+              if d <= b + 2:
+                  print(pid, '|', p.get('displayName'), '|', b, d, '| age-year-span', d-b, '| children', len(ids(p,'children')))
+
+          print('\nNON-MARITAL-PARENT CANDIDATES')
+          for pid, p in sorted(people.items(), key=lambda kv: (int(kv[1].get('birthYear') or 99999), kv[1].get('displayName',''))):
+              parents = ids(p, 'parents')
+              pairs=[]
+              for i, a in enumerate(parents):
+                  for b in parents[i+1:]:
+                      if partner_pair(a,b) and not formal_pair(a,b):
+                          pairs.append((people[a]['displayName'], people[b]['displayName']))
+              if pairs:
+                  print(pid, '|', p.get('displayName'), '|', p.get('birthYear'), p.get('deathYear'), '|', pairs)
+
+          print('\nGENI ID COLLISIONS')
+          aliases=defaultdict(list)
+          def canon(value):
+              s=str(value or '').strip()
+              m=re.search(r'(?:profile-)?g?(\d{4,})$', s, re.I)
+              if not m and 'geni.com' in s:
+                  m=re.search(r'/(?:g)?(\d{4,})(?:[/?#]|$)', s)
+              return f'profile-g{m.group(1)}' if m and len(m.group(1)) >= 15 else (f'profile-{m.group(1)}' if m else '')
+          for pid,p in people.items():
+              for raw in (pid,p.get('sourceId'),p.get('sourceUrl')):
+                  key=canon(raw)
+                  if key: aliases[key].append((pid,p.get('displayName'),raw))
+          for key, rows in aliases.items():
+              unique_profiles={row[0] for row in rows}
+              if len(unique_profiles)>1:
+                  print(key, rows)
+
+          print('\nCOUNTS')
+          nn=[]; missing=[]; infant=[]; nonmarital=[]
+          for pid,p in people.items():
+              name=p.get('displayName','')
+              if re.search(r'(^|[\s,;()\[\]–—-])(?:NN|N\.N\.|unknown|unnamed)(?=$|[\s,;()\[\]–—-])', name, re.I): nn.append(pid)
+              parents=ids(p,'parents')
+              if len(parents)<2: missing.append(pid)
+              try:
+                  b,d=int(p.get('birthYear')),int(p.get('deathYear'))
+                  if d<=b+2: infant.append(pid)
+              except: pass
+              for i,a in enumerate(parents):
+                  if any(partner_pair(a,b) and not formal_pair(a,b) for b in parents[i+1:]):
+                      nonmarital.append(pid); break
+          print({'nn':len(nn),'missing':len(missing),'infant':len(infant),'nonmarital':len(nonmarital)})
+          PY
+      - name: Show current stitch and Geni merge paths
+        run: |
+          grep -nE "function (mergePersonRecords|migrateGeniPeople)|stitch|sourceId|profileToLineagePerson|mergeLineagePerson|registerProfile|resolveStableId" app.js geni-import.js geni-import-core.js geni-model.js | head -n 240

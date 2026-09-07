@@ -24,15 +24,10 @@ jobs:
           from pathlib import Path
           path = Path('.github/scripts/check_paternal_households.mjs')
           text = path.read_text()
-          old = """  chrome.kill('SIGKILL');
-          rmSync(userDataDir, { recursive: true, force: true });
-          """
-          new = """  chrome.kill('SIGKILL');
-          await sleep(300);
-          try { rmSync(userDataDir, { recursive: true, force: true }); } catch {}
-          """
+          old = "rmSync(userDataDir, { recursive: true, force: true });"
+          new = "try { rmSync(userDataDir, { recursive: true, force: true }); } catch {}"
           if text.count(old) != 1:
-              raise SystemExit(f'Expected one Chrome cleanup block, found {text.count(old)}')
+              raise SystemExit(f'Expected one Chrome cleanup statement, found {text.count(old)}')
           path.write_text(text.replace(old, new, 1))
           PY
       - name: Run unit tests and syntax checks

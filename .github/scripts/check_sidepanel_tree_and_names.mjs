@@ -110,6 +110,7 @@ if (catherineAlreadyRoot) {
   await waitFor(`document.querySelector('.timeline-node.focus')?.dataset.personId === ${JSON.stringify(catherineId)}`, 'Catherine tree');
   await waitFor("document.getElementById('tree-filter').value === ''", 'search clearing after side-panel tree action');
 }
+await waitFor("!document.documentElement.classList.contains('focus-tree-transitioning')", 'Catherine tree transition');
 
 await searchFor('Henry VII');
 const henryId = await resultId('Henry VII');
@@ -132,6 +133,7 @@ assert.equal(previewState.treeButtonDisabled, false);
 await evaluate("document.getElementById('focus-tree-button').click(); true");
 await waitFor(`document.querySelector('.timeline-node.focus')?.dataset.personId === ${JSON.stringify(henryId)}`, 'Henry VII tree');
 await waitFor("document.getElementById('tree-filter').value === ''", 'search clearing after Henry VII tree action');
+await waitFor("!document.documentElement.classList.contains('focus-tree-transitioning')", 'Henry VII tree transition');
 
 await searchFor('Arthur, Prince of Wales');
 assert.ok(await resultId('Arthur, Prince of Wales'));

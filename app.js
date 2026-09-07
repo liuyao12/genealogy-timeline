@@ -1,5 +1,6 @@
 import { computeDescendantScope } from './descendant-scope.js?v=1';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
+import { graphUnionRecords } from './geni-import-core.js?v=2';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -777,7 +778,10 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
     aliases[rawId] = id;
     profileMap[id] = { ...profile, id };
   });
-  nodeRecords.filter(node => clean(node.id).startsWith('union-')).forEach(union => {
+  // Geni's real immediate-family graph represents union membership in
+  // union.edges. Reuse the same edge-aware parser as the full descendant
+  // importer so newly fetched spouses and children are linked immediately.
+  graphUnionRecords({ nodes }).forEach(union => {
     const partners = uniqueRefs(union.partners || union.partner_ids || union.profiles).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
     const children = uniqueRefs(union.children || union.child_ids).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
   const marriageYear = clean(
@@ -940,7 +944,12 @@ async function fetchGeniNeighborhood(id) {
   const graphNodes = payload?.nodes && typeof payload.nodes === 'object'
     ? { ...payload.nodes }
     : {};
-  graphNodes[rawFocusId] = { ...focusRaw, id: rawFocusId };
+  graphNodes[rawFocusId] = {
+    ...(graphNodes[rawFocusId] || {}),
+    ...focusRaw,
+    id: rawFocusId,
+    edges: graphNodes[rawFocusId]?.edges || focusRaw?.edges || {}
+  };
 
   // Geni provides the focus profile, immediate-family profile nodes, and
   // union nodes together. One request is sufficient to reconstruct parents,

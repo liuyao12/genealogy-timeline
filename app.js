@@ -3334,6 +3334,7 @@ function primaryTimelineNodeForPerson(id) {
 }
 
 async function focusTreeOn(personId) {
+  const { clearSearch = false, centerIfHidden = false } = arguments[1] || {};
   const id = clean(personId);
   if (!state.people[id] || id === state.rootId || focusTreeTransitionRunning) return;
   const viewport = els['canvas-viewport'];
@@ -3347,6 +3348,10 @@ async function focusTreeOn(personId) {
     state.selectedId = id;
     state.editingProfileId = '';
     state.collapsedIds.clear();
+    if (clearSearch) {
+      state.treeFilter = '';
+      els['tree-filter'].value = '';
+    }
     render();
 
     // Keep the chosen person at the same screen position. The surrounding
@@ -3357,6 +3362,8 @@ async function focusTreeOn(personId) {
       const newRect = newNode.getBoundingClientRect();
       viewport.scrollLeft += newRect.left - oldRect.left;
       viewport.scrollTop += newRect.top - oldRect.top;
+    } else if (centerIfHidden) {
+      centerTimelinePerson(id);
     }
     persist(`Tree focused on ${fullName(state.people[id])}`);
   };
@@ -3397,19 +3404,41 @@ function renderPersonList() {
   clearTimelinePersonPreview();
   const scope = activeDescendantScope();
   const keywords = clean(els['tree-filter'].value).toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  const people = [...scope.allowedIds].map(id => state.people[id]).filter(Boolean)
-    .filter(person => !keywords.length || keywords.some(keyword => matchesKeyword(person, keyword)));
+  const searching = keywords.length > 0;
+  // With no query, this remains a concise list of the active focus tree. Once
+  // the user searches, query every profile stored in this tree tab—including
+  // ancestors, collateral relatives, and spouses currently outside the focus
+  // projection—so any saved person can become the next point of view.
+  const candidateIds = searching ? Object.keys(state.people) : [...scope.allowedIds];
+  const people = candidateIds.map(id => state.people[id]).filter(Boolean)
+    .filter(person => !searching || keywords.some(keyword => matchesKeyword(person, keyword)));
   people.sort((a, b) => visibleName(a).localeCompare(visibleName(b)));
   els['people-count'].textContent = people.length;
-  els['people-label'].textContent = keywords.length ? (people.length === 1 ? 'match' : 'matches') : (people.length === 1 ? 'profile' : 'profiles');
-  els['people-list'].replaceChildren(...people.map(person => {
+  els['people-label'].textContent = searching
+    ? (people.length === 1 ? 'stored match' : 'stored matches')
+    : (people.length === 1 ? 'profile' : 'profiles');
+
+  const rows = people.map(person => {
+    const inCurrentScope = scope.allowedIds.has(person.id);
+    const row = document.createElement('div');
+    row.className = `person-list-row${person.id === state.selectedId ? ' active' : ''}${searching ? ' search-result' : ''}${inCurrentScope ? '' : ' outside-focus-scope'}`;
+    row.dataset.personId = person.id;
+
     const button = document.createElement('button');
-    button.type = 'button'; button.className = `person-list-item${person.id === state.selectedId ? ' active' : ''}`; button.dataset.gender = person.gender; button.dataset.personId = person.id;
+    button.type = 'button';
+    button.className = 'person-list-item';
+    button.dataset.gender = person.gender;
+    button.dataset.personId = person.id;
+    button.setAttribute('aria-label', inCurrentScope
+      ? `Open ${visibleName(person)}`
+      : `Focus tree on ${visibleName(person)}`);
+
     const gender = document.createElement('span');
     gender.className = 'person-gender';
     gender.setAttribute('role', 'img');
     gender.setAttribute('aria-label', person.gender === 'male' ? 'Male' : person.gender === 'female' ? 'Female' : 'Gender unknown');
     gender.textContent = person.gender === 'male' ? '♂' : person.gender === 'female' ? '♀' : '·';
+
     const summary = document.createElement('span');
     const name = document.createElement('strong');
     const displayedName = visibleName(person);
@@ -3428,14 +3457,57 @@ function renderPersonList() {
       summary.append(alias);
     }
     summary.append(lifespan);
+    if (searching && !inCurrentScope) {
+      const scopeNote = document.createElement('small');
+      scopeNote.className = 'person-list-scope';
+      scopeNote.textContent = 'Outside current focus tree';
+      summary.append(scopeNote);
+    }
     button.append(gender, summary);
-    button.addEventListener('pointerenter', () => previewTimelinePerson(person.id));
-    button.addEventListener('pointerleave', () => clearTimelinePersonPreview(person.id));
-    button.addEventListener('focus', () => previewTimelinePerson(person.id));
-    button.addEventListener('blur', () => clearTimelinePersonPreview(person.id));
-    button.addEventListener('click', () => selectPerson(person.id, { center: true }));
-    return button;
-  }));
+
+    const focusFromResult = () => focusTreeOn(person.id, {
+      clearSearch: true,
+      centerIfHidden: !inCurrentScope
+    });
+    if (inCurrentScope) {
+      button.addEventListener('pointerenter', () => previewTimelinePerson(person.id));
+      button.addEventListener('pointerleave', () => clearTimelinePersonPreview(person.id));
+      button.addEventListener('focus', () => previewTimelinePerson(person.id));
+      button.addEventListener('blur', () => clearTimelinePersonPreview(person.id));
+    }
+    button.addEventListener('click', () => {
+      if (inCurrentScope) selectPerson(person.id, { center: true });
+      else focusFromResult();
+    });
+    row.append(button);
+
+    if (searching) {
+      const focus = document.createElement('button');
+      focus.type = 'button';
+      focus.className = 'person-list-focus';
+      focus.dataset.focusPersonId = person.id;
+      if (person.id === state.rootId) {
+        focus.textContent = 'Focused';
+        focus.disabled = true;
+        focus.setAttribute('aria-label', `${displayedName} is the current tree focus`);
+      } else {
+        focus.textContent = 'Focus';
+        focus.setAttribute('aria-label', `Focus tree on ${displayedName}`);
+        focus.title = `Show ${displayedName}'s paternal households and descendants`;
+        focus.addEventListener('click', focusFromResult);
+      }
+      row.append(focus);
+    }
+    return row;
+  });
+
+  if (!rows.length && searching) {
+    const empty = document.createElement('p');
+    empty.className = 'people-search-empty';
+    empty.textContent = 'No stored profiles match this search.';
+    rows.push(empty);
+  }
+  els['people-list'].replaceChildren(...rows);
 }
 
 function updateEventColorPalette(picker, value, fallback = DEFAULT_PERSONAL_EVENT_COLOR) {

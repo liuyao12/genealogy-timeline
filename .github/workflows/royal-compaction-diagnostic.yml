@@ -20,16 +20,53 @@ jobs:
           CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
           test -n "$CHROME_BIN"
           echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
-      - name: Prepare historical layouts with the current royal data
+      - name: Prepare repair variants
         run: |
-          git worktree add --detach /tmp/layout-before-lower-first 3e46edcdcab5840ecc8a073706a70a2641200768
-          git worktree add --detach /tmp/layout-restored d82e028db83e38f67960acf9d2b1ed748febcd3d
-          git worktree add --detach /tmp/layout-spaced 29a5a41cb3df1f9f44d21d40711f19b91d538442
-          for directory in /tmp/layout-before-lower-first /tmp/layout-restored /tmp/layout-spaced; do
-            mkdir -p "$directory/data"
-            cp data/british-royal-line.json "$directory/data/british-royal-line.json"
-          done
-      - name: Measure current and historical British royal layouts
+          git worktree add --detach /tmp/layout-old-stabilizer HEAD
+          git worktree add --detach /tmp/layout-pairwise-runs HEAD
+          git worktree add --detach /tmp/layout-singleton-runs HEAD
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          def replace_section(current, source, start_marker, end_marker):
+              current_start = current.index(start_marker)
+              current_end = current.index(end_marker, current_start)
+              source_start = source.index(start_marker)
+              source_end = source.index(end_marker, source_start)
+              return current[:current_start] + source[source_start:source_end] + current[current_end:]
+
+          old = subprocess.check_output(
+              ['git', 'show', 'd82e028db83e38f67960acf9d2b1ed748febcd3d:app.js'],
+              text=True
+          )
+          old_path = Path('/tmp/layout-old-stabilizer/app.js')
+          current = old_path.read_text()
+          current = replace_section(
+              current,
+              old,
+              'function stabilizeTimelineOrder(',
+              'function compactTimelineTidyContours('
+          )
+          old_path.write_text(current)
+
+          pairwise_path = Path('/tmp/layout-pairwise-runs/app.js')
+          pairwise = pairwise_path.read_text()
+          old_line = 'if (previousIndex != null && timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index])) currentRun.push(index);'
+          new_line = 'if (previousIndex != null && currentRun.every(runIndex => timelineNodesAreImmediateFamily(nodes[runIndex], nodes[index]))) currentRun.push(index);'
+          if pairwise.count(old_line) != 1:
+              raise SystemExit(f'Expected one direct-run condition, found {pairwise.count(old_line)}')
+          pairwise_path.write_text(pairwise.replace(old_line, new_line, 1))
+
+          singleton_path = Path('/tmp/layout-singleton-runs/app.js')
+          singleton = singleton_path.read_text()
+          old_line = '    runs: directRuns,'
+          new_line = '    runs: nodes.map((_, index) => [index]),'
+          if singleton.count(old_line) != 1:
+              raise SystemExit(f'Expected one lower-first run argument, found {singleton.count(old_line)}')
+          singleton_path.write_text(singleton.replace(old_line, new_line, 1))
+          PY
+      - name: Measure current and repair variants
         run: |
           set -euo pipefail
           measure() {
@@ -43,17 +80,17 @@ jobs:
             kill "$(cat /tmp/royal-$label.pid)" || true
           }
           measure "$GITHUB_WORKSPACE" 4173 current | tee /tmp/current.json
-          measure /tmp/layout-before-lower-first 4174 before-lower-first | tee /tmp/before-lower-first.json
-          measure /tmp/layout-restored 4175 restored-compaction | tee /tmp/restored-compaction.json
-          measure /tmp/layout-spaced 4176 spaced-compaction | tee /tmp/spaced-compaction.json
+          measure /tmp/layout-old-stabilizer 4174 old-stabilizer | tee /tmp/old-stabilizer.json
+          measure /tmp/layout-pairwise-runs 4175 pairwise-runs | tee /tmp/pairwise-runs.json
+          measure /tmp/layout-singleton-runs 4176 singleton-runs | tee /tmp/singleton-runs.json
       - name: Summarize target positions
         run: |
           node --input-type=module <<'EOF'
           import { readFileSync } from 'node:fs';
-          const files = ['/tmp/current.json', '/tmp/before-lower-first.json', '/tmp/restored-compaction.json', '/tmp/spaced-compaction.json'];
+          const files = ['/tmp/current.json', '/tmp/old-stabilizer.json', '/tmp/pairwise-runs.json', '/tmp/singleton-runs.json'];
           const rows = files.map(file => JSON.parse(readFileSync(file, 'utf8'))).flatMap(result => [
-            { version: result.label, mode: 'king queen', span: result.filtered.verticalSpan, rows: result.filtered.distinctRowCount, HenryVIII: result.filtered.henryVIII?.row, CharlesII: result.filtered.charlesII?.row },
-            { version: result.label, mode: 'all', span: result.unfiltered.verticalSpan, rows: result.unfiltered.distinctRowCount, HenryVIII: result.unfiltered.henryVIII?.row, CharlesII: result.unfiltered.charlesII?.row }
+            { version: result.label, mode: 'king queen', span: result.filtered.verticalSpan, rows: result.filtered.distinctRowCount, HenryVIII: result.filtered.henryVIII?.row, HenryY: result.filtered.henryVIII?.y, CharlesII: result.filtered.charlesII?.row, CharlesY: result.filtered.charlesII?.y },
+            { version: result.label, mode: 'all', span: result.unfiltered.verticalSpan, rows: result.unfiltered.distinctRowCount, HenryVIII: result.unfiltered.henryVIII?.row, HenryY: result.unfiltered.henryVIII?.y, CharlesII: result.unfiltered.charlesII?.row, CharlesY: result.unfiltered.charlesII?.y }
           ]);
           console.table(rows);
           EOF

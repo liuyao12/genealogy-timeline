@@ -184,6 +184,8 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .timeline-node.male .lifespan-outline { stroke: #a9cfe7; }
 .timeline-node.female .lifespan-outline { stroke: #f6b8db; }
 .timeline-node.reigned .lifespan-outline { stroke-width: 2.8; }
+.timeline-node.focus .lifespan-outline { stroke: #111; stroke-width: 3.1; }
+.timeline-node.focus .timeline-label:not(.timeline-label-halo) { font-weight: 600; }
 .timeline-node.selected .lifespan-outline { stroke-width: 3.4; }
 .timeline-node.list-hover .lifespan-outline { stroke-width: 4.4; filter: drop-shadow(0 0 2px var(--as-of)); }
 .timeline-node.list-hover .timeline-label:not(.timeline-label-halo) .timeline-name-match,
@@ -238,6 +240,12 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .person-edit-button { position: absolute; left: 13px; top: 12px; min-height: 29px; padding: 0 10px; }
 .person-hero h2 { margin: 6px 0 3px; font: 650 21px Georgia, serif; }
 .person-hero p { margin: 0; color: var(--muted); font-size: 11px; }
+.focus-tree-control { display: grid; justify-items: center; gap: 5px; margin-top: 13px; }
+.focus-tree-button { min-height: 31px; padding: 0 12px; font-size: 10px; }
+.focus-tree-button[aria-pressed="true"] { border-color: #111; background: #111; color: #fff; cursor: default; transform: none; }
+.focus-tree-control small { max-width: 285px; color: #666; font-size: 8px; line-height: 1.35; }
+.focus-tree-transitioning .focus-tree-button,
+.focus-tree-transitioning .relationship-focus { pointer-events: none; }
 .form-content { padding: 18px 20px 25px; }
 .profile-edit-fields { margin-bottom: 17px; padding: 14px; border: 1px solid #000; border-radius: 9px; }
 .form-content > label, .dialog-card > label, .field-grid label, .provenance-box label { display: block; margin-bottom: 13px; color: #555; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
@@ -288,6 +296,10 @@ kbd { border: 1px solid #ddd; border-radius: 3px; background: #f6f6f6; padding: 
 .relationship-copy { min-width: 0; }
 .relationship-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 500; }
 .relationship-copy small { display: block; margin-top: 2px; color: #777; font-size: 8px; }
+.relationship-actions { display: inline-flex; align-items: center; gap: 4px; }
+.relationship-focus { min-width: 42px; height: 25px; padding: 0 7px; border: 1px solid #999; border-radius: 6px; background: #fff; color: #111; cursor: pointer; font-size: 8px; font-weight: 700; }
+.relationship-focus:hover { border-color: #000; background: #ededed; }
+.relationship-focus:disabled { border-color: #ccc; background: #f4f4f4; color: #999; cursor: default; }
 .relationship-visibility { width: 27px; height: 25px; display: grid; place-items: center; padding: 0; border: 1px solid #aaa; border-radius: 6px; background: #fff; color: #111; cursor: pointer; font-size: 12px; }
 .relationship-visibility:hover { border-color: #000; }
 .relationship-visibility:disabled { border-color: #ccc; background: #f4f4f4; color: #aaa; cursor: not-allowed; }
@@ -386,4 +398,29 @@ dialog::backdrop { background: rgba(0, 0, 0, .36); backdrop-filter: blur(3px); }
   .workspace { grid-template-columns: 250px minmax(0, 1fr); }
   .app-header { grid-template-columns: 280px 1fr 390px; padding: 0 16px; }
   .privacy-pill { display: none; }
+}
+
+
+/* Same-document View Transitions keep shared people moving while the paternal
+   ancestry exchanged by a focus jump fades out and in. */
+::view-transition-group(*) {
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(.22, .61, .36, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 360ms;
+  animation-timing-function: ease-in-out;
+  mix-blend-mode: normal;
+}
+::view-transition-old(*),
+::view-transition-new(*) {
+  mix-blend-mode: normal;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 1ms;
+  }
 }

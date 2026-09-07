@@ -140,3 +140,15 @@ test('selected-profile graph preserves the focus node edges when merging focus d
   );
   assert.match(body, /edges:\s*graphNodes\[rawFocusId\]\?\.edges\s*\|\|\s*focusRaw\?\.edges/);
 });
+
+
+test('a previously saved profile set with no family links surfaces a repair action', () => {
+  const body = functionSource(
+    'function renderGeniFamilyActions(person, scope)',
+    'function renderDetails()'
+  );
+  assert.match(body, /needsRelationshipRepair/);
+  assert.match(body, /Repair saved Geni family links/);
+  assert.match(body, /Repair family links from Geni/);
+  assert.match(body, /linked && \(!verifiedAt \|\| needsRelationshipRepair\)/);
+});

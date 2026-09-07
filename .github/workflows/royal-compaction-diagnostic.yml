@@ -23,14 +23,14 @@ jobs:
           CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
           test -n "$CHROME_BIN"
           echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
-      - name: Prepare repair variants
+      - name: Prepare source-order variants
         run: |
           git worktree add --detach /tmp/layout-pairwise-runs HEAD
           git worktree add --detach /tmp/layout-singleton-runs HEAD
           git worktree add --detach /tmp/layout-source-first HEAD
           git worktree add --detach /tmp/layout-adaptive HEAD
           python3 .github/scripts/make_compaction_variants.py
-      - name: Measure current and repair variants
+      - name: Measure source-order variants and current layout
         run: |
           set -euo pipefail
           measure() {
@@ -40,19 +40,17 @@ jobs:
               curl -fsS "http://127.0.0.1:$port/" >/dev/null && break
               sleep .1
             done
-            timeout 35s node .github/scripts/measure_royal_compaction.mjs "http://127.0.0.1:$port/" "$label"
+            timeout 25s node .github/scripts/measure_royal_compaction.mjs "http://127.0.0.1:$port/" "$label"
             kill "$(cat /tmp/royal-$label.pid)" || true
           }
-          measure "$GITHUB_WORKSPACE" 4173 current | tee /tmp/current.json
-          measure /tmp/layout-pairwise-runs 4174 pairwise-runs | tee /tmp/pairwise-runs.json
-          measure /tmp/layout-singleton-runs 4175 singleton-runs | tee /tmp/singleton-runs.json
-          measure /tmp/layout-source-first 4176 source-first | tee /tmp/source-first.json
-          measure /tmp/layout-adaptive 4177 adaptive | tee /tmp/adaptive.json
+          measure /tmp/layout-source-first 4173 source-first | tee /tmp/source-first.json
+          measure /tmp/layout-adaptive 4174 adaptive | tee /tmp/adaptive.json
+          measure "$GITHUB_WORKSPACE" 4175 current | tee /tmp/current.json
       - name: Summarize target positions
         run: |
           node --input-type=module <<'EOF'
           import { readFileSync } from 'node:fs';
-          const files = ['/tmp/current.json', '/tmp/pairwise-runs.json', '/tmp/singleton-runs.json', '/tmp/source-first.json', '/tmp/adaptive.json'];
+          const files = ['/tmp/source-first.json', '/tmp/adaptive.json', '/tmp/current.json'];
           const rows = files.map(file => JSON.parse(readFileSync(file, 'utf8'))).flatMap(result => [
             { version: result.label, mode: 'king queen', span: result.filtered.verticalSpan, rows: result.filtered.distinctRowCount, HenryVIII: result.filtered.henryVIII?.row, HenryY: result.filtered.henryVIII?.y, CharlesII: result.filtered.charlesII?.row, CharlesY: result.filtered.charlesII?.y },
             { version: result.label, mode: 'all', span: result.unfiltered.verticalSpan, rows: result.unfiltered.distinctRowCount, HenryVIII: result.unfiltered.henryVIII?.row, HenryY: result.unfiltered.henryVIII?.y, CharlesII: result.unfiltered.charlesII?.row, CharlesY: result.unfiltered.charlesII?.y }

@@ -1,3 +1,4 @@
+# Verification rerun after exact pointer alignment.
 name: Move global event labels above ruler
 on:
   push:

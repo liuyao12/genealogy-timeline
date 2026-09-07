@@ -31,7 +31,7 @@ export function layoutGlobalEventLabels(events, {
   minimumWidth = 38,
   maximumWidth = 240,
   labelGap = 6,
-  pointerInset = 7
+  pointerInset = 0
 } = {}) {
   if (!Number.isFinite(minYear) || !Number.isFinite(maxYear) || typeof xForYear !== 'function') {
     return { items: [], laneCount: 0 };

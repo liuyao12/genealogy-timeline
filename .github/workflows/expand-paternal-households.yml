@@ -20,6 +20,21 @@ jobs:
         run: |
           python3 .github/scripts/expand_paternal_households.py
           python3 .github/scripts/fix_paternal_household_expectation.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/check_paternal_households.mjs')
+          text = path.read_text()
+          old = """  chrome.kill('SIGKILL');
+          rmSync(userDataDir, { recursive: true, force: true });
+          """
+          new = """  chrome.kill('SIGKILL');
+          await sleep(300);
+          try { rmSync(userDataDir, { recursive: true, force: true }); } catch {}
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one Chrome cleanup block, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
       - name: Run unit tests and syntax checks
         run: |
           npm test

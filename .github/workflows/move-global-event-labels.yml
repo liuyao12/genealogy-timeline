@@ -1,0 +1,36 @@
+name: Move global event labels above ruler
+on:
+  push:
+    branches: [ui/global-event-labels-above-ruler]
+    paths: [.github/workflows/move-global-event-labels.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/global-event-labels-above-ruler
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply ruler layout changes
+        run: python3 .github/scripts/move_global_event_labels.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check timeline-event-labels.js
+          node --check tests/timeline-event-labels.test.mjs
+          node --check tests/timeline-ruler-layout.test.mjs
+      - name: Commit verified ruler layout
+        run: |
+          rm .github/scripts/move_global_event_labels.py
+          rm .github/workflows/move-global-event-labels.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Move global event labels above the ruler"
+          git push origin HEAD:ui/global-event-labels-above-ruler

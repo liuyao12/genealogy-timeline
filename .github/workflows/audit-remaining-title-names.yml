@@ -1,0 +1,13 @@
+name: Audit remaining titled names
+on:
+  push:
+    branches: [audit/remaining-title-names]
+    paths: [.github/workflows/audit-remaining-title-names.yml]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/remaining-title-names
+      - run: python3 .github/scripts/audit_remaining_title_names.py

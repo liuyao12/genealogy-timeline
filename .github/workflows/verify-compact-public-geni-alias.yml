@@ -1,0 +1,55 @@
+name: Verify compact-to-public Geni alias coalescing
+on:
+  push:
+    branches: [feature/hide-noisy-births-and-dedupe-geni]
+    paths: [.github/workflows/verify-compact-public-geni-alias.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/hide-noisy-births-and-dedupe-geni
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply compact/public alias hardening
+        run: python3 .github/scripts/harden_geni_alias_coalescing.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check geni-model.js
+          node --check geni-import-core.js
+          node --check .github/scripts/check_compact_public_geni_alias.mjs
+          git diff --check
+      - name: Start the patched application
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+      - name: Verify compact and public IDs merge into existing local nodes
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/lineage-geni-alias about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          echo $! >/tmp/lineage-chrome.pid
+          node .github/scripts/check_compact_public_geni_alias.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit the verified hardening
+        run: |
+          rm .github/scripts/harden_geni_alias_coalescing.py
+          rm .github/scripts/check_compact_public_geni_alias.mjs
+          rm .github/workflows/verify-compact-public-geni-alias.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Coalesce compact and public Geni aliases"
+          git push origin HEAD:feature/hide-noisy-births-and-dedupe-geni

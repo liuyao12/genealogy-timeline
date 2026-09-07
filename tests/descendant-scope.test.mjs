@@ -20,7 +20,7 @@ test('keeps one lineal descendant tree plus one formal-spouse layer', () => {
   const scope = computeDescendantScope(people, 'root');
   assert.deepEqual([...scope.descendantIds].sort(), ['daughter', 'root']);
   assert.deepEqual([...scope.allowedIds].sort(), ['daughter', 'daughter-spouse', 'root', 'root-spouse']);
-  assert.equal(scope.allowedIds.has('ancestor'), false);
+  assert.equal(scope.allowedIds.has('ancestor'), false, 'an unknown-gender parent is not guessed to be the father');
   assert.equal(scope.allowedIds.has('uncle'), false);
   assert.equal(scope.allowedIds.has('cousin'), false);
   assert.equal(scope.allowedIds.has('former-root-spouse'), false);
@@ -69,4 +69,61 @@ test('the Henry VII starter scope includes Catherine Parr but excludes her other
   assert.ok(johnNevilleId, 'the starter data should contain John Neville');
   assert.equal(scope.allowedIds.has(catherineParrId), true, 'Henry VIII’s spouse remains in Henry VII’s descendant tree');
   assert.equal(scope.allowedIds.has(johnNevilleId), false, 'a spouse’s unrelated marriage must not open another tree');
+});
+
+test('adds only the direct paternal line above the focus and all descendants below', () => {
+  const people = {
+    grandfather: { id: 'grandfather', gender: 'male', parents: [], children: ['father', 'uncle'], spouses: ['grandmother'] },
+    grandmother: { id: 'grandmother', gender: 'female', parents: [], children: ['father', 'uncle'], spouses: ['grandfather'] },
+    uncle: { id: 'uncle', gender: 'male', parents: ['grandfather', 'grandmother'], children: ['cousin'], spouses: [] },
+    cousin: { id: 'cousin', parents: ['uncle'], children: [], spouses: [] },
+    father: { id: 'father', gender: 'male', parents: ['grandfather', 'grandmother'], children: ['focus', 'sibling'], spouses: ['mother'] },
+    mother: { id: 'mother', gender: 'female', parents: [], children: ['focus', 'sibling'], spouses: ['father'] },
+    sibling: { id: 'sibling', parents: ['father', 'mother'], children: [], spouses: [] },
+    focus: { id: 'focus', gender: 'female', parents: ['father', 'mother'], children: ['child'], spouses: ['focus-spouse'] },
+    'focus-spouse': { id: 'focus-spouse', gender: 'male', parents: [], children: ['child'], spouses: ['focus'] },
+    child: { id: 'child', parents: ['focus', 'focus-spouse'], children: ['grandchild'], spouses: [] },
+    grandchild: { id: 'grandchild', parents: ['child'], children: [], spouses: [] }
+  };
+
+  const scope = computeDescendantScope(people, 'focus');
+  assert.deepEqual(scope.paternalLineIds, ['grandfather', 'father', 'focus']);
+  assert.equal(scope.treeRootId, 'grandfather');
+  assert.deepEqual([...scope.descendantIds].sort(), ['child', 'focus', 'grandchild']);
+  assert.deepEqual([...scope.linealIds].sort(), ['child', 'father', 'focus', 'grandchild', 'grandfather']);
+  assert.deepEqual([...scope.allowedIds].sort(), ['child', 'father', 'focus', 'focus-spouse', 'grandchild', 'grandfather']);
+  for (const excluded of ['grandmother', 'mother', 'uncle', 'cousin', 'sibling']) {
+    assert.equal(scope.allowedIds.has(excluded), false, `${excluded} is collateral or maternal and must remain outside the focus tree`);
+  }
+  assert.deepEqual([...scope.childrenByParent.get('grandfather')], ['father']);
+  assert.deepEqual([...scope.childrenByParent.get('father')], ['focus']);
+  assert.deepEqual([...scope.parentsByChild.get('focus')], ['father']);
+  assert.deepEqual([...scope.parentsByChild.get('child')].sort(), ['focus', 'focus-spouse']);
+});
+
+test('refocusing on a spouse exchanges paternal ancestry but keeps the shared descendants', () => {
+  const people = {
+    'old-grandfather': { id: 'old-grandfather', gender: 'male', parents: [], children: ['old-father'], spouses: [] },
+    'old-father': { id: 'old-father', gender: 'male', parents: ['old-grandfather'], children: ['old-root'], spouses: [] },
+    'old-root': { id: 'old-root', gender: 'male', parents: ['old-father'], children: ['shared-child'], spouses: ['new-focus'] },
+    'new-grandfather': { id: 'new-grandfather', gender: 'male', parents: [], children: ['new-father'], spouses: [] },
+    'new-father': { id: 'new-father', gender: 'male', parents: ['new-grandfather'], children: ['new-focus', 'new-focus-sibling'], spouses: [] },
+    'new-focus-sibling': { id: 'new-focus-sibling', parents: ['new-father'], children: [], spouses: [] },
+    'new-focus': { id: 'new-focus', gender: 'female', parents: ['new-father'], children: ['shared-child'], spouses: ['old-root'] },
+    'shared-child': { id: 'shared-child', parents: ['old-root', 'new-focus'], children: ['shared-grandchild'], spouses: [] },
+    'shared-grandchild': { id: 'shared-grandchild', parents: ['shared-child'], children: [], spouses: [] }
+  };
+
+  const oldScope = computeDescendantScope(people, 'old-root');
+  const newScope = computeDescendantScope(people, 'new-focus');
+  assert.deepEqual(oldScope.paternalLineIds, ['old-grandfather', 'old-father', 'old-root']);
+  assert.deepEqual(newScope.paternalLineIds, ['new-grandfather', 'new-father', 'new-focus']);
+  assert.equal(oldScope.allowedIds.has('new-father'), false);
+  assert.equal(newScope.allowedIds.has('old-father'), false);
+  assert.equal(newScope.allowedIds.has('old-root'), true, 'the former root becomes the focus person’s spouse');
+  assert.equal(newScope.linealIds.has('old-root'), false);
+  assert.deepEqual([...oldScope.descendantIds].filter(id => id !== 'old-root').sort(), ['shared-child', 'shared-grandchild']);
+  assert.deepEqual([...newScope.descendantIds].filter(id => id !== 'new-focus').sort(), ['shared-child', 'shared-grandchild']);
+  assert.deepEqual([...newScope.childrenByParent.get('new-father')], ['new-focus']);
+  assert.deepEqual([...newScope.parentsByChild.get('shared-child')].sort(), ['new-focus', 'old-root']);
 });

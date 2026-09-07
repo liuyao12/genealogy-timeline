@@ -98,6 +98,21 @@ input:focus, textarea:focus, select:focus { border-color: #000; box-shadow: 0 0 
 .person-list-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 400; }
 .person-name-match { padding: 0 1px; color: #000; background: #ffeb3b; box-shadow: 0 0 0 1px #ffeb3b; }
 .person-list-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+.person-list-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-radius: 8px; }
+.person-list-row:hover, .person-list-row:focus-within, .person-list-row.active { background: var(--green-pale); }
+.person-list-row .person-list-item { min-width: 0; background: transparent; }
+.person-list-row .person-list-item:hover, .person-list-row .person-list-item.active { background: transparent; }
+.person-list-row.search-result .person-list-item { border-radius: 8px 0 0 8px; }
+.person-list-focus {
+  min-width: 43px; height: 25px; margin-right: 5px; padding: 0 7px; border: 1px solid #999;
+  border-radius: 6px; background: #fff; color: #111; font-size: 9px; font-weight: 700; cursor: pointer;
+}
+.person-list-row.outside-focus-scope .person-list-focus { border-color: #000; background: #000; color: #fff; }
+.person-list-focus:hover:not(:disabled) { transform: translateY(-1px); }
+.person-list-focus:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+.person-list-focus:disabled { border-color: #ccc; background: transparent; color: #777; cursor: default; }
+.person-list-scope { color: #333 !important; font-weight: 650; }
+.people-search-empty { margin: 12px 6px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .source-links { display: flex; gap: 12px; }
 .source-footer { padding: 13px 16px 15px; border-top: 1px solid var(--line); }
 .source-footer a { font-weight: 700; font-size: 11px; text-decoration: none; }

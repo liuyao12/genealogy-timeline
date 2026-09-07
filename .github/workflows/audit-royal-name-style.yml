@@ -10,5 +10,5 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: audit/royal-example-name-style
-      - name: Show dated-name examples
-        run: python3 .github/scripts/show_name_period_examples.py
+      - name: Show profile merge behavior
+        run: python3 .github/scripts/show_merge_function.py

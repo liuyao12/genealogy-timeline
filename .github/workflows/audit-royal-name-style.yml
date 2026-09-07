@@ -10,5 +10,5 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: audit/royal-example-name-style
-      - name: Show starter-data migration logic
-        run: python3 .github/scripts/show_starter_migration.py
+      - name: Show dated-name examples
+        run: python3 .github/scripts/show_name_period_examples.py

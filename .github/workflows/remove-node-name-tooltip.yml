@@ -1,0 +1,55 @@
+name: Remove redundant timeline node tooltip
+on:
+  push:
+    branches: [ui/remove-node-name-tooltip]
+    paths: [.github/workflows/remove-node-name-tooltip.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/remove-node-name-tooltip
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply tooltip cleanup
+        run: python3 .github/scripts/remove_timeline_node_name_tooltip.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check tests/timeline-node-tooltip.test.mjs
+          git diff --check
+      - name: Check the rendered SVG
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=7000 --dump-dom http://127.0.0.1:4173/ >/tmp/lineage-dom.html
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const dom = readFileSync('/tmp/lineage-dom.html', 'utf8');
+          assert.match(dom, /app\.js\?v=137/);
+          assert.match(dom, /class="[^"]*timeline-node/);
+          assert.doesNotMatch(dom, /<g[^>]*class="[^"]*timeline-node[^"]*"[^>]*>\s*<title\b/);
+          assert.match(dom, /class="[^"]*timeline-node[^"]*"[^>]*aria-label="[^"]+"/);
+          EOF
+      - name: Commit verified change
+        run: |
+          rm .github/scripts/remove_timeline_node_name_tooltip.py
+          rm .github/workflows/remove-node-name-tooltip.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove redundant profile-name hover tooltip"
+          git push origin HEAD:ui/remove-node-name-tooltip

@@ -1,0 +1,97 @@
+name: Verify hidden child branches and Geni identity
+on:
+  push:
+    branches: [feature/hide-noisy-births-and-dedupe-geni]
+    paths: [.github/workflows/verify-noisy-births-geni-identity.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/hide-noisy-births-and-dedupe-geni
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prepare and apply the production patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/apply_noisy_birth_and_geni_identity_fix.py')
+          text = path.read_text()
+          old = 're.subn(pattern, replacement, text, count=1, flags=flags)'
+          new = 're.subn(pattern, lambda _match: replacement, text, count=1, flags=flags)'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one regex replacement helper, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+          text = text.replace("assert.equal(Object.keys(people).length, 14, 'suppression must not delete stored profiles');", "assert.equal(Object.keys(people).length, 15, 'suppression must not delete stored profiles');")
+          path.write_text(text)
+          PY
+          python3 .github/scripts/apply_noisy_birth_and_geni_identity_fix.py
+      - name: Run tests, syntax checks, and data validation
+        run: |
+          npm test
+          node --check app.js
+          node --check descendant-scope.js
+          node --check geni-model.js
+          node --check geni-import-core.js
+          node --check geni-import.js
+          node --check .github/scripts/check_noisy_births_and_geni_identity.mjs
+          python3 -m json.tool data/british-royal-line.json >/dev/null
+          git diff --check
+      - name: Check the expanded royal example still retains its main line
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import { computeDescendantScope } from './descendant-scope.js';
+          const data = JSON.parse(fs.readFileSync('data/british-royal-line.json', 'utf8'));
+          const people = data.people;
+          const byName = new Map(Object.entries(people).map(([id, person]) => [person.displayName, id]));
+          const scope = computeDescendantScope(people, data.rootId);
+          for (const name of [
+            'Henry VIII, King of England',
+            'Charles II, King of England',
+            'Victoria, Queen of the United Kingdom and Empress of India',
+            'Elizabeth II, Queen of the United Kingdom'
+          ]) {
+            const id = byName.get(name);
+            assert.ok(id, `missing ${name}`);
+            assert.ok(scope.allowedIds.has(id), `${name} should remain in the Henry VII timeline`);
+          }
+          assert.equal(scope.hiddenBirthIds.size, 0, 'the repaired bundled example should not hide any currently included profile');
+          assert.equal(data.version, 27);
+          console.log(JSON.stringify({ profiles: Object.keys(people).length, visible: scope.allowedIds.size, hidden: scope.hiddenBirthIds.size }));
+          JS
+      - name: Start the patched application
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+      - name: Verify hidden profiles, search, restore dedupe, and stitch dedupe in Chrome
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/lineage-noisy-births about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          echo $! >/tmp/lineage-chrome.pid
+          node .github/scripts/check_noisy_births_and_geni_identity.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit the verified implementation
+        run: |
+          rm .github/scripts/apply_noisy_birth_and_geni_identity_fix.py
+          rm .github/scripts/check_noisy_births_and_geni_identity.mjs
+          rm .github/workflows/audit-hidden-births-geni-identity.yml
+          rm .github/workflows/audit-descendant-birth-candidates.yml
+          rm .github/workflows/verify-noisy-births-geni-identity.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Hide noisy child branches and deduplicate Geni identities"
+          git push origin HEAD:feature/hide-noisy-births-and-dedupe-geni

@@ -2,7 +2,9 @@ name: Tree actions and hidden profile preview
 on:
   push:
     branches: [ui/tree-action-profile-preview]
-    paths: [.github/workflows/tree-action-profile-preview.yml]
+    paths:
+      - .github/workflows/tree-action-profile-preview.yml
+      - .github/scripts/check_tree_action_ui.mjs
 permissions:
   contents: write
 jobs:

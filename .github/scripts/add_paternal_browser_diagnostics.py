@@ -53,6 +53,21 @@ if text.count(old) != 1:
     raise SystemExit(f'Expected one waitUntil block, found {text.count(old)}')
 text = text.replace(old, new, 1)
 
+old = """  const targets = await json(`http://127.0.0.1:${port}/json`);
+  const target = targets[0] || await json(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' });
+"""
+new = """  const targets = await json(`http://127.0.0.1:${port}/json`);
+  // Hosted Chrome may expose extension background pages before the actual tab.
+  // Attach only to a normal page target so storage and navigation belong to
+  // the app origin rather than to an unrelated extension.
+  const target = targets.find(candidate =>
+    candidate.type === 'page' && !String(candidate.url || '').startsWith('chrome-extension://')
+  ) || await json(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' });
+"""
+if text.count(old) != 1:
+    raise SystemExit(f'Expected one Chrome target-selection block, found {text.count(old)}')
+text = text.replace(old, new, 1)
+
 old = """  socket.addEventListener('message', event => {
     const message = JSON.parse(event.data);
     if (!message.id || !pending.has(message.id)) return;

@@ -1,4 +1,4 @@
-import { computeDescendantScope } from './descendant-scope.js?v=1';
+import { computeDescendantScope } from './descendant-scope.js?v=2';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
@@ -92,7 +92,7 @@ const els = Object.fromEntries([
   'tree-title', 'global-events-button', 'import-file-button', 'save-image-button', 'export-button', 'file-input', 'prepare-ai-import',
   'people-count', 'people-label', 'people-list', 'add-person-button', 'tree-tabs', 'add-tree-tab', 'canvas-viewport',
   'empty-state', 'timeline-ruler', 'timeline-canvas', 'empty-add-person-button', 'empty-file-button',
-  'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
+  'detail-backdrop', 'detail-sidebar', 'detail-empty', 'person-form', 'person-heading', 'person-life', 'person-avatar', 'focus-tree-button', 'focus-tree-status', 'edit-person', 'cancel-person-edit', 'person-edit-fields', 'person-edit-actions',
   'person-source-link', 'person-source-name', 'person-source-mark', 'source-updated', 'close-detail', 'delete-person', 'add-dialog', 'add-dialog-heading',
   'prepare-ai-person-import', 'ai-family-status',
   'relationship-households', 'add-relative', 'geni-family-card', 'geni-family-heading', 'geni-family-status',
@@ -1731,6 +1731,16 @@ function partnerRelationKey(firstId, secondId) {
 }
 function childRelationKey(parentId, childId) { return `child:${parentId}>${childId}`; }
 function profileVisibilityKey(profileId) { return `profile:${profileId}`; }
+function timelineViewTransitionName(personId) {
+  const value = String(personId || '');
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  const suffix = value.replace(/[^a-zA-Z0-9_-]/g, '-').slice(-36) || 'person';
+  return `lineage-person-${(hash >>> 0).toString(36)}-${suffix}`;
+}
 function relationOverride(key) { return Object.hasOwn(state.relationVisibility, key) ? state.relationVisibility[key] : null; }
 function marriageYearFor(firstId, secondId) {
   return numericYear(state.people[firstId]?.marriageYears?.[secondId] || state.people[secondId]?.marriageYears?.[firstId]);
@@ -1744,7 +1754,7 @@ function scopedSpouseIds(person, scope = activeDescendantScope()) {
 }
 function scopedChildIds(personId, scope = activeDescendantScope()) {
   return [...(scope.childrenByParent.get(personId) || [])]
-    .filter(id => scope.descendantIds.has(id) && state.people[id]);
+    .filter(id => scope.linealIds.has(id) && state.people[id]);
 }
 function scopedParentIds(childId, scope = activeDescendantScope()) {
   return [...(scope.parentsByChild.get(childId) || [])]
@@ -1775,15 +1785,17 @@ function buildTimelineVisibility() {
   const scope = activeDescendantScope();
   const allIds = [...scope.allowedIds];
   // Child visibility belongs to the whole parental household. A descendant
-  // can be hidden, but no override is allowed to pull a collateral relative,
-  // an ancestor, or a spouse's other family into the active tree.
+  // or father-line edge can be hidden, but no override may pull a collateral
+  // relative, maternal branch, or spouse's other family into this focus tree.
   const childEdgeVisible = (parentId, childId) => {
-    if (!scope.descendantIds.has(childId) || !scope.allowedIds.has(parentId)) return false;
+    if (!scope.linealIds.has(childId) || !scope.allowedIds.has(parentId)) return false;
     if (relationOverride(childRelationKey(parentId, childId)) === false) return false;
     const parentIds = scopedParentIds(childId, scope);
     return !parentIds.some(id => relationOverride(childRelationKey(id, childId)) === false);
   };
 
+  // Keep this set separate from the full lineal projection. Spouse attachment
+  // belongs to the focus person and descendants, never to paternal ancestors.
   const descendantsOfRoot = new Set();
   const descendantQueue = scope.descendantIds.has(state.rootId) ? [state.rootId] : [];
   while (descendantQueue.length) {
@@ -1795,17 +1807,34 @@ function buildTimelineVisibility() {
     });
   }
 
+  // The visible lineal spine starts with the oldest known father-line ancestor,
+  // reaches the focus person, and then opens into every descendant branch.
+  const linealFromTreeRoot = new Set();
+  const lineageQueue = scope.linealIds.has(scope.treeRootId) ? [scope.treeRootId] : [];
+  while (lineageQueue.length) {
+    const id = lineageQueue.shift();
+    if (linealFromTreeRoot.has(id) || !scope.linealIds.has(id) || !state.people[id]) continue;
+    linealFromTreeRoot.add(id);
+    scopedChildIds(id, scope).forEach(childId => {
+      if (scope.linealIds.has(childId) && childEdgeVisible(id, childId)) lineageQueue.push(childId);
+    });
+  }
+
   const query = clean(els['tree-filter']?.value).toLocaleLowerCase();
   const keywords = query.split(/\s+/).filter(Boolean);
   const matches = allIds.filter(id => keywords.some(keyword => matchesKeyword(state.people[id], keyword)));
-  const hasRoot = scope.descendantIds.has(state.rootId);
-  const visible = new Set(query ? (hasRoot ? [state.rootId] : matches) : descendantsOfRoot);
+  const hasTreeRoot = scope.linealIds.has(scope.treeRootId);
+  // Even under a name filter, retain the father-line path through the focus so
+  // the current point of view never disappears merely because its name did not
+  // match the filter.
+  const focusPath = scope.paternalLineIds.filter(id => linealFromTreeRoot.has(id));
+  const visible = new Set(query ? (hasTreeRoot ? focusPath : matches) : linealFromTreeRoot);
   const matchedPartnerPairs = new Set();
 
   if (query) {
     const pathSeeds = new Set();
     matches.forEach(id => {
-      if (descendantsOfRoot.has(id)) {
+      if (linealFromTreeRoot.has(id)) {
         visible.add(id);
         pathSeeds.add(id);
         return;
@@ -1813,7 +1842,7 @@ function buildTimelineVisibility() {
       if (!scope.affinalIds.has(id)) return;
       // A matching spouse is attached only to the descendant whom they married.
       // Their parents, siblings, other spouses, and unrelated children remain
-      // outside this root's descendant projection.
+      // outside this focus tree.
       scopedSpouseIds(state.people[id], scope).forEach(partnerId => {
         if (!descendantsOfRoot.has(partnerId)) return;
         const pairKey = partnerRelationKey(id, partnerId);
@@ -1829,7 +1858,7 @@ function buildTimelineVisibility() {
       const child = state.people[childId];
       if (!child) continue;
       scopedParentIds(childId, scope).forEach(parentId => {
-        if (!descendantsOfRoot.has(parentId) || !childEdgeVisible(parentId, childId) || visible.has(parentId)) return;
+        if (!linealFromTreeRoot.has(parentId) || !childEdgeVisible(parentId, childId) || visible.has(parentId)) return;
         visible.add(parentId);
         queue.push(parentId);
       });
@@ -1838,30 +1867,30 @@ function buildTimelineVisibility() {
     Object.entries(state.relationVisibility).forEach(([key, shown]) => {
       if (shown || !key.startsWith('child:')) return;
       const childId = key.split('>').pop();
-      if (!scope.descendantIds.has(childId)) return;
+      if (!scope.linealIds.has(childId)) return;
       const queue = [childId];
       while (queue.length) {
         const id = queue.shift();
         if (!visible.delete(id)) continue;
         scopedChildIds(id, scope).forEach(nextId => {
-          if (scope.descendantIds.has(nextId)) queue.push(nextId);
+          if (scope.linealIds.has(nextId)) queue.push(nextId);
         });
       }
     });
   }
 
   // A manually shown child can be inspected even when it is not part of the
-  // current keyword path, but only when it is structurally below this root.
+  // current keyword path, but only when it is structurally in this focus tree.
   Object.entries(state.relationVisibility).forEach(([key, shown]) => {
     if (!shown || !key.startsWith('child:')) return;
     const relation = key.slice('child:'.length);
     const split = relation.lastIndexOf('>');
     const parentId = relation.slice(0, split);
     const childId = relation.slice(split + 1);
-    if (scope.allowedIds.has(parentId) && scope.descendantIds.has(childId) && visible.has(parentId)) visible.add(childId);
+    if (scope.allowedIds.has(parentId) && scope.linealIds.has(childId) && visible.has(parentId)) visible.add(childId);
   });
-  // Legacy profile overrides are honored only inside the current descendant
-  // scope. They can never resurrect an unrelated mini-tree.
+  // Legacy profile overrides are honored only inside the current focus scope.
+  // They can never resurrect a collateral or maternal mini-tree.
   Object.entries(state.relationVisibility).forEach(([key, shown]) => {
     if (!shown || !key.startsWith('profile:')) return;
     const profileId = key.slice('profile:'.length);
@@ -1893,8 +1922,7 @@ function buildTimelineVisibility() {
   });
 
   // An affinal profile survives only as the spouse occurrence attached to a
-  // visible lineal descendant. This is the boundary that excludes, for
-  // example, John Neville's separate marriage tree from Henry VII's view.
+  // visible focus/descendant. This excludes a spouse's unrelated marriage tree.
   [...visible].forEach(id => {
     if (!scope.allowedIds.has(id)) {
       visible.delete(id);
@@ -1909,7 +1937,7 @@ function buildTimelineVisibility() {
     if (!hasRenderedHousehold) visible.delete(id);
   });
 
-  return { visibleIds: visible, renderedPartnerPairs, descendantsOfRoot, childEdgeVisible, scope };
+  return { visibleIds: visible, renderedPartnerPairs, descendantsOfRoot, linealFromTreeRoot, childEdgeVisible, scope };
 }
 
 function svg(tag, attrs = {}, text = '') {
@@ -2238,20 +2266,21 @@ function renderTimeline() {
   // its natal branch and again beside a spouse. If one route from the root is
   // collapsed, the other route must keep the shared household alive.
   const activeLineageIds = new Set();
-  const lineageQueue = state.people[state.rootId] && visibleIds.has(state.rootId) ? [state.rootId] : [];
+  const lineageStartId = scope.treeRootId || state.rootId;
+  const lineageQueue = state.people[lineageStartId] && visibleIds.has(lineageStartId) ? [lineageStartId] : [];
   while (lineageQueue.length) {
     const id = lineageQueue.shift();
-    if (activeLineageIds.has(id) || !visibleIds.has(id) || !state.people[id]) continue;
+    if (activeLineageIds.has(id) || !scope.linealIds.has(id) || !visibleIds.has(id) || !state.people[id]) continue;
     activeLineageIds.add(id);
     if (state.collapsedIds.has(id)) continue;
     scopedChildIds(id, scope).forEach(childId => {
-      if (visibleIds.has(childId) && childEdgeVisible(id, childId)) lineageQueue.push(childId);
+      if (scope.linealIds.has(childId) && visibleIds.has(childId) && childEdgeVisible(id, childId)) lineageQueue.push(childId);
     });
   }
-  if (!state.people[state.rootId]) {
+  if (!state.people[lineageStartId]) {
     visibleIds.forEach(id => activeLineageIds.add(id));
   }
-  if (state.collapsedIds.size && state.people[state.rootId]) {
+  if (state.collapsedIds.size && state.people[lineageStartId]) {
     const activeVisibleIds = new Set(activeLineageIds);
     // Spouses are occurrences attached to an active lineage household. They
     // remain visible without opening their unrelated branches. A collapsed
@@ -2269,7 +2298,7 @@ function renderTimeline() {
   ));
   const people = Object.values(state.people).filter(person => {
     if (!visibleIds.has(person.id) || numericYear(person.birthYear) == null) return false;
-    if (descendantsOfRoot.has(person.id)) return true;
+    if (scope.linealIds.has(person.id)) return true;
     return scopedSpouseIds(person, scope).some(partnerId =>
       datedVisibleDescendants.has(partnerId)
       && renderedPartnerPairs.has(partnerRelationKey(person.id, partnerId))
@@ -2344,7 +2373,8 @@ function renderTimeline() {
     && !scopedParentIds(person.id, scope).some(id => datedIds.has(id) && activeLineageIds.has(id)));
   const roots = (lineageRoots.length ? lineageRoots : people.filter(person => !scopedParentIds(person.id, scope).some(id => datedIds.has(id))))
     .map(person => person.id).sort(byBirth);
-  if (datedIds.has(state.rootId)) roots.sort((a, b) => (a === state.rootId ? -1 : b === state.rootId ? 1 : byBirth(a, b)));
+  const preferredTreeRootId = datedIds.has(scope.treeRootId) ? scope.treeRootId : state.rootId;
+  if (datedIds.has(preferredTreeRootId)) roots.sort((a, b) => (a === preferredTreeRootId ? -1 : b === preferredTreeRootId ? 1 : byBirth(a, b)));
   const order = [];
   const placed = new Set();
   const expanded = new Set();
@@ -3032,6 +3062,15 @@ function renderTimeline() {
   };
   canvas.append(nodeDefs);
   const snapshotLabelLayer = historicalYear == null ? null : svg('g', { class: 'timeline-snapshot-labels' });
+  // A person can have several visual occurrences after cousin marriages. Give
+  // exactly one occurrence a stable View Transition name so shared people move
+  // between focus trees instead of cross-fading as unrelated boxes.
+  const transitionNodeKeyByPerson = new Map();
+  layoutNodes.forEach(node => {
+    if (!transitionNodeKeyByPerson.has(node.id) || node.key === node.id) {
+      transitionNodeKeyByPerson.set(node.id, node.key);
+    }
+  });
 
   layoutNodes.forEach((layoutNode, nodeIndex) => {
     const { id, key: nodeKey } = layoutNode;
@@ -3046,7 +3085,11 @@ function renderTimeline() {
       : svg('rect', { ...attrs, x: 0, y: 0, width: lifespanWidth, height: rowHeight, rx: cornerRadius, ry: cornerRadius });
     const historicalDisplayName = visibleName(person);
     const historicalLifeLabel = timelineLifeLabel(person, historicalYear);
-    const group = svg('g', { class: `timeline-node ${person.gender} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, 'data-person-id': id, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${historicalLifeLabel}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    const group = svg('g', { class: `timeline-node ${person.gender} ${id === state.rootId ? 'focus' : ''} ${scope.paternalAncestorIds.has(id) ? 'paternal-ancestor' : ''} ${isSpouseNode ? 'spouse' : ''} ${layoutNode.isTransportedCopy ? 'transport-copy' : ''} ${hasReign ? 'reigned' : ''} ${id === state.selectedId ? 'selected' : ''}`, transform: `translate(${pos.x} ${pos.y})`, 'data-node-key': nodeKey, 'data-person-id': id, tabindex: '0', role: 'button', 'aria-label': `${historicalDisplayName}, ${historicalLifeLabel}${isSpouseNode ? ', spouse' : ''}${layoutNode.isTransportedCopy ? ', transported copy' : ''}${hasReign ? ', reigning monarch' : ''}` });
+    if (transitionNodeKeyByPerson.get(id) === nodeKey) {
+      group.style.viewTransitionName = timelineViewTransitionName(id);
+      group.dataset.focusTransitionNode = 'true';
+    }
     group.append(svg('title', {}, `${historicalDisplayName} · ${historicalLifeLabel}`));
     group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
@@ -3338,6 +3381,66 @@ function previewTimelinePerson(id) {
     top: best.dy,
     behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
   });
+}
+
+let focusTreeTransitionRunning = false;
+
+function primaryTimelineNodeForPerson(id) {
+  const selector = `.timeline-node[data-person-id="${CSS.escape(id)}"]`;
+  return els['timeline-canvas'].querySelector(`${selector}[data-focus-transition-node="true"]`)
+    || els['timeline-canvas'].querySelector(`${selector}[data-node-key="${CSS.escape(id)}"]`)
+    || els['timeline-canvas'].querySelector(selector);
+}
+
+async function focusTreeOn(personId) {
+  const id = clean(personId);
+  if (!state.people[id] || id === state.rootId || focusTreeTransitionRunning) return;
+  const viewport = els['canvas-viewport'];
+  const oldNode = primaryTimelineNodeForPerson(id);
+  const oldRect = oldNode?.getBoundingClientRect();
+  let applied = false;
+
+  const applyFocus = () => {
+    applied = true;
+    state.rootId = id;
+    state.selectedId = id;
+    state.editingProfileId = '';
+    state.collapsedIds.clear();
+    render();
+
+    // Keep the chosen person at the same screen position. The surrounding
+    // father line, spouse, and descendants then visibly rearrange around the
+    // new focus instead of the whole canvas jumping under the pointer.
+    const newNode = primaryTimelineNodeForPerson(id);
+    if (oldRect && newNode) {
+      const newRect = newNode.getBoundingClientRect();
+      viewport.scrollLeft += newRect.left - oldRect.left;
+      viewport.scrollTop += newRect.top - oldRect.top;
+    }
+    persist(`Tree focused on ${fullName(state.people[id])}`);
+  };
+
+  focusTreeTransitionRunning = true;
+  document.documentElement.classList.add('focus-tree-transitioning');
+  try {
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!reducedMotion && typeof document.startViewTransition === 'function') {
+      const transition = document.startViewTransition(applyFocus);
+      await transition.finished.catch(() => {});
+    } else {
+      applyFocus();
+      els['timeline-canvas'].animate?.(
+        [{ opacity: .45 }, { opacity: 1 }],
+        { duration: reducedMotion ? 1 : 260, easing: 'ease-out' }
+      );
+    }
+  } catch {
+    if (!applied) applyFocus();
+  } finally {
+    focusTreeTransitionRunning = false;
+    document.documentElement.classList.remove('focus-tree-transitioning');
+    renderDetails();
+  }
 }
 
 function selectPerson(id, { center = false } = {}) {
@@ -3723,6 +3826,24 @@ function renderRelationshipHouseholds(person) {
     meta.textContent = detail;
     copy.append(name, meta);
     row.append(branch, copy);
+
+    const actions = document.createElement('span');
+    actions.className = 'relationship-actions';
+    if (kind === 'spouse') {
+      const focus = document.createElement('button');
+      focus.type = 'button';
+      focus.className = 'relationship-focus';
+      focus.dataset.focusPersonId = targetId;
+      const alreadyFocused = targetId === state.rootId;
+      focus.textContent = alreadyFocused ? 'Focused' : 'Focus';
+      focus.disabled = alreadyFocused || focusTreeTransitionRunning;
+      focus.title = alreadyFocused
+        ? `${label} is the current tree focus`
+        : `Focus on ${label}: father’s line above, all descendants below`;
+      focus.setAttribute('aria-label', focus.title);
+      focus.addEventListener('click', () => focusTreeOn(targetId));
+      actions.append(focus);
+    }
     if (canToggle) {
       const toggle = document.createElement('button');
       toggle.type = 'button';
@@ -3743,8 +3864,9 @@ function renderRelationshipHouseholds(person) {
           toast(`${fullName(state.people[targetId])} has no birth year, so it cannot be positioned on the timeline yet.`, true);
         }
       });
-      row.append(toggle);
+      actions.append(toggle);
     }
+    if (actions.childNodes.length) row.append(actions);
     return row;
   };
 
@@ -3838,7 +3960,7 @@ function renderGeniFamilyActions(person, scope) {
   );
   const outsideCount = returnedIds.filter(id => !scope.allowedIds.has(id)).length;
   const outsideNote = outsideCount
-    ? ` ${outsideCount} returned relative${outsideCount === 1 ? ' is' : 's are'} saved outside this descendant view.`
+    ? ` ${outsideCount} returned relative${outsideCount === 1 ? ' is' : 's are'} saved outside this focus tree.`
     : '';
   if (importingThisProfile) {
     els['geni-family-heading'].textContent = 'Reading immediate family from Geni';
@@ -3856,7 +3978,7 @@ function renderGeniFamilyActions(person, scope) {
     els['geni-family-badge'].textContent = 'Checked';
   } else if (linked) {
     els['geni-family-heading'].textContent = 'Add immediate family from Geni';
-    els['geni-family-status'].textContent = `Import parents, siblings, spouses, and children. Relatives outside this descendant tree remain saved but hidden.`;
+    els['geni-family-status'].textContent = `Import parents, siblings, spouses, and children. Relatives outside this focus tree remain saved but hidden.`;
     els['geni-family-badge'].textContent = 'Ready';
   } else {
     els['geni-family-heading'].textContent = 'Connect this profile to Geni';
@@ -3912,6 +4034,16 @@ function renderDetails() {
   if (!person) return;
   els['person-heading'].textContent = visibleName(person);
   els['person-life'].textContent = life(person);
+  const candidateFocusScope = person.id === state.rootId ? scope : computeDescendantScope(state.people, person.id);
+  const paternalCount = candidateFocusScope.paternalAncestorIds.size;
+  const descendantCount = Math.max(0, candidateFocusScope.descendantIds.size - 1);
+  const isTreeFocus = person.id === state.rootId;
+  els['focus-tree-button'].disabled = isTreeFocus || focusTreeTransitionRunning;
+  els['focus-tree-button'].setAttribute('aria-pressed', String(isTreeFocus));
+  els['focus-tree-button'].textContent = isTreeFocus ? 'Current tree focus' : 'Focus tree here';
+  els['focus-tree-status'].textContent = isTreeFocus
+    ? `${paternalCount ? `${paternalCount} father-line ancestor${paternalCount === 1 ? '' : 's'} above` : 'No known father-line ancestors'} · ${descendantCount} descendant${descendantCount === 1 ? '' : 's'} below`
+    : `Show this person’s father line above and all ${descendantCount} known descendant${descendantCount === 1 ? '' : 's'} below.`;
   els['person-avatar'].textContent = initials(person);
   els['person-avatar'].style.background = '#fff';
   const form = els['person-form'];
@@ -4430,6 +4562,7 @@ async function linkSelectedProfileAndLoadFromGeni() {
   await loadSelectedImmediateFamilyFromGeni();
 }
 
+els['focus-tree-button'].addEventListener('click', () => focusTreeOn(state.selectedId));
 els['geni-family-primary'].addEventListener('click', loadSelectedImmediateFamilyFromGeni);
 els['geni-family-link-button'].addEventListener('click', linkSelectedProfileAndLoadFromGeni);
 els['geni-family-link-input'].addEventListener('keydown', event => {

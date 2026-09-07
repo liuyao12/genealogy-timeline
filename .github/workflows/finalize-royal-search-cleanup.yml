@@ -1,0 +1,35 @@
+name: Finalize royal-name and search cleanup
+on:
+  push:
+    branches: [cleanup/royal-names-and-search-tree-action]
+    paths: [.github/workflows/finalize-royal-search-cleanup.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/royal-names-and-search-tree-action
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Expand exact stale-title migrations
+        run: python3 .github/scripts/expand_stale_name_migration.py
+      - name: Verify the complete implementation
+        run: |
+          npm test
+          node --check app.js
+          python3 -m json.tool data/british-royal-line.json >/dev/null
+          git diff --check
+      - name: Commit the verified reconciliation
+        run: |
+          rm .github/scripts/expand_stale_name_migration.py
+          rm .github/workflows/finalize-royal-search-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Preserve the full royal-name audit during starter upgrades"
+          git push origin HEAD:cleanup/royal-names-and-search-tree-action

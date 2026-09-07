@@ -2708,10 +2708,12 @@ function renderTimeline() {
     estimateWidth: estimateTextWidth
   });
   const globalEventLabelLaneStep = 22;
-  const globalEventLabelAreaHeight = globalEventLabelLayout.laneCount
-    ? globalEventLabelLayout.laneCount * globalEventLabelLaneStep + 8
+  // Keep the nearest event badge immediately above the year numerals. Extra
+  // collision lanes grow upward, rather than leaving the first badge stranded
+  // at the top of a tall sticky ruler.
+  const rulerCoreOffset = globalEventLabelLayout.laneCount
+    ? 16 + (globalEventLabelLayout.laneCount - 1) * globalEventLabelLaneStep
     : 0;
-  const rulerCoreOffset = globalEventLabelAreaHeight;
   const rulerBaseline = rulerCoreOffset + 43;
   const rulerHeight = rulerBaseline + 1;
   const top = rulerHeight;
@@ -2860,14 +2862,14 @@ function renderTimeline() {
     if (eventWidth > 2) globalEvents.append(svg('line', { class: 'global-event-edge', x1: x + eventWidth, y1: eventTop, x2: x + eventWidth, y2: eventBottom, stroke: color }));
     const labelGeometry = globalEventLabelsByIndex.get(index);
     if (labelGeometry) {
-      const labelY = 2 + labelGeometry.lane * globalEventLabelLaneStep;
+      const labelY = rulerCoreOffset - 14 - labelGeometry.lane * globalEventLabelLaneStep;
       const pointerX = labelGeometry.pointerOffset;
       stickyGlobalEventGuides.append(svg('line', {
         class: 'global-event-label-guide',
         x1: labelGeometry.anchorX,
         y1: labelY + 25,
         x2: labelGeometry.anchorX,
-        y2: rulerBaseline,
+        y2: rulerCoreOffset + 12,
         stroke: color
       }));
       const label = svg('g', {

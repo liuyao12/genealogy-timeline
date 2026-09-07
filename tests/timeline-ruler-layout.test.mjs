@@ -5,13 +5,18 @@ import { readFileSync } from 'node:fs';
 const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
-test('global event labels render as pointed badges above the year-ruler core', () => {
+test('global event labels render as pointed badges centered over event bands', () => {
   assert.match(app, /layoutGlobalEventLabels/);
   assert.match(app, /global-event-label-box/);
   assert.match(app, /global-event-label-text/);
   assert.match(app, /global-event-label-pointer/);
-  assert.match(app, /globalEventLabelAreaHeight/);
   assert.doesNotMatch(app, /class: 'global-event-label', x: x \+ 4, y: 56/);
+});
+
+test('event-label lanes are bottom-aligned immediately above the year numerals', () => {
+  assert.match(app, /const rulerCoreOffset = globalEventLabelLayout\.laneCount[\s\S]*?16 \+ \(globalEventLabelLayout\.laneCount - 1\) \* globalEventLabelLaneStep/);
+  assert.match(app, /const labelY = rulerCoreOffset - 14 - labelGeometry\.lane \* globalEventLabelLaneStep/);
+  assert.match(app, /y2: rulerCoreOffset \+ 12/);
 });
 
 test('the first timeline row sits directly below the dynamic ruler baseline', () => {

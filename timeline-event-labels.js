@@ -49,7 +49,11 @@ export function layoutGlobalEventLabels(events, {
 
     const startYear = Math.max(minYear, rawStartYear);
     const endYear = Math.min(maxYear, Math.max(rawStartYear, rawEndYear));
-    const anchorX = xForYear(startYear);
+    // A global event is a span, so its label belongs at the midpoint of the
+    // visible band rather than at the first year. Point events naturally keep
+    // their single-year anchor.
+    const anchorYear = startYear + (endYear - startYear) / 2;
+    const anchorX = (xForYear(startYear) + xForYear(endYear)) / 2;
     const desiredWidth = Math.max(minimumWidth, estimateWidth(name) + horizontalPadding * 2);
     const width = Math.min(desiredWidth, maximumWidth, availableWidth);
     const halfWidth = width / 2;
@@ -64,6 +68,7 @@ export function layoutGlobalEventLabels(events, {
       displayName,
       startYear,
       endYear,
+      anchorYear,
       anchorX,
       centerX,
       pointerOffset,

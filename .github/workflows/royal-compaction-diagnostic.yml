@@ -1,0 +1,59 @@
+name: British royal compaction diagnostic
+on:
+  push:
+    branches: [fix/british-royal-compaction]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Find Chrome
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Prepare historical layouts with the current royal data
+        run: |
+          git worktree add --detach /tmp/layout-before-lower-first 3e46edcdcab5840ecc8a073706a70a2641200768
+          git worktree add --detach /tmp/layout-restored d82e028db83e38f67960acf9d2b1ed748febcd3d
+          git worktree add --detach /tmp/layout-spaced 29a5a41cb3df1f9f44d21d40711f19b91d538442
+          for directory in /tmp/layout-before-lower-first /tmp/layout-restored /tmp/layout-spaced; do
+            mkdir -p "$directory/data"
+            cp data/british-royal-line.json "$directory/data/british-royal-line.json"
+          done
+      - name: Measure current and historical British royal layouts
+        run: |
+          set -euo pipefail
+          measure() {
+            local directory="$1" port="$2" label="$3"
+            (cd "$directory" && python3 -m http.server "$port" >/tmp/royal-$label-http.log 2>&1 & echo $! >/tmp/royal-$label.pid)
+            for attempt in $(seq 1 50); do
+              curl -fsS "http://127.0.0.1:$port/" >/dev/null && break
+              sleep .1
+            done
+            node .github/scripts/measure_royal_compaction.mjs "http://127.0.0.1:$port/" "$label"
+            kill "$(cat /tmp/royal-$label.pid)" || true
+          }
+          measure "$GITHUB_WORKSPACE" 4173 current | tee /tmp/current.json
+          measure /tmp/layout-before-lower-first 4174 before-lower-first | tee /tmp/before-lower-first.json
+          measure /tmp/layout-restored 4175 restored-compaction | tee /tmp/restored-compaction.json
+          measure /tmp/layout-spaced 4176 spaced-compaction | tee /tmp/spaced-compaction.json
+      - name: Summarize target positions
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync } from 'node:fs';
+          const files = ['/tmp/current.json', '/tmp/before-lower-first.json', '/tmp/restored-compaction.json', '/tmp/spaced-compaction.json'];
+          const rows = files.map(file => JSON.parse(readFileSync(file, 'utf8'))).flatMap(result => [
+            { version: result.label, mode: 'king queen', span: result.filtered.verticalSpan, rows: result.filtered.distinctRowCount, HenryVIII: result.filtered.henryVIII?.row, CharlesII: result.filtered.charlesII?.row },
+            { version: result.label, mode: 'all', span: result.unfiltered.verticalSpan, rows: result.unfiltered.distinctRowCount, HenryVIII: result.unfiltered.henryVIII?.row, CharlesII: result.unfiltered.charlesII?.row }
+          ]);
+          console.table(rows);
+          EOF

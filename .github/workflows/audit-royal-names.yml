@@ -1,48 +1,54 @@
-name: Audit bundled royal names
+name: Verify royal names and side-panel tree action
 on:
   push:
     branches: [cleanup/royal-names-and-search-tree-action]
     paths: [.github/workflows/audit-royal-names.yml]
+permissions:
+  contents: write
 jobs:
-  audit:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: cleanup/royal-names-and-search-tree-action
-      - name: Inspect starter refresh logic
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply the production cleanup
+        run: python3 .github/scripts/apply_royal_name_and_search_cleanup.py
+      - name: Run automated tests and syntax checks
         run: |
-          grep -n -C 14 "starterDataVersion" app.js || true
-          grep -n -C 10 "starterProfile" app.js || true
-          grep -n -C 10 "british-royal-line" app.js || true
-      - name: Print name catalogue and likely style mismatches
+          npm test
+          node --check app.js
+          node --check .github/scripts/check_sidepanel_tree_and_names.mjs
+          python3 -m json.tool data/british-royal-line.json >/dev/null
+          git diff --check
+      - name: Start the patched app
         run: |
-          python3 - <<'PY'
-          import json, re
-          from pathlib import Path
-
-          data = json.loads(Path('data/british-royal-line.json').read_text())
-          people = list(data['people'].values())
-          people.sort(key=lambda p: (int(p.get('birthYear') or 99999), p.get('displayName','')))
-          print('COUNT', len(people), 'VERSION', data.get('version'))
-          print('\nALL DISPLAY NAMES')
-          for p in people:
-              default = next((n.get('name') for n in p.get('namePeriods', []) if n.get('id') == p.get('defaultNamePeriodId')), '')
-              print(f"{p.get('birthYear','?'):>5} | {p['id']} | {p.get('displayName','')} | title={p.get('title','')} | default={default}")
-
-          print('\nLIKELY STYLE CANDIDATES')
-          rank_words = r'(King|Queen|Prince|Princess|Duke|Duchess|Marquess|Marchioness|Earl|Countess|Baron|Baroness|Viscount|Viscountess|Elector|Electress|Emperor|Empress|Landgrave|Archduke|Archduchess)'
-          for p in people:
-              name = p.get('displayName','')
-              title = p.get('title','')
-              reasons = []
-              if re.search(r'\bof\s+[A-Z]', name) and ',' not in name and re.search(rank_words, title):
-                  reasons.append('territorial-form-with-titled-record')
-              if title and title not in name:
-                  reasons.append('title-not-in-display-name')
-              default = next((n.get('name') for n in p.get('namePeriods', []) if n.get('id') == p.get('defaultNamePeriodId')), '')
-              if default and default != name:
-                  reasons.append('display-default-mismatch')
-              if reasons:
-                  print(f"{p.get('birthYear','?'):>5} | {p['id']} | {name} | title={title} | default={default} | {','.join(reasons)}")
-          PY
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+      - name: Verify search, side-panel tree action, and corrected names
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/lineage-search-sidepanel about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          echo $! >/tmp/lineage-chrome.pid
+          node .github/scripts/check_sidepanel_tree_and_names.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit the verified implementation
+        run: |
+          rm .github/scripts/apply_royal_name_and_search_cleanup.py
+          rm .github/scripts/check_sidepanel_tree_and_names.mjs
+          rm .github/workflows/audit-royal-names.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use the side panel as the sole tree-switch action"
+          git push origin HEAD:cleanup/royal-names-and-search-tree-action

@@ -3031,7 +3031,6 @@ function renderTimeline() {
       group.style.viewTransitionName = timelineViewTransitionName(id);
       group.dataset.focusTransitionNode = 'true';
     }
-    group.append(svg('title', {}, `${historicalDisplayName} · ${historicalLifeLabel}`));
     group.append(nodeShape({ class: 'lifespan' }));
     const eventClipId = `node-events-${nodeIndex}`;
     const eventClip = svg('clipPath', { id: eventClipId, clipPathUnits: 'userSpaceOnUse' });

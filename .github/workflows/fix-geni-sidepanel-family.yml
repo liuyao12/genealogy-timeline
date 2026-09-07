@@ -1,0 +1,35 @@
+name: Fix Geni side-panel family refresh
+on:
+  push:
+    branches: [fix/geni-sidepanel-family-refresh]
+    paths: [.github/workflows/fix-geni-sidepanel-family.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/geni-sidepanel-family-refresh
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply edge-aware relationship patch
+        run: python3 .github/scripts/fix_geni_sidepanel_family.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check geni-import-core.js
+          node --check tests/geni-sidepanel-family.test.mjs
+      - name: Commit verified fix
+        run: |
+          rm .github/scripts/fix_geni_sidepanel_family.py
+          rm .github/workflows/fix-geni-sidepanel-family.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Render newly imported Geni family links immediately"
+          git push origin HEAD:fix/geni-sidepanel-family-refresh

@@ -22,10 +22,29 @@ jobs:
           python3 .github/scripts/implement_global_search_focus.py
       - name: Run automated tests and syntax checks
         run: |
-          npm test
-          node --check app.js
-          node --check tests/search-focus.test.mjs
-          git diff --check
+          set -o pipefail
+          {
+            npm test
+            node --check app.js
+            node --check tests/search-focus.test.mjs
+            git diff --check
+          } 2>&1 | tee .github/global-search-test.log
+      - name: Save test diagnostics on failure
+        if: failure()
+        run: |
+          {
+            echo
+            echo '--- git diff --stat ---'
+            git diff --stat
+            echo
+            echo '--- git diff -- app.js tests/search-focus.test.mjs ---'
+            git diff -- app.js tests/search-focus.test.mjs
+          } >> .github/global-search-test.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/global-search-test.log
+          git commit -m "Capture global search verification failure"
+          git push origin HEAD:feature/global-search-focus
       - name: Start local app
         run: |
           python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
@@ -39,6 +58,7 @@ jobs:
         run: node .github/scripts/check_global_search_focus.mjs
       - name: Commit verified implementation
         run: |
+          rm -f .github/global-search-test.log
           rm .github/scripts/fix_global_search_patch_script.py
           rm .github/scripts/implement_global_search_focus.py
           rm .github/scripts/check_global_search_focus.mjs

@@ -14,6 +14,7 @@ const GENI_TOKEN_SESSION_KEY = 'lineage-geni-access-token';
 const GENI_OAUTH_PENDING_KEY = 'lineage-geni-oauth-pending';
 const GENI_IMPORT_INTENT_KEY = 'lineage-geni-import-intent';
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const TREE_ACTION_SYMBOL = '🌳';
 const HENRY_VII_GENI_URL = 'https://www.geni.com/people/Henry-VII-King-of-England/6000000003760873898';
 const CAMILLA_GENI_PROFILE_ID = 'profile-g6000000003081589893';
 const EVENT_COLOR_PALETTE = [
@@ -3390,14 +3391,16 @@ async function focusTreeOn(personId) {
   }
 }
 
-function selectPerson(id, { center = false } = {}) {
-  if (!activeDescendantScope().allowedIds.has(id)) return;
+function selectPerson(id, { center = false, allowOutsideScope = false } = {}) {
+  const inCurrentScope = activeDescendantScope().allowedIds.has(id);
+  if (!inCurrentScope && !allowOutsideScope) return;
+  if (!state.people[id]) return;
   if (els['events-dialog'].open) els['events-dialog'].close();
   state.selectedId = id;
   state.editingProfileId = '';
   render();
   els['detail-sidebar'].scrollTop = 0;
-  if (center) centerTimelinePerson(id);
+  if (center && inCurrentScope) centerTimelinePerson(id);
 }
 function renderPersonList() {
   clearTimelinePersonPreview();
@@ -3428,9 +3431,7 @@ function renderPersonList() {
     button.className = 'person-list-item';
     button.dataset.gender = person.gender;
     button.dataset.personId = person.id;
-    button.setAttribute('aria-label', inCurrentScope
-      ? `Open ${visibleName(person)}`
-      : `Focus tree on ${visibleName(person)}`);
+    button.setAttribute('aria-label', `Open ${visibleName(person)}`);
 
     const gender = document.createElement('span');
     gender.className = 'person-gender';
@@ -3459,7 +3460,7 @@ function renderPersonList() {
     if (searching && !inCurrentScope) {
       const scopeNote = document.createElement('small');
       scopeNote.className = 'person-list-scope';
-      scopeNote.textContent = 'Outside current focus tree';
+      scopeNote.textContent = 'Outside current tree';
       summary.append(scopeNote);
     }
     button.append(gender, summary);
@@ -3476,7 +3477,7 @@ function renderPersonList() {
     }
     button.addEventListener('click', () => {
       if (inCurrentScope) selectPerson(person.id, { center: true });
-      else focusFromResult();
+      else selectPerson(person.id, { allowOutsideScope: true });
     });
     row.append(button);
 
@@ -3485,16 +3486,15 @@ function renderPersonList() {
       focus.type = 'button';
       focus.className = 'person-list-focus';
       focus.dataset.focusPersonId = person.id;
-      if (person.id === state.rootId) {
-        focus.textContent = 'Focused';
-        focus.disabled = true;
-        focus.setAttribute('aria-label', `${displayedName} is the current tree focus`);
-      } else {
-        focus.textContent = 'Focus';
-        focus.setAttribute('aria-label', `Focus tree on ${displayedName}`);
-        focus.title = `Show ${displayedName}'s paternal households and descendants`;
-        focus.addEventListener('click', focusFromResult);
-      }
+      const alreadyRoot = person.id === state.rootId;
+      focus.textContent = TREE_ACTION_SYMBOL;
+      focus.disabled = alreadyRoot;
+      focus.setAttribute('aria-pressed', String(alreadyRoot));
+      focus.title = alreadyRoot
+        ? `${displayedName} is the current tree`
+        : `Show ${displayedName}'s paternal households and descendants`;
+      focus.setAttribute('aria-label', focus.title);
+      if (!alreadyRoot) focus.addEventListener('click', focusFromResult);
       row.append(focus);
     }
     return row;
@@ -3792,9 +3792,13 @@ function renderGlobalEventsEditor() {
 
 function renderRelationshipHouseholds(person) {
   const container = els['relationship-households'];
-  const scope = activeDescendantScope();
-  if (!person || !scope.allowedIds.has(person.id)) { container.replaceChildren(); return; }
-  const visibility = buildTimelineVisibility();
+  const activeScope = activeDescendantScope();
+  if (!person) { container.replaceChildren(); return; }
+  const inCurrentScope = activeScope.allowedIds.has(person.id);
+  const scope = inCurrentScope ? activeScope : computeDescendantScope(state.people, person.id);
+  const visibility = inCurrentScope
+    ? buildTimelineVisibility()
+    : { visibleIds: new Set(), renderedPartnerPairs: new Set(), childEdgeVisible: () => false };
   const visibleOccurrences = [...els['timeline-canvas'].querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(person.id)}"]`)];
   const shownOnlyAsSpouse = visibleOccurrences.length > 0 && visibleOccurrences.every(node => node.classList.contains('spouse'));
   const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]));
@@ -3824,7 +3828,7 @@ function renderRelationshipHouseholds(person) {
     return;
   }
 
-  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [], canToggle = true, toggleDisabled = false }) => {
+  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [], canToggle = inCurrentScope, toggleDisabled = false }) => {
     const row = document.createElement('div');
     row.className = `relationship-row ${kind}${visible ? '' : ' is-hidden'}`;
     const branch = document.createElement('span');
@@ -3847,11 +3851,12 @@ function renderRelationshipHouseholds(person) {
       focus.className = 'relationship-focus';
       focus.dataset.focusPersonId = targetId;
       const alreadyFocused = targetId === state.rootId;
-      focus.textContent = alreadyFocused ? 'Focused' : 'Focus';
+      focus.textContent = TREE_ACTION_SYMBOL;
       focus.disabled = alreadyFocused || focusTreeTransitionRunning;
+      focus.setAttribute('aria-pressed', String(alreadyFocused));
       focus.title = alreadyFocused
-        ? `${label} is the current tree focus`
-        : `Focus on ${label}: father’s line above, all descendants below`;
+        ? `${label} is the current tree`
+        : `Show ${label}'s tree: father’s line above, all descendants below`;
       focus.setAttribute('aria-label', focus.title);
       focus.addEventListener('click', () => focusTreeOn(targetId));
       actions.append(focus);
@@ -4034,7 +4039,7 @@ function renderGeniFamilyActions(person, scope) {
 
 function renderDetails() {
   const scope = activeDescendantScope();
-  const person = scope.allowedIds.has(state.selectedId) ? state.people[state.selectedId] : null;
+  const person = state.people[state.selectedId] || null;
   if (!person && state.selectedId) { state.selectedId = ''; state.editingProfileId = ''; }
   const isOpen = !!person;
   els['detail-backdrop'].hidden = !isOpen;
@@ -4054,7 +4059,11 @@ function renderDetails() {
   const isTreeFocus = person.id === state.rootId;
   els['focus-tree-button'].disabled = isTreeFocus || focusTreeTransitionRunning;
   els['focus-tree-button'].setAttribute('aria-pressed', String(isTreeFocus));
-  els['focus-tree-button'].textContent = isTreeFocus ? 'Current tree focus' : 'Focus tree here';
+  els['focus-tree-button'].textContent = TREE_ACTION_SYMBOL;
+  els['focus-tree-button'].title = isTreeFocus
+    ? `${visibleName(person)} is the current tree`
+    : `Show ${visibleName(person)}'s paternal households and descendants`;
+  els['focus-tree-button'].setAttribute('aria-label', els['focus-tree-button'].title);
   const paternalSummary = paternalCount
     ? `${paternalCount} paternal ancestor${paternalCount === 1 ? '' : 's'}, ${paternalSpouseCount} spouse${paternalSpouseCount === 1 ? '' : 's'}, ${paternalSiblingCount} sibling${paternalSiblingCount === 1 ? '' : 's'}`
     : 'No known paternal households above';
@@ -4085,7 +4094,7 @@ function renderDetails() {
     ? `Imported ${new Date(person.importedAt).toLocaleString()}.`
     : person.sourceUrl ? 'Public source linked to this local profile.' : 'No public source is linked.';
   renderRelationshipHouseholds(person);
-  renderGeniFamilyActions(person, scope);
+  renderGeniFamilyActions(person, candidateFocusScope);
   renderNamePeriods(person);
   renderPersonalEvents(person);
 }

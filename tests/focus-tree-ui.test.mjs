@@ -6,16 +6,18 @@ const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
-test('the selected profile exposes a persistent focus-tree action', () => {
-  assert.match(html, /id="focus-tree-button"/);
+test('the selected profile exposes a persistent tree-symbol action', () => {
+  assert.match(html, /id="focus-tree-button"[^>]*>🌳<\/button>/);
+  assert.match(app, /els\['focus-tree-button'\]\.textContent = TREE_ACTION_SYMBOL/);
   assert.match(html, /id="focus-tree-status"/);
   assert.match(app, /function focusTreeOn\(personId\)/);
   assert.match(app, /state\.rootId = id/);
   assert.match(app, /Tree focused on/);
 });
 
-test('spouse rows offer a one-click focus change', () => {
+test('spouse rows offer a one-click tree-symbol change', () => {
   assert.match(app, /className = 'relationship-focus'/);
+  assert.match(app, /focus\.textContent = TREE_ACTION_SYMBOL/);
   assert.match(app, /focus\.dataset\.focusPersonId = targetId/);
   assert.match(app, /focusTreeOn\(targetId\)/);
   assert.match(styles, /\.relationship-focus/);

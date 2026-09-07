@@ -2,6 +2,7 @@ import { computeDescendantScope } from './descendant-scope.js?v=3';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
+import { packTimelineRunsLowerFirst } from './timeline-compaction.js?v=1';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -2090,79 +2091,44 @@ function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, h
     if (previousIndex != null && timelineNodesAreImmediateFamily(nodes[previousIndex], nodes[index])) currentRun.push(index);
     else directRuns.push([index]);
   });
-  const runByIndex = new Map();
-  directRuns.forEach((run, runIndex) => run.forEach(index => runByIndex.set(index, runIndex)));
-  const runDependencies = new Map(directRuns.map((_, runIndex) => [runIndex, new Set()]));
-  siblingHouseholdConstraints.forEach((precedingGroups, index) => {
-    const runIndex = runByIndex.get(index);
+  // Convert the structural reading order into explicit precedence pairs.
+  // The source traversal is already top-to-bottom; the lower-first packer
+  // reverses only allocation priority, never genealogical order.
+  const precedencePairs = [];
+  const precedenceKeys = new Set();
+  const addPrecedence = (upper, lower, gap) => {
+    if (upper == null || lower == null || upper === lower) return;
+    const key = `${upper}>${lower}:${gap}`;
+    if (precedenceKeys.has(key)) return;
+    precedenceKeys.add(key);
+    precedencePairs.push({ upper, lower, gap });
+  };
+  parentIndexByIndex.forEach((parentIndex, childIndex) => {
+    addPrecedence(parentIndex, childIndex, rowStep);
+  });
+  siblingHouseholdConstraints.forEach((precedingGroups, followingIndex) => {
     precedingGroups.flat().forEach(precedingIndex => {
-      const precedingRun = runByIndex.get(precedingIndex);
-      if (precedingRun != null && precedingRun !== runIndex) runDependencies.get(runIndex).add(precedingRun);
+      addPrecedence(
+        precedingIndex,
+        followingIndex,
+        timelineVerticalSeparation(followingIndex, precedingIndex, nodes, rowStep)
+      );
     });
   });
-  const preferredRunOrder = directRuns.map((run, runIndex) => ({
-    runIndex,
-    preferredTop: Math.min(...run.map((index, offset) => preferredY[index] - offset * rowStep))
-  })).sort((first, second) => first.preferredTop - second.preferredTop || first.runIndex - second.runIndex);
-  const runOrder = [];
-  const pendingRuns = [...preferredRunOrder];
-  const orderedRuns = new Set();
-  while (pendingRuns.length) {
-    let nextPosition = pendingRuns.findIndex(item =>
-      [...runDependencies.get(item.runIndex)].every(precedingRun => orderedRuns.has(precedingRun))
-    );
-    if (nextPosition < 0) nextPosition = 0;
-    const [nextRun] = pendingRuns.splice(nextPosition, 1);
-    runOrder.push(nextRun.runIndex);
-    orderedRuns.add(nextRun.runIndex);
-  }
-  const placed = [];
-  const placedSet = new Set();
 
-  runOrder.forEach(runIndex => {
-    const run = directRuns[runIndex];
-    const offsetByIndex = new Map(run.map((index, offset) => [index, offset * rowStep]));
-    let targetTop = 0;
-    run.forEach(index => {
-      const offset = offsetByIndex.get(index);
-      const parentIndex = indexByKey.get(displayParentByKey.get(nodes[index].key));
-      if (parentIndex != null && !offsetByIndex.has(parentIndex) && placedSet.has(parentIndex)) {
-        targetTop = Math.max(targetTop, nodes[parentIndex].y + rowStep - offset);
-      }
-      (siblingHouseholdConstraints.get(index) || []).forEach(precedingIndexes => {
-        const placedIndexes = precedingIndexes.filter(other => !offsetByIndex.has(other) && placedSet.has(other));
-        if (placedIndexes.length) {
-          const dependencyBottom = Math.max(...placedIndexes.map(other =>
-            nodes[other].y + timelineVerticalSeparation(index, other, nodes, rowStep)
-          ));
-          targetTop = Math.max(targetTop, dependencyBottom - offset);
-        }
-      });
-    });
-
-    // Search for the earliest destination that fits the whole direct-family
-    // run. When one member meets an obstacle, shift every member together.
-    let moved;
-    do {
-      moved = false;
-      for (const index of run) {
-        const targetY = targetTop + offsetByIndex.get(index);
-        for (const other of placed) {
-          if (!timelineRowsConflict(index, other, ranges, horizontalRangesByKey, nodes)) continue;
-          const relationshipSeparation = Math.max(requiredVerticalSeparation, timelineVerticalSeparation(index, other, nodes, rowStep));
-          if (Math.abs(targetY - nodes[other].y) >= relationshipSeparation) continue;
-          targetTop = Math.max(targetTop, nodes[other].y + relationshipSeparation - offsetByIndex.get(index));
-          moved = true;
-        }
-      }
-    } while (moved);
-
-    run.forEach(index => {
-      nodes[index].y = Math.round((targetTop + offsetByIndex.get(index)) * 1000) / 1000;
-      placed.push(index);
-      placedSet.add(index);
-    });
+  packTimelineRunsLowerFirst({
+    nodes,
+    runs: directRuns,
+    precedencePairs,
+    rowStep,
+    conflicts: (index, other) =>
+      timelineRowsConflict(index, other, ranges, horizontalRangesByKey, nodes),
+    separation: (index, other) => Math.max(
+      requiredVerticalSeparation,
+      timelineVerticalSeparation(index, other, nodes, rowStep)
+    )
   });
+
 }
 
 // D3's tidy tree gains its compactness by comparing whole subtree contours,

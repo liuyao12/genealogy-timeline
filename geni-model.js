@@ -54,6 +54,39 @@ export function profileIdFromGeniInput(input) {
   }
 }
 
+export function geniIdentityForPerson(person = {}, fallbackId = '') {
+  for (const candidate of [
+    person?.sourceId,
+    person?.source_id,
+    person?.profile_url,
+    person?.profileUrl,
+    person?.sourceUrl,
+    person?.id,
+    fallbackId
+  ]) {
+    const identity = profileIdFromGeniInput(candidate);
+    if (identity) return identity;
+  }
+  return '';
+}
+
+export function buildGeniIdentityIndex(people = {}) {
+  const index = new Map();
+  const rank = (id, identity) => {
+    if (!/^profile-/i.test(id)) return 0; // Preserve an existing local anchor.
+    if (id === identity) return 1;
+    return 2;
+  };
+  Object.entries(people || {}).forEach(([key, person]) => {
+    const id = clean(person?.id || key) || key;
+    const identity = geniIdentityForPerson(person, id);
+    if (!identity) return;
+    const current = index.get(identity);
+    if (!current || rank(id, identity) < rank(current, identity)) index.set(identity, id);
+  });
+  return index;
+}
+
 export function extractYear(value) {
   const candidates = [
     value?.date?.year,
@@ -126,14 +159,15 @@ export function profileToLineagePerson(raw, fallbackId = '', importedAt = new Da
     importedAt,
     geniImmediateFamilyLoaded: false,
     geniImmediateFamilyVerifiedAt: '',
-    geniImmediateFamilyIds: []
+    geniImmediateFamilyIds: [],
+    geniParentage: ''
   };
 }
 
 export function mergeLineagePerson(existing, incoming) {
   if (!existing) return structuredClone(incoming);
   const merged = { ...incoming, ...existing, id: existing.id || incoming.id };
-  for (const field of ['displayName', 'firstName', 'lastName', 'title', 'birthYear', 'deathYear', 'place', 'note', 'sourceUrl', 'sourceId', 'sourceProvider']) {
+  for (const field of ['displayName', 'firstName', 'lastName', 'title', 'birthYear', 'deathYear', 'place', 'note', 'sourceUrl', 'sourceId', 'sourceProvider', 'geniParentage']) {
     if (!clean(existing[field]) && clean(incoming[field])) merged[field] = incoming[field];
   }
   if (!['male', 'female'].includes(existing.gender) && ['male', 'female'].includes(incoming.gender)) merged.gender = incoming.gender;

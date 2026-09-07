@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 26,
+  "version": 27,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -1396,7 +1396,8 @@
       "place": "",
       "note": "Fourth son of George III; father of Victoria",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [
         "profile-g6000000008852088113"
@@ -2905,7 +2906,8 @@
       "place": "",
       "note": "King of the United Kingdom, 1820–1830",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [],
       "partners": [
@@ -2980,7 +2982,8 @@
       "place": "",
       "note": "King of the United Kingdom, 1830–1837",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [],
       "partners": [
@@ -3052,7 +3055,8 @@
       "place": "",
       "note": "Duke of Cambridge; son of George III",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [
         "profile-g6000000003245250586"
@@ -5166,7 +5170,12 @@
       "place": "",
       "note": "Queen consort; wife of George III",
       "parents": [],
-      "children": [],
+      "children": [
+        "profile-g4137986493320052463",
+        "profile-g4137989648200126749",
+        "profile-g4087038607800049893",
+        "profile-g6000000000307240333"
+      ],
       "partners": [
         "profile-g6000000003091034586"
       ],

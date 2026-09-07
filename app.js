@@ -1,4 +1,5 @@
-import { computeDescendantScope } from './descendant-scope.js?v=3';
+import { computeDescendantScope } from './descendant-scope.js?v=4';
+import { buildGeniIdentityIndex, geniIdentityForPerson as geniIdentityForRecord } from './geni-model.js?v=3';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
@@ -249,11 +250,7 @@ function optionalGeniLink(input) {
   } : null;
 }
 function geniProfileIdForPerson(person) {
-  for (const candidate of [person?.id, person?.sourceId, person?.sourceUrl]) {
-    const id = profileIdFromInput(candidate);
-    if (id) return id;
-  }
-  return '';
+  return geniIdentityForRecord(person, person?.id);
 }
 function sourceProviderFromUrl(url) {
   const href = validPublicUrl(url);
@@ -457,6 +454,7 @@ function normalizePerson(source, fallbackId) {
     geniImmediateFamilyLoaded: source.geniImmediateFamilyLoaded === true,
     geniImmediateFamilyVerifiedAt: clean(source.geniImmediateFamilyVerifiedAt),
     geniImmediateFamilyIds: uniqueRefs(source.geniImmediateFamilyIds),
+    geniParentage: clean(source.geniParentage || source.geni_parentage),
     starterProfile: source.starterProfile === true
   };
 }
@@ -637,38 +635,125 @@ function upgradeBundledBritishRoyalLine() {
 }
 
 function migrateGeniPeople(rawPeople) {
-  const people = {};
+  const entries = [];
   let migrated = false;
-  const remap = value => {
-    const id = clean(value);
-    const canonical = /^profile-/i.test(id) ? canonicalGeniProfileId(id) : id;
-    if (canonical !== id) migrated = true;
-    return canonical;
-  };
-  const remapMap = value => Object.fromEntries(Object.entries(value || {}).map(([id, detail]) => [remap(id), detail]));
-  Object.entries(rawPeople || {}).forEach(([key, source]) => {
-    const normalized = normalizePerson(source, key);
-    const rawNamePeriods = source?.namePeriods || source?.historicalNames || source?.names;
+  Object.entries(rawPeople || {}).forEach(([key, source], order) => {
+    const record = source && typeof source === 'object' ? source : {};
+    const normalized = normalizePerson(record, key);
+    const rawNamePeriods = record.namePeriods || record.historicalNames || record.names;
     if (Array.isArray(rawNamePeriods) && normalized.namePeriods.length < rawNamePeriods.filter(Boolean).length) migrated = true;
-    if (!clean(source?.defaultNamePeriodId || source?.default_name_period_id) && normalized.defaultNamePeriodId) migrated = true;
-    const oldId = normalized.id;
-    normalized.id = remap(oldId);
-    normalized.sourceId = remap(normalized.sourceId);
-    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses'].forEach(field => {
-      normalized[field] = unique(normalized[field].map(remap));
+    if (!clean(record.defaultNamePeriodId || record.default_name_period_id) && normalized.defaultNamePeriodId) migrated = true;
+    const originalId = /^profile-/i.test(clean(normalized.id))
+      ? canonicalGeniProfileId(normalized.id)
+      : clean(normalized.id || key);
+    if (originalId !== clean(normalized.id)) migrated = true;
+    normalized.id = originalId;
+    const identity = geniIdentityForRecord({ ...record, ...normalized, id: originalId }, originalId);
+    if (identity && normalized.sourceId !== identity) {
+      normalized.sourceId = identity;
+      migrated = true;
+    }
+    entries.push({ key, record, normalized, originalId, identity, order });
+  });
+
+  const groupsByIdentity = new Map();
+  entries.forEach(entry => {
+    if (!entry.identity) return;
+    if (!groupsByIdentity.has(entry.identity)) groupsByIdentity.set(entry.identity, []);
+    groupsByIdentity.get(entry.identity).push(entry);
+  });
+  const targetByIdentity = new Map();
+  groupsByIdentity.forEach((group, identity) => {
+    const localAnchor = group.find(entry => !/^profile-/i.test(entry.originalId));
+    const canonicalRecord = group.find(entry => entry.originalId === identity);
+    const targetId = localAnchor?.originalId || canonicalRecord?.originalId || identity;
+    targetByIdentity.set(identity, targetId);
+    if (group.length > 1 || group.some(entry => entry.originalId !== targetId)) migrated = true;
+  });
+
+  const targetFor = entry => entry.identity ? targetByIdentity.get(entry.identity) : entry.originalId;
+  const idMap = new Map();
+  const registerAlias = (value, targetId) => {
+    const raw = clean(value);
+    if (!raw || !targetId) return;
+    idMap.set(raw, targetId);
+    const canonical = /^profile-/i.test(raw) ? canonicalGeniProfileId(raw) : raw;
+    idMap.set(canonical, targetId);
+    const identity = profileIdFromInput(raw);
+    if (identity) idMap.set(identity, targetId);
+  };
+  entries.forEach(entry => {
+    const targetId = targetFor(entry);
+    [entry.key, entry.originalId, entry.record.id, entry.record.sourceId, entry.record.sourceUrl, entry.identity]
+      .forEach(value => registerAlias(value, targetId));
+  });
+  targetByIdentity.forEach((targetId, identity) => registerAlias(identity, targetId));
+
+  const remapId = value => {
+    const raw = clean(value);
+    if (!raw) return '';
+    const canonical = /^profile-/i.test(raw) ? canonicalGeniProfileId(raw) : raw;
+    const identity = profileIdFromInput(raw);
+    const remapped = idMap.get(raw) || idMap.get(canonical) || (identity ? idMap.get(identity) : '') || canonical;
+    if (remapped !== raw) migrated = true;
+    return remapped;
+  };
+  const remapMap = value => {
+    const remapped = {};
+    Object.entries(value || {}).forEach(([id, detail]) => {
+      const targetId = remapId(id);
+      if (targetId) remapped[targetId] = detail;
+    });
+    return remapped;
+  };
+
+  const people = {};
+  [...entries].sort((first, second) => {
+    const firstPrimary = first.originalId === targetFor(first) ? 0 : 1;
+    const secondPrimary = second.originalId === targetFor(second) ? 0 : 1;
+    return firstPrimary - secondPrimary || first.order - second.order;
+  }).forEach(entry => {
+    const targetId = targetFor(entry);
+    const normalized = { ...entry.normalized, id: targetId };
+    if (entry.identity) normalized.sourceId = entry.identity;
+    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses', 'geniImmediateFamilyIds'].forEach(field => {
+      normalized[field] = unique((normalized[field] || []).map(remapId)).filter(id => id && id !== targetId);
     });
     normalized.marriageYears = remapMap(normalized.marriageYears);
     normalized.relationshipEndYears = remapMap(normalized.relationshipEndYears);
     normalized.relationshipEndStatuses = remapMap(normalized.relationshipEndStatuses);
-    people[normalized.id] = people[normalized.id] ? mergePersonRecords(people[normalized.id], normalized) : normalized;
+    people[targetId] = people[targetId] ? mergePersonRecords(people[targetId], normalized) : normalized;
   });
-  return { people, migrated };
+
+  Object.values(people).forEach(person => {
+    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses', 'geniImmediateFamilyIds'].forEach(field => {
+      person[field] = unique((person[field] || []).map(remapId)).filter(id => id && id !== person.id);
+    });
+    person.marriageYears = remapMap(person.marriageYears);
+    person.relationshipEndYears = remapMap(person.relationshipEndYears);
+    person.relationshipEndStatuses = remapMap(person.relationshipEndStatuses);
+  });
+
+  return {
+    people,
+    migrated,
+    remapId,
+    idMap,
+    deduplicatedCount: Math.max(0, entries.length - Object.keys(people).length)
+  };
 }
 
-function migrateRelationVisibility(rawVisibility) {
+function migrateRelationVisibility(rawVisibility, idMap = null) {
   let migrated = false;
+  const aliases = idMap instanceof Map
+    ? [...idMap.entries()].filter(([from, to]) => from && to && from !== to).sort((a, b) => b[0].length - a[0].length)
+    : [];
+  const escapePattern = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const relationVisibility = Object.fromEntries(Object.entries(rawVisibility || {}).filter(([, value]) => typeof value === 'boolean').map(([key, value]) => {
-    const canonicalKey = key.replace(/profile-(\d{15,})/gi, 'profile-g$1');
+    let canonicalKey = key.replace(/profile-(\\d{15,})/gi, 'profile-g$1');
+    aliases.forEach(([from, to]) => {
+      canonicalKey = canonicalKey.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escapePattern(from)}(?![\\p{L}\\p{N}])`, 'gu'), to);
+    });
     if (canonicalKey !== key) migrated = true;
     return [canonicalKey, value];
   }));
@@ -702,9 +787,10 @@ function writeTreeWorkspace() {
 }
 
 function applyTreeSnapshot(saved) {
-  const savedRootId = /^profile-/i.test(clean(saved.rootId)) ? canonicalGeniProfileId(saved.rootId) : clean(saved.rootId);
+  const rawSavedRootId = /^profile-/i.test(clean(saved.rootId)) ? canonicalGeniProfileId(saved.rootId) : clean(saved.rootId);
   const migratedPeople = migrateGeniPeople(saved.people);
-  const migratedVisibility = migrateRelationVisibility(saved.relationVisibility);
+  const savedRootId = migratedPeople.remapId(rawSavedRootId);
+  const migratedVisibility = migrateRelationVisibility(saved.relationVisibility, migratedPeople.idMap);
   state.title = clean(saved.title) || 'Untitled family';
   state.rootId = savedRootId;
   state.reignColor = paletteColor(saved.reignColor, DEFAULT_REIGN_EVENT_COLOR);
@@ -720,7 +806,7 @@ function applyTreeSnapshot(saved) {
   state.manualTree = saved.manualTree === true;
   state.globalEvents = normalizeGlobalEvents(saved.globalEvents || saved.timelineEvents);
   state.people = migratedPeople.people;
-  state.collapsedIds = new Set(array(saved.collapsedIds));
+  state.collapsedIds = new Set(array(saved.collapsedIds).map(migratedPeople.remapId).filter(Boolean));
   state.zoom = Math.min(1.8, Math.max(.45, Number(saved.zoom) || 1));
   state.selectedId = '';
   state.editingProfileId = '';
@@ -730,7 +816,7 @@ function applyTreeSnapshot(saved) {
     top: Math.max(0, Number(saved.viewportTop) || 0)
   } : null;
   timelineViewportInitialized = false;
-  return migratedPeople.migrated || migratedVisibility.migrated || savedRootId !== clean(saved.rootId);
+  return migratedPeople.migrated || migratedVisibility.migrated || savedRootId !== rawSavedRootId;
 }
 
 function restore() {
@@ -1042,18 +1128,47 @@ function geniYearOnlyEvent(value) {
   return year == null ? {} : { date: { year } };
 }
 
-function remapGeniImmediateFamily(mapped, focusAliases, localFocusId, remoteFocusId) {
-  const aliases = new Set(focusAliases.map(normalizedGeniReference).filter(Boolean));
+function remapGeniImmediateFamily(mapped, focusAliases, localFocusId, remoteFocusId, existingByGeniId = new Map()) {
+  const focusIdentityAliases = new Set(focusAliases.flatMap(value => {
+    const normalized = normalizedGeniReference(value);
+    const identity = profileIdFromInput(value) || profileIdFromInput(normalized);
+    return [normalized, identity].filter(Boolean);
+  }));
+  const targetByRemoteId = new Map();
+  const registerRemoteAlias = (value, targetId) => {
+    const normalized = normalizedGeniReference(value);
+    if (normalized) targetByRemoteId.set(normalized, targetId);
+    const identity = profileIdFromInput(value) || profileIdFromInput(normalized);
+    if (identity) targetByRemoteId.set(identity, targetId);
+  };
+
+  Object.entries(mapped || {}).forEach(([key, raw]) => {
+    if (!raw) return;
+    const originalId = normalizedGeniReference(key || raw.id);
+    const identity = geniIdentityForRecord({ ...raw, id: originalId }, originalId) || profileIdFromInput(originalId);
+    const isFocus = focusIdentityAliases.has(originalId) || (identity && focusIdentityAliases.has(identity));
+    const targetId = isFocus
+      ? localFocusId
+      : (identity && existingByGeniId.get(identity)) || originalId;
+    [originalId, identity, raw.id, raw.profile_url, raw.sourceId].forEach(value => registerRemoteAlias(value, targetId));
+  });
+  focusAliases.forEach(value => registerRemoteAlias(value, localFocusId));
+  registerRemoteAlias(remoteFocusId, localFocusId);
+
   const remapId = value => {
     const id = normalizedGeniReference(value);
-    return aliases.has(id) ? localFocusId : id;
+    const identity = profileIdFromInput(value) || profileIdFromInput(id);
+    return targetByRemoteId.get(id)
+      || (identity && (targetByRemoteId.get(identity) || existingByGeniId.get(identity)))
+      || id;
   };
   const remapMap = value => Object.fromEntries(
-    Object.entries(value || {}).map(([id, detail]) => [remapId(id), detail])
+    Object.entries(value || {}).map(([id, detail]) => [remapId(id), detail]).filter(([id]) => id)
   );
   const records = {};
   Object.entries(mapped || {}).forEach(([key, raw]) => {
     const originalId = normalizedGeniReference(key || raw?.id);
+    const identity = geniIdentityForRecord({ ...raw, id: originalId }, originalId) || profileIdFromInput(originalId);
     const targetId = remapId(originalId);
     if (!targetId || !raw) return;
     const record = {
@@ -1068,7 +1183,7 @@ function remapGeniImmediateFamily(mapped, focusAliases, localFocusId, remoteFocu
       marriageYears: remapMap(raw.marriageYears),
       relationshipEndYears: remapMap(raw.relationshipEndYears),
       relationshipEndStatuses: remapMap(raw.relationshipEndStatuses),
-      sourceId: aliases.has(originalId) ? remoteFocusId : originalId
+      sourceId: identity || (focusIdentityAliases.has(originalId) ? remoteFocusId : originalId)
     };
     const previous = records[targetId];
     if (previous) {
@@ -1098,12 +1213,13 @@ async function loadGeniImmediateFamily(profileId) {
   const importedAt = new Date().toISOString();
   const { mapped, focusRaw } = await fetchGeniNeighborhood(requestedFocusId);
   const remoteFocusId = geniProfileIdForPerson(focusRaw) || requestedFocusId;
+  const existingByGeniId = buildGeniIdentityIndex(state.people);
   const { records, remapId } = remapGeniImmediateFamily(mapped, [
     requestedFocusId,
     remoteFocusId,
     focusRaw?.id,
     focusRaw?.profile_url
-  ], profileId, remoteFocusId);
+  ], profileId, remoteFocusId, existingByGeniId);
   if (!records[profileId]) {
     records[profileId] = {
       ...focusRaw,
@@ -1220,7 +1336,7 @@ async function fetchGeniReignEvents(profileIds) {
 function mergePersonRecords(existing, incoming) {
   if (!existing) return incoming;
   const preferred = { ...incoming, ...existing, id: existing.id || incoming.id };
-  ['firstName', 'lastName', 'displayName', 'title', 'birthYear', 'deathYear', 'place', 'note'].forEach(field => {
+  ['firstName', 'lastName', 'displayName', 'title', 'birthYear', 'deathYear', 'place', 'note', 'geniParentage'].forEach(field => {
     if (!clean(existing[field]) && clean(incoming[field])) preferred[field] = incoming[field];
   });
   if (!clean(existing.defaultNamePeriodId) && clean(incoming.defaultNamePeriodId)) {
@@ -1549,16 +1665,29 @@ function stitchImport(payload) {
     throw new Error('This is not a lineage-stitch version 1 package.');
   }
   const importedAt = new Date().toISOString();
-  const incomingPeople = migrateGeniPeople(normalizeStitchPeople(payload.people)).people;
-  const incomingIds = Object.keys(incomingPeople);
-  if (!incomingIds.length) throw new Error('The AI import contains no profiles.');
+  const incomingMigration = migrateGeniPeople(normalizeStitchPeople(payload.people));
+  const incomingPeople = Object.fromEntries(Object.entries(incomingMigration.people).map(([id, person]) => [
+    id,
+    normalizePerson({ ...person, importedAt: person.importedAt || importedAt }, id)
+  ]));
+  if (!Object.keys(incomingPeople).length) throw new Error('The AI import contains no profiles.');
+
   const previousIds = new Set(Object.keys(state.people));
-
-  incomingIds.forEach(id => {
-    const incoming = normalizePerson({ ...incomingPeople[id], importedAt: incomingPeople[id].importedAt || importedAt }, id);
-    state.people[id] = mergePersonRecords(state.people[id], incoming);
+  const combinedRaw = {};
+  Object.entries(state.people).forEach(([id, person], index) => {
+    combinedRaw[`existing-${index}-${id}`] = { ...person, id: person.id || id };
   });
+  Object.entries(incomingPeople).forEach(([id, person], index) => {
+    combinedRaw[`incoming-${index}-${id}`] = { ...person, id: person.id || id };
+  });
+  const combinedMigration = migrateGeniPeople(combinedRaw);
+  state.people = combinedMigration.people;
+  state.rootId = combinedMigration.remapId(state.rootId);
+  state.selectedId = combinedMigration.remapId(state.selectedId);
+  state.collapsedIds = new Set([...state.collapsedIds].map(combinedMigration.remapId).filter(Boolean));
+  state.relationVisibility = migrateRelationVisibility(state.relationVisibility, combinedMigration.idMap).relationVisibility;
 
+  const incomingIds = unique(Object.keys(incomingPeople).map(combinedMigration.remapId)).filter(id => state.people[id]);
   const missingRefs = new Set();
   const existingRef = id => {
     if (state.people[id]) return true;
@@ -1576,6 +1705,10 @@ function stitchImport(payload) {
     person.parents.forEach(parentId => { state.people[parentId].children = unique([...state.people[parentId].children, id]); });
     person.children.forEach(childId => { state.people[childId].parents = unique([...state.people[childId].parents, id]); });
     person.partners.forEach(partnerId => { state.people[partnerId].partners = unique([...state.people[partnerId].partners, id]); });
+    person.nonSpouses.forEach(partnerId => {
+      state.people[partnerId].partners = unique([...state.people[partnerId].partners, id]);
+      state.people[partnerId].nonSpouses = unique([...state.people[partnerId].nonSpouses, id]);
+    });
     person.spouses.forEach(spouseId => {
       state.people[spouseId].partners = unique([...state.people[spouseId].partners, id]);
       state.people[spouseId].spouses = unique([...state.people[spouseId].spouses, id]);
@@ -1589,8 +1722,9 @@ function stitchImport(payload) {
     const combined = [...state.globalEvents, ...normalizeGlobalEvents(payload.globalEvents)];
     state.globalEvents = combined.filter((event, index) => combined.findIndex(other => other.id === event.id) === index);
   }
-  const focusId = clean(payload.focusId);
-  if (!state.rootId || !state.people[state.rootId]) state.rootId = state.people[clean(payload.rootId)] ? clean(payload.rootId) : incomingIds[0];
+  const focusId = combinedMigration.remapId(incomingMigration.remapId(clean(payload.focusId)));
+  const importedRootId = combinedMigration.remapId(incomingMigration.remapId(clean(payload.rootId)));
+  if (!state.rootId || !state.people[state.rootId]) state.rootId = state.people[importedRootId] ? importedRootId : incomingIds[0];
   if (state.people[focusId]) state.selectedId = focusId;
   state.manualTree = true;
   persist('AI research stitched into this tree');
@@ -1598,8 +1732,11 @@ function stitchImport(payload) {
   const newCount = incomingIds.filter(id => !previousIds.has(id)).length;
   const updatedCount = incomingIds.length - newCount;
   const missingNote = missingRefs.size ? ` ${missingRefs.size} dangling reference${missingRefs.size === 1 ? '' : 's'} omitted.` : '';
-  toast(`Stitched ${newCount} new and ${updatedCount} matching profile${updatedCount === 1 ? '' : 's'} into this tree.${missingNote}`, true);
-  return { newCount, updatedCount, missingCount: missingRefs.size };
+  const dedupeNote = combinedMigration.deduplicatedCount
+    ? ` ${combinedMigration.deduplicatedCount} duplicate Geni record${combinedMigration.deduplicatedCount === 1 ? '' : 's'} coalesced by public ID.`
+    : '';
+  toast(`Stitched ${newCount} new and ${updatedCount} matching profile${updatedCount === 1 ? '' : 's'} into this tree.${dedupeNote}${missingNote}`, true);
+  return { newCount, updatedCount, missingCount: missingRefs.size, deduplicatedCount: combinedMigration.deduplicatedCount };
 }
 
 function importBackup(payload) {
@@ -1611,8 +1748,9 @@ function importBackup(payload) {
   state.timelineNodeHeight = timelineNodeHeight(payload.timelineNodeHeight || payload.db?.timelineNodeHeight);
   state.asOfYear = numericYear(payload.asOfYear || payload.db?.asOfYear);
   state.treeFilter = clean(payload.treeFilter || payload.db?.treeFilter);
-  state.relationVisibility = migrateRelationVisibility(payload.relationVisibility || payload.db?.relationVisibility).relationVisibility;
-  const people = migrateGeniPeople(rawPeople).people;
+  const migratedPeople = migrateGeniPeople(rawPeople);
+  state.relationVisibility = migrateRelationVisibility(payload.relationVisibility || payload.db?.relationVisibility, migratedPeople.idMap).relationVisibility;
+  const people = migratedPeople.people;
   // The mini-program stores children/spouses on profiles. Reconstruct reverse parent links for the web layout.
   Object.values(people).forEach(person => {
     person.children.forEach(childId => {
@@ -1631,7 +1769,7 @@ function importBackup(payload) {
   state.people = people;
   state.manualTree = payload.manualTree !== false;
   const importedRootId = clean(payload.activeRootId || payload.db?.activeRootId);
-  state.rootId = (/^profile-/i.test(importedRootId) ? canonicalGeniProfileId(importedRootId) : importedRootId) || Object.keys(people)[0] || '';
+  state.rootId = migratedPeople.remapId(importedRootId) || Object.keys(people)[0] || '';
   state.title = clean(payload.title || payload.familyName) || `${fullName(people[state.rootId] || {})} family`;
   state.selectedId = state.rootId;
   els['tree-filter'].value = state.treeFilter;

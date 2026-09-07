@@ -23,6 +23,90 @@ function normalizedGender(person) {
   return value === 'm' ? 'male' : value === 'f' ? 'female' : value;
 }
 
+function numericYear(value) {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+const PLACEHOLDER_NAME_PATTERN = /(?:^|[^\p{L}\p{N}])(?:n\.?\s*n\.?|unknown|unnamed)(?=$|[^\p{L}\p{N}])/iu;
+const STILLBIRTH_PATTERN = /\b(?:still[\s-]?born|stillbirth|died (?:in|during) infancy|infant death)\b/i;
+
+export function profileHasPlaceholderName(person) {
+  const name = [
+    person?.displayName,
+    typeof person?.name === 'string' ? person.name : '',
+    person?.firstName,
+    person?.lastName
+  ].filter(Boolean).join(' ').trim();
+  return Boolean(name) && PLACEHOLDER_NAME_PATTERN.test(name);
+}
+
+function profileIndicatesStillbirth(person) {
+  return STILLBIRTH_PATTERN.test([
+    person?.displayName,
+    typeof person?.name === 'string' ? person.name : '',
+    person?.note
+  ].filter(Boolean).join(' '));
+}
+
+function isFormalPartnerPair(records, firstId, secondId) {
+  if (!records[firstId] || !records[secondId]) return false;
+  return formalSpouseIds(records[firstId]).includes(secondId)
+    || formalSpouseIds(records[secondId]).includes(firstId);
+}
+
+function isNonFormalPartnerPair(records, firstId, secondId) {
+  const first = records[firstId];
+  const second = records[secondId];
+  if (!first || !second || isFormalPartnerPair(records, firstId, secondId)) return false;
+  return ids(first.nonSpouses).includes(secondId)
+    || ids(second.nonSpouses).includes(firstId)
+    || ids(first.partners).includes(secondId)
+    || ids(second.partners).includes(firstId);
+}
+
+/**
+ * Return the reason a stored child branch should be omitted from the default
+ * timeline projection. The record remains searchable and can still be chosen
+ * explicitly as the focus.
+ */
+export function hiddenBirthReason(records = {}, childId = '', parentIds = [], childIds = []) {
+  const person = records[childId];
+  if (!person) return 'missing-profile';
+  if (profileHasPlaceholderName(person)) return 'placeholder-name';
+  if (profileIndicatesStillbirth(person)) return 'stillbirth';
+
+  const birthYear = numericYear(person.birthYear);
+  const deathYear = person.isLiving ? null : numericYear(person.deathYear);
+  const knownChildren = uniqueIds([...(ids(person.children)), ...childIds]).filter(id => records[id]);
+  // With year-only dates, a death in the birth year or following calendar year
+  // is the conservative interval that can represent infancy. Never suppress a
+  // profile carrying descendants, even when one of its dates is erroneous.
+  if (!knownChildren.length && birthYear != null && deathYear != null
+      && deathYear >= birthYear && deathYear <= birthYear + 1) {
+    return 'infant-death';
+  }
+
+  const parents = uniqueIds(parentIds).filter(id => records[id]);
+  if (parents.length < 2 || parents.some(parentId => profileHasPlaceholderName(records[parentId]))) {
+    return 'missing-parent';
+  }
+
+  // Adopted and foster children are not classified by their parents' marital
+  // relation. Their explicit parentage remains visible when complete.
+  if (['adopted', 'foster'].includes(String(person.geniParentage || '').toLowerCase())) return '';
+
+  let hasFormalPair = false;
+  let hasNonFormalPair = false;
+  for (let first = 0; first < parents.length; first += 1) {
+    for (let second = first + 1; second < parents.length; second += 1) {
+      hasFormalPair ||= isFormalPartnerPair(records, parents[first], parents[second]);
+      hasNonFormalPair ||= isNonFormalPartnerPair(records, parents[first], parents[second]);
+    }
+  }
+  return hasNonFormalPair && !hasFormalPair ? 'non-marital-parentage' : '';
+}
+
 function orderedParentIds(records, parentsByChild, childId) {
   const person = records[childId];
   return uniqueIds([
@@ -85,11 +169,28 @@ export function computeDescendantScope(people = {}, rootId = '') {
     if (explicitMother) addParentChild(allChildrenByParent, allParentsByChild, explicitMother, id, records);
   });
 
+  const hiddenBirthReasons = new Map();
+  const birthVisibility = new Map([[root, true]]);
+  const childMayAppear = childId => {
+    if (birthVisibility.has(childId)) return birthVisibility.get(childId);
+    const reason = hiddenBirthReason(
+      records,
+      childId,
+      [...(allParentsByChild.get(childId) || [])],
+      [...(allChildrenByParent.get(childId) || [])]
+    );
+    const visible = !reason;
+    birthVisibility.set(childId, visible);
+    if (reason) hiddenBirthReasons.set(childId, reason);
+    return visible;
+  };
+
   const descendantIds = new Set();
   const descendantQueue = records[root] ? [root] : [];
   for (let index = 0; index < descendantQueue.length; index += 1) {
     const id = descendantQueue[index];
     if (!records[id] || descendantIds.has(id)) continue;
+    if (id !== root && !childMayAppear(id)) continue;
     descendantIds.add(id);
     (allChildrenByParent.get(id) || []).forEach(childId => descendantQueue.push(childId));
   }
@@ -102,7 +203,7 @@ export function computeDescendantScope(people = {}, rootId = '') {
   let paternalChildId = root;
   while (records[paternalChildId]) {
     const fatherId = fatherIdFor(records, allParentsByChild, paternalChildId);
-    if (!fatherId || paternalSeen.has(fatherId)) break;
+    if (!fatherId || paternalSeen.has(fatherId) || profileHasPlaceholderName(records[fatherId])) break;
     fatherByChild.set(paternalChildId, fatherId);
     paternalLineFromFocus.push(fatherId);
     paternalSeen.add(fatherId);
@@ -118,7 +219,9 @@ export function computeDescendantScope(people = {}, rootId = '') {
   // They remain terminal unless one of them is explicitly chosen as the focus.
   const paternalHouseholdChildIds = new Set();
   paternalAncestorIds.forEach(ancestorId => {
-    (allChildrenByParent.get(ancestorId) || []).forEach(childId => paternalHouseholdChildIds.add(childId));
+    (allChildrenByParent.get(ancestorId) || []).forEach(childId => {
+      if (childId === root || childMayAppear(childId)) paternalHouseholdChildIds.add(childId);
+    });
   });
   const paternalSiblingIds = new Set(
     [...paternalHouseholdChildIds].filter(id => !paternalLineSet.has(id) && !descendantIds.has(id))
@@ -134,6 +237,8 @@ export function computeDescendantScope(people = {}, rootId = '') {
   const paternalSpouseIds = new Set();
   const addSpousePair = (firstId, secondId) => {
     if (!records[firstId] || !records[secondId] || firstId === secondId) return;
+    if ((firstId !== root && profileHasPlaceholderName(records[firstId]))
+        || (secondId !== root && profileHasPlaceholderName(records[secondId]))) return;
     const key = descendantPairKey(firstId, secondId);
     spousePairs.add(key);
     if (!spouseIdsByPerson.has(firstId)) spouseIdsByPerson.set(firstId, new Set());
@@ -203,6 +308,8 @@ export function computeDescendantScope(people = {}, rootId = '') {
     childrenByParent,
     parentsByChild,
     allChildrenByParent,
-    allParentsByChild
+    allParentsByChild,
+    hiddenBirthReasons,
+    hiddenBirthIds: new Set(hiddenBirthReasons.keys())
   };
 }

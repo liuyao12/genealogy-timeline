@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { computeDescendantScope, descendantPairKey } from '../descendant-scope.js';
+import { computeDescendantScope, descendantPairKey, hiddenBirthReason, profileHasPlaceholderName } from '../descendant-scope.js';
 
 test('keeps one lineal descendant tree plus one formal-spouse layer', () => {
   const people = {
@@ -47,8 +47,10 @@ test('keeps a former formal spouse when only divorce metadata survives', () => {
 test('repairs sparse parent-child links in both directions for one connected layout', () => {
   const people = {
     root: { id: 'root', children: [], parents: [], spouses: [] },
-    child: { id: 'child', children: ['grandchild'], parents: ['root'], spouses: [] },
-    grandchild: { id: 'grandchild', children: [], parents: [], spouses: [] }
+    'child-other-parent': { id: 'child-other-parent', displayName: 'Other parent of child', children: ['child'], parents: [], spouses: [] },
+    child: { id: 'child', children: ['grandchild'], parents: ['root', 'child-other-parent'], spouses: [] },
+    'grandchild-other-parent': { id: 'grandchild-other-parent', displayName: 'Other parent of grandchild', children: ['grandchild'], parents: [], spouses: [] },
+    grandchild: { id: 'grandchild', children: [], parents: ['child', 'grandchild-other-parent'], spouses: [] }
   };
   const scope = computeDescendantScope(people, 'root');
   assert.deepEqual([...scope.descendantIds], ['root', 'child', 'grandchild']);
@@ -89,7 +91,8 @@ test('adds complete paternal households but keeps siblings terminal', () => {
     focus: { id: 'focus', gender: 'female', parents: ['father', 'mother'], children: ['child'], spouses: ['focus-spouse'] },
     'focus-spouse': { id: 'focus-spouse', gender: 'male', parents: [], children: ['child'], spouses: ['focus'] },
     child: { id: 'child', parents: ['focus', 'focus-spouse'], children: ['grandchild'], spouses: [] },
-    grandchild: { id: 'grandchild', parents: ['child'], children: [], spouses: [] }
+    'grandchild-other-parent': { id: 'grandchild-other-parent', displayName: 'Other parent of grandchild', parents: [], children: ['grandchild'], spouses: [] },
+    grandchild: { id: 'grandchild', parents: ['child', 'grandchild-other-parent'], children: [], spouses: [] }
   };
 
   const scope = computeDescendantScope(people, 'focus');
@@ -123,10 +126,12 @@ test('refocusing on a spouse exchanges paternal ancestry but keeps the shared de
     'old-root': { id: 'old-root', gender: 'male', parents: ['old-father'], children: ['shared-child'], spouses: ['new-focus'] },
     'new-grandfather': { id: 'new-grandfather', gender: 'male', parents: [], children: ['new-father'], spouses: [] },
     'new-father': { id: 'new-father', gender: 'male', parents: ['new-grandfather'], children: ['new-focus', 'new-focus-sibling'], spouses: [] },
-    'new-focus-sibling': { id: 'new-focus-sibling', parents: ['new-father'], children: [], spouses: [] },
-    'new-focus': { id: 'new-focus', gender: 'female', parents: ['new-father'], children: ['shared-child'], spouses: ['old-root'] },
+    'new-mother': { id: 'new-mother', displayName: 'New mother', parents: [], children: ['new-focus', 'new-focus-sibling'], spouses: [] },
+    'new-focus-sibling': { id: 'new-focus-sibling', parents: ['new-father', 'new-mother'], children: [], spouses: [] },
+    'new-focus': { id: 'new-focus', gender: 'female', parents: ['new-father', 'new-mother'], children: ['shared-child'], spouses: ['old-root'] },
     'shared-child': { id: 'shared-child', parents: ['old-root', 'new-focus'], children: ['shared-grandchild'], spouses: [] },
-    'shared-grandchild': { id: 'shared-grandchild', parents: ['shared-child'], children: [], spouses: [] }
+    'shared-grandchild-other-parent': { id: 'shared-grandchild-other-parent', displayName: 'Other parent of shared grandchild', parents: [], children: ['shared-grandchild'], spouses: [] },
+    'shared-grandchild': { id: 'shared-grandchild', parents: ['shared-child', 'shared-grandchild-other-parent'], children: [], spouses: [] }
   };
 
   const oldScope = computeDescendantScope(people, 'old-root');
@@ -142,4 +147,78 @@ test('refocusing on a spouse exchanges paternal ancestry but keeps the shared de
   assert.deepEqual([...newScope.descendantIds].filter(id => id !== 'new-focus').sort(), ['shared-child', 'shared-grandchild']);
   assert.deepEqual([...newScope.childrenByParent.get('new-father')].sort(), ['new-focus', 'new-focus-sibling']);
   assert.deepEqual([...newScope.parentsByChild.get('shared-child')].sort(), ['new-focus', 'old-root']);
+});
+
+
+test('hides non-marital, incomplete, placeholder, stillborn, and infant child branches without deleting them', () => {
+  const person = (id, overrides = {}) => ({
+    id, displayName: id, birthYear: '1900', deathYear: '1980', gender: 'unknown',
+    parents: [], children: [], partners: [], spouses: [], nonSpouses: [], divorcedSpouses: [],
+    marriageYears: {}, relationshipEndYears: {}, relationshipEndStatuses: {}, ...overrides
+  });
+  const people = {
+    root: person('root', {
+      displayName: 'Root', gender: 'male', children: ['legitimate', 'nonmarital', 'missing', 'nn-child', 'stillborn', 'infant', 'next-year-infant', 'survivor'],
+      partners: ['wife', 'mistress'], spouses: ['wife'], nonSpouses: ['mistress'], marriageYears: { wife: '1899' }
+    }),
+    wife: person('wife', {
+      displayName: 'Wife', gender: 'female', children: ['legitimate', 'nn-child', 'stillborn', 'infant', 'next-year-infant', 'survivor'],
+      partners: ['root'], spouses: ['root'], marriageYears: { root: '1899' }
+    }),
+    mistress: person('mistress', {
+      displayName: 'Mistress', gender: 'female', children: ['nonmarital'], partners: ['root'], nonSpouses: ['root']
+    }),
+    legitimate: person('legitimate', { displayName: 'Legitimate Child', parents: ['root', 'wife'] }),
+    nonmarital: person('nonmarital', {
+      displayName: 'Non-marital Child', parents: ['root', 'mistress'], children: ['hidden-grandchild']
+    }),
+    'hidden-grandchild': person('hidden-grandchild', { displayName: 'Hidden Grandchild', parents: ['nonmarital', 'grandchild-parent'] }),
+    'grandchild-parent': person('grandchild-parent', { displayName: 'Grandchild Parent', children: ['hidden-grandchild'] }),
+    missing: person('missing', { displayName: 'One-parent Child', parents: ['root'] }),
+    'nn-parent': person('nn-parent', { displayName: 'NN', children: ['nn-parent-child'], partners: ['root'] }),
+    'nn-parent-child': person('nn-parent-child', { displayName: 'Child of Placeholder Parent', parents: ['root', 'nn-parent'] }),
+    'nn-child': person('nn-child', { displayName: 'NN son of Root', parents: ['root', 'wife'] }),
+    stillborn: person('stillborn', { displayName: 'Stillborn daughter', birthYear: '1902', deathYear: '1902', parents: ['root', 'wife'] }),
+    infant: person('infant', { displayName: 'Infant One', birthYear: '1903', deathYear: '1903', parents: ['root', 'wife'] }),
+    'next-year-infant': person('next-year-infant', { displayName: 'Infant Two', birthYear: '1904', deathYear: '1905', parents: ['root', 'wife'] }),
+    survivor: person('survivor', { displayName: 'Young Survivor', birthYear: '1906', deathYear: '1908', parents: ['root', 'wife'] })
+  };
+  people.root.children.push('nn-parent-child');
+
+  assert.equal(profileHasPlaceholderName(people['nn-parent']), true);
+  assert.equal(profileHasPlaceholderName(people['nn-child']), true);
+  assert.equal(hiddenBirthReason(people, 'nonmarital', ['root', 'mistress']), 'non-marital-parentage');
+  assert.equal(hiddenBirthReason(people, 'missing', ['root']), 'missing-parent');
+  assert.equal(hiddenBirthReason(people, 'nn-parent-child', ['root', 'nn-parent']), 'missing-parent');
+  assert.equal(hiddenBirthReason(people, 'stillborn', ['root', 'wife']), 'stillbirth');
+  assert.equal(hiddenBirthReason(people, 'infant', ['root', 'wife']), 'infant-death');
+  assert.equal(hiddenBirthReason(people, 'next-year-infant', ['root', 'wife']), 'infant-death');
+  assert.equal(hiddenBirthReason(people, 'survivor', ['root', 'wife']), '');
+
+  const scope = computeDescendantScope(people, 'root');
+  for (const visible of ['root', 'wife', 'legitimate', 'survivor']) assert.equal(scope.allowedIds.has(visible), true, visible);
+  for (const hidden of ['nonmarital', 'hidden-grandchild', 'missing', 'nn-parent-child', 'nn-child', 'stillborn', 'infant', 'next-year-infant']) {
+    assert.equal(scope.allowedIds.has(hidden), false, hidden);
+  }
+  assert.equal(scope.hiddenBirthReasons.get('nonmarital'), 'non-marital-parentage');
+  assert.equal(scope.hiddenBirthReasons.get('missing'), 'missing-parent');
+  assert.equal(Object.keys(people).length, 15, 'suppression must not delete stored profiles');
+
+  const explicitFocus = computeDescendantScope(people, 'nonmarital');
+  assert.equal(explicitFocus.allowedIds.has('nonmarital'), true, 'an explicitly selected hidden profile remains focusable');
+  assert.equal(explicitFocus.allowedIds.has('hidden-grandchild'), true, 'its otherwise valid descendants remain available when focused directly');
+});
+
+test('the George III children retain both parents before incomplete-parent filtering', () => {
+  const starter = JSON.parse(readFileSync(new URL('../data/british-royal-line.json', import.meta.url), 'utf8'));
+  const idByName = new Map(Object.entries(starter.people).map(([id, person]) => [person.displayName, id]));
+  const georgeId = idByName.get('George III, King of Great Britain and Ireland');
+  const charlotteId = idByName.get('Charlotte of Mecklenburg-Strelitz');
+  const scope = computeDescendantScope(starter.people, starter.rootId);
+  for (const name of ['George IV, King of the United Kingdom', 'William IV, King of the United Kingdom', 'Edward, Duke of Kent', 'Adolphus, Duke of Cambridge']) {
+    const childId = idByName.get(name);
+    assert.ok(childId, name);
+    assert.deepEqual(new Set(starter.people[childId].parents), new Set([georgeId, charlotteId]), `${name} parents`);
+    assert.equal(scope.descendantIds.has(childId), true, `${name} should remain in the British line`);
+  }
 });

@@ -15,7 +15,7 @@ import {
   stableProfileId,
   unionChildRefs,
   unique
-} from './geni-model.js?v=2';
+} from './geni-model.js?v=3';
 import {
   GeniApiError,
   apiProfileIdentifier,
@@ -190,15 +190,19 @@ export class GeniDescendantImporter {
 
   registerProfile(raw, requestedId = '') {
     const rawApiId = refId(raw?.id || raw?.url);
-    const stableId = stableProfileId(raw, requestedId || rawApiId);
-    if (!stableId) return '';
+    const proposedStableId = stableProfileId(raw, requestedId || rawApiId);
+    if (!proposedStableId) return '';
     const aliases = unique([
+      proposedStableId,
       rawApiId,
       apiProfileIdentifier(requestedId),
       canonicalGeniProfileId(requestedId),
       raw?.guid && /^\d{15,}$/.test(clean(raw.guid)) ? `profile-g${clean(raw.guid)}` : '',
       profileIdFromGeniInput(raw?.profile_url)
     ]);
+    // The same profile may first arrive as a compact API node and later with a
+    // public GUID. Reuse the first stable key instead of creating a duplicate.
+    const stableId = aliases.map(alias => this.apiToStable[alias]).find(Boolean) || proposedStableId;
     for (const alias of aliases) if (alias) this.apiToStable[alias] = stableId;
     if (rawApiId) this.stableToApi[stableId] = rawApiId;
     this.profileCacheByStable.set(stableId, raw);
@@ -212,8 +216,15 @@ export class GeniDescendantImporter {
       const fallback = requestedId || refId(raw?.id || raw?.url);
       const stableId = this.registerProfile(raw, fallback);
       if (!stableId || raw?.public === false) continue;
-      const incoming = profileToLineagePerson(raw, stableId, this.importedAt);
-      this.people[stableId] = mergeLineagePerson(this.people[stableId], incoming);
+      const publicIdentity = stableProfileId(raw, fallback) || stableId;
+      const incoming = {
+        ...profileToLineagePerson(raw, stableId, this.importedAt),
+        id: stableId,
+        sourceId: publicIdentity
+      };
+      const merged = mergeLineagePerson(this.people[stableId], incoming);
+      if (/^profile-g\d{15,}$/i.test(publicIdentity)) merged.sourceId = publicIdentity;
+      this.people[stableId] = merged;
       added.push(stableId);
     }
     return unique(added);

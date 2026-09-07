@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { FAMILY_GRAPH_FIELDS } from '../geni-config.js';
 import {
   applyUnionToPeople,
+  buildGeniIdentityIndex,
   canonicalGeniProfileId,
   profileIdFromGeniInput,
   profileToLineagePerson,
@@ -417,4 +418,48 @@ test('chunks a 51-profile generation into one 50-ID graph request and one single
   assert.ok(bulkIds.every(id => /^\d+$/.test(id)), 'bulk frontiers use compact Geni API node IDs');
   assert.equal(secondGenerationCalls.filter(call => call.path !== 'profile/immediate-family').length, 1);
   assert.match(secondGenerationCalls.find(call => call.path !== 'profile/immediate-family').path, /^profile-\d+\/immediate-family$/);
+});
+
+
+test('indexes an existing local node by its public Geni identity', () => {
+  const identity = 'profile-g6000000000000099001';
+  const index = buildGeniIdentityIndex({
+    'local-anchor': {
+      id: 'local-anchor', displayName: 'Locally named person', sourceId: identity, sourceProvider: 'geni'
+    },
+    [identity]: {
+      id: identity, displayName: 'Duplicate remote record', sourceId: identity, sourceProvider: 'geni'
+    }
+  });
+  assert.equal(index.get(identity), 'local-anchor', 'an existing local anchor should receive later Geni data');
+});
+
+test('records a partner-only Geni union as non-spousal parentage', () => {
+  const people = Object.fromEntries(['parent-a', 'parent-b', 'child'].map(name => {
+    const id = `profile-${name}`;
+    return [id, profileToLineagePerson({ id, name }, id)];
+  }));
+  applyUnionToPeople(people, {
+    id: 'union-partner',
+    partners: ['profile-parent-a', 'profile-parent-b'],
+    children: ['profile-child'],
+    status: 'partner'
+  }, value => value);
+  assert.deepEqual(people['profile-child'].parents.sort(), ['profile-parent-a', 'profile-parent-b']);
+  assert.deepEqual(people['profile-parent-a'].nonSpouses, ['profile-parent-b']);
+  assert.deepEqual(people['profile-parent-a'].spouses, []);
+});
+
+test('the descendant importer coalesces compact and public aliases for one Geni profile', () => {
+  const client = { requestCount: 0, cancel() {} };
+  const importer = new GeniDescendantImporter({ client, rootInput: 'profile-42' });
+  importer.addProfiles([{ id: 'profile-42', display_name: 'Same Person', public: true }]);
+  importer.addProfiles([{
+    id: 'profile-42', guid: '6000000000000000042', public: true,
+    display_name: 'Same Person', profile_url: 'https://www.geni.com/people/Same-Person/6000000000000000042'
+  }]);
+  assert.deepEqual(Object.keys(importer.people), ['profile-42']);
+  assert.equal(importer.people['profile-42'].id, 'profile-42');
+  assert.equal(importer.people['profile-42'].sourceId, 'profile-g6000000000000000042');
+  assert.equal(importer.apiToStable['profile-g6000000000000000042'], 'profile-42');
 });

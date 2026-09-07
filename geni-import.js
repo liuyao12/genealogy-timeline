@@ -8,9 +8,9 @@ import {
   GENI_TOKEN_SESSION_KEY,
   WORKSPACE_STORAGE_KEY
 } from './geni-config.js?v=2';
-import { clean, profileIdFromGeniInput } from './geni-model.js?v=2';
+import { clean, profileIdFromGeniInput } from './geni-model.js?v=3';
 import { GeniJsonpClient, cryptoId } from './geni-api.js?v=2';
-import { GeniDescendantImporter, lineageTreeSnapshot } from './geni-import-core.js?v=2';
+import { GeniDescendantImporter, lineageTreeSnapshot } from './geni-import-core.js?v=3';
 
 function storageJson(storage, key, fallback = null) {
   try {
@@ -165,7 +165,7 @@ function createUi() {
         <label>Profile pause target<input id="geni-max-profiles" type="number" min="25" max="5000" step="25" value="${DEFAULT_MAX_PROFILES}"></label>
         <label>Request safety limit<input id="geni-max-requests" type="number" min="20" max="2000" step="20" value="${DEFAULT_MAX_REQUESTS}"></label>
       </div>
-      <p class="geni-import-note">The importer retains complete generations, spouses, marriage and divorce dates, and the correct parent union. Adopted and foster children are included and identified in the imported profile note.</p>
+      <p class="geni-import-note">Profiles are matched to existing nodes by public Geni ID. Complete generations, formal spouses, union dates, and parent unions are retained; low-information child branches stay stored and searchable but are omitted from the timeline.</p>
       <div class="geni-import-status" aria-live="polite">
         <strong id="geni-import-status-title">Ready</strong>
         <small id="geni-import-status-detail">No Geni requests have been made.</small>

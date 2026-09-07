@@ -8,19 +8,28 @@ const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
 test('an active search queries every profile stored in the tree tab', () => {
   assert.match(app, /const candidateIds = searching \? Object\.keys\(state\.people\) : \[\.\.\.scope\.allowedIds\]/);
-  assert.match(app, /Outside current focus tree/);
+  assert.match(app, /Outside current tree/);
   assert.match(html, /placeholder="Search all stored people"/);
 });
 
-test('search results expose a direct focus action', () => {
+test('search results expose a tree-symbol action', () => {
+  assert.match(app, /const TREE_ACTION_SYMBOL = '🌳'/);
   assert.match(app, /focus\.className = 'person-list-focus'/);
   assert.match(app, /focus\.dataset\.focusPersonId = person\.id/);
+  assert.match(app, /focus\.textContent = TREE_ACTION_SYMBOL/);
   assert.match(app, /focusTreeOn\(person\.id, \{[\s\S]*?clearSearch: true,[\s\S]*?centerIfHidden: !inCurrentScope/);
   assert.match(styles, /\.person-list-focus/);
   assert.match(styles, /\.outside-focus-scope \.person-list-focus/);
 });
 
-test('focusing a hidden search result clears the query and centers its new tree', () => {
+test('clicking a hidden result opens its side panel without changing the tree', () => {
+  assert.match(app, /function selectPerson\(id, \{ center = false, allowOutsideScope = false \} = \{\}\)/);
+  assert.match(app, /else selectPerson\(person\.id, \{ allowOutsideScope: true \}\);/);
+  assert.doesNotMatch(app, /else focusFromResult\(\);/);
+  assert.match(app, /const person = state\.people\[state\.selectedId\] \|\| null/);
+});
+
+test('using the tree symbol on a hidden result clears the query and centers its new tree', () => {
   assert.match(app, /async function focusTreeOn\(personId\) \{\s*const \{ clearSearch = false, centerIfHidden = false \} = arguments\[1\] \|\| \{\};/);
   assert.match(app, /if \(clearSearch\) \{[\s\S]*?state\.treeFilter = '';[\s\S]*?els\['tree-filter'\]\.value = '';/);
   assert.match(app, /else if \(centerIfHidden\) \{\s*centerTimelinePerson\(id\);/);

@@ -1,0 +1,14 @@
+name: Audit royal example name style
+on:
+  push:
+    branches: [audit/royal-example-name-style]
+    paths: [.github/workflows/audit-royal-name-style.yml]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/royal-example-name-style
+      - name: Print candidate royal names
+        run: python3 .github/scripts/audit_royal_names.py

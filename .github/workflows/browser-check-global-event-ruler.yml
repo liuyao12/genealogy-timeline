@@ -1,0 +1,38 @@
+name: Browser check global event ruler
+on:
+  push:
+    branches: [ui/global-event-labels-above-ruler]
+    paths: [.github/workflows/browser-check-global-event-ruler.yml]
+permissions:
+  contents: write
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/global-event-labels-above-ruler
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Start local app
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+      - name: Find Chrome
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Check rendered ruler geometry
+        run: node .github/scripts/check_global_event_ruler.mjs
+      - name: Commit successful browser check cleanup
+        run: |
+          rm .github/scripts/check_global_event_ruler.mjs
+          rm .github/workflows/browser-check-global-event-ruler.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Verify global event ruler in Chromium"
+          git push origin HEAD:ui/global-event-labels-above-ruler

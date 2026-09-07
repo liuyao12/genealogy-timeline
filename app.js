@@ -1,5 +1,6 @@
 import { computeDescendantScope } from './descendant-scope.js?v=1';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
+import { graphUnionRecords } from './geni-import-core.js?v=2';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -777,7 +778,10 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
     aliases[rawId] = id;
     profileMap[id] = { ...profile, id };
   });
-  nodeRecords.filter(node => clean(node.id).startsWith('union-')).forEach(union => {
+  // Geni's real immediate-family graph represents union membership in
+  // union.edges. Reuse the same edge-aware parser as the full descendant
+  // importer so newly fetched spouses and children are linked immediately.
+  graphUnionRecords({ nodes }).forEach(union => {
     const partners = uniqueRefs(union.partners || union.partner_ids || union.profiles).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
     const children = uniqueRefs(union.children || union.child_ids).map(id => aliases[id] || canonicalGeniProfileId(id)).filter(id => profileMap[id]);
   const marriageYear = clean(
@@ -940,7 +944,12 @@ async function fetchGeniNeighborhood(id) {
   const graphNodes = payload?.nodes && typeof payload.nodes === 'object'
     ? { ...payload.nodes }
     : {};
-  graphNodes[rawFocusId] = { ...focusRaw, id: rawFocusId };
+  graphNodes[rawFocusId] = {
+    ...(graphNodes[rawFocusId] || {}),
+    ...focusRaw,
+    id: rawFocusId,
+    edges: graphNodes[rawFocusId]?.edges || focusRaw?.edges || {}
+  };
 
   // Geni provides the focus profile, immediate-family profile nodes, and
   // union nodes together. One request is sufficient to reconstruct parents,
@@ -3753,6 +3762,10 @@ function renderGeniFamilyActions(person, scope) {
   els['geni-family-card'].setAttribute('aria-busy', String(importingThisProfile));
 
   const returnedIds = unique(person.geniImmediateFamilyIds).filter(id => state.people[id]);
+  const linkedFamilyIds = new Set([...person.parents, ...person.children, ...allPartnerIds(person)]);
+  const needsRelationshipRepair = Boolean(
+    verifiedAt && returnedIds.length && !returnedIds.some(id => linkedFamilyIds.has(id))
+  );
   const outsideCount = returnedIds.filter(id => !scope.allowedIds.has(id)).length;
   const outsideNote = outsideCount
     ? ` ${outsideCount} returned relative${outsideCount === 1 ? ' is' : 's are'} saved outside this descendant view.`
@@ -3763,6 +3776,10 @@ function renderGeniFamilyActions(person, scope) {
       ? `${activeImport.loaded} profiles received. Merging family links and dates…`
       : 'Reading family unions, profiles, and dates…';
     els['geni-family-badge'].textContent = 'Loading';
+  } else if (linked && verifiedAt && needsRelationshipRepair) {
+    els['geni-family-heading'].textContent = 'Repair saved Geni family links';
+    els['geni-family-status'].textContent = 'An earlier import saved the profiles but not their union links. Refresh once to connect them and show them here.';
+    els['geni-family-badge'].textContent = 'Repair';
   } else if (linked && verifiedAt) {
     els['geni-family-heading'].textContent = 'Keep immediate family current';
     els['geni-family-status'].textContent = `Last checked ${formatGeniFamilyCheckedAt(verifiedAt)}. Refresh to merge changes without replacing local edits.${outsideNote}`;
@@ -3782,9 +3799,11 @@ function renderGeniFamilyActions(person, scope) {
   els['geni-family-primary'].disabled = importingThisProfile || anotherImportRunning;
   els['geni-family-primary'].textContent = importingThisProfile
     ? 'Loading immediate family…'
-    : verifiedAt
-      ? (state.geniAccessToken ? 'Refresh immediate family from Geni' : 'Authorize Geni & refresh family')
-      : (state.geniAccessToken ? 'Load immediate family from Geni' : 'Authorize Geni & load family');
+    : needsRelationshipRepair
+      ? (state.geniAccessToken ? 'Repair family links from Geni' : 'Authorize Geni & repair family links')
+      : verifiedAt
+        ? (state.geniAccessToken ? 'Refresh immediate family from Geni' : 'Authorize Geni & refresh family')
+        : (state.geniAccessToken ? 'Load immediate family from Geni' : 'Authorize Geni & load family');
   els['geni-family-link-input'].disabled = Boolean(activeImport);
   els['geni-family-link-button'].disabled = Boolean(activeImport);
   els['geni-family-link-button'].textContent = state.geniAccessToken
@@ -3798,7 +3817,7 @@ function renderGeniFamilyActions(person, scope) {
   ]);
   els['known-family-count'].textContent = `${knownIds.length} relative${knownIds.length === 1 ? '' : 's'}`;
 
-  const manualNeedsGeniCheck = linked && !verifiedAt;
+  const manualNeedsGeniCheck = linked && (!verifiedAt || needsRelationshipRepair);
   els['add-relative'].disabled = importingThisProfile || anotherImportRunning || manualNeedsGeniCheck;
   els['add-relative'].title = manualNeedsGeniCheck
     ? 'Load this profile’s immediate family from Geni first to avoid duplicate relatives.'

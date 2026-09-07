@@ -1,0 +1,47 @@
+name: Verify global search focus
+on:
+  push:
+    branches: [feature/global-search-focus]
+    paths: [.github/workflows/global-search-focus.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/global-search-focus
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply global search UI
+        run: python3 .github/scripts/implement_global_search_focus.py
+      - name: Run automated tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check tests/search-focus.test.mjs
+          git diff --check
+      - name: Start local app
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+      - name: Find Chrome
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Search the full stored tree and focus a hidden result
+        run: node .github/scripts/check_global_search_focus.mjs
+      - name: Commit verified implementation
+        run: |
+          rm .github/scripts/implement_global_search_focus.py
+          rm .github/scripts/check_global_search_focus.mjs
+          rm .github/workflows/global-search-focus.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Search all stored profiles and focus results"
+          git push origin HEAD:feature/global-search-focus

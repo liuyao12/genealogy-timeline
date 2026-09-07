@@ -104,6 +104,7 @@ assert.equal(catherine?.treeDisabled, false);
 await evaluate(`document.querySelector('.person-list-row[data-person-id=${JSON.stringify(catherine.id)}] .person-list-focus').click(); true`);
 await waitFor(`document.querySelector('.timeline-node.focus')?.dataset.personId === ${JSON.stringify(catherine.id)}`, 'Catherine as tree root');
 await waitFor("document.getElementById('tree-filter').value === ''", 'search clearing after tree change');
+await waitFor("!document.documentElement.classList.contains('focus-tree-transitioning')", 'Catherine tree transition');
 
 await searchFor('Henry VII');
 const henry = await rowInfo('Henry VII');

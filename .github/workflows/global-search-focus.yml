@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Apply global search UI
+      - name: Apply global search UI while preserving the focus API
         run: |
           python3 .github/scripts/fix_global_search_patch_script.py
           python3 .github/scripts/implement_global_search_focus.py

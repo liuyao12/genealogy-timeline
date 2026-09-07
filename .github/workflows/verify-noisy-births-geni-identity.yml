@@ -31,6 +31,36 @@ jobs:
           path.write_text(text)
           PY
           python3 .github/scripts/apply_noisy_birth_and_geni_identity_fix.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected one match in {path}, found {text.count(old)}')
+              file.write_text(text.replace(old, new, 1))
+
+          # Missing display text is not the same thing as an explicit NN name.
+          replace_once(
+              'descendant-scope.js',
+              '  return !name || PLACEHOLDER_NAME_PATTERN.test(name);',
+              '  return Boolean(name) && PLACEHOLDER_NAME_PATTERN.test(name);'
+          )
+          replace_once(
+              'tests/descendant-scope.test.mjs',
+              "    'nn-parent-child': person('nn-parent-child', { displayName: 'Child of NN', parents: ['root', 'nn-parent'] }),",
+              "    'nn-parent-child': person('nn-parent-child', { displayName: 'Child of Placeholder Parent', parents: ['root', 'nn-parent'] }),"
+          )
+
+          # Once Geni exposes a public GUID, retain it as source identity even
+          # when the object's stable in-import key began as a compact API ID.
+          replace_once(
+              'geni-import-core.js',
+              '''      this.people[stableId] = mergeLineagePerson(this.people[stableId], incoming);\n      added.push(stableId);''',
+              '''      const merged = mergeLineagePerson(this.people[stableId], incoming);\n      if (/^profile-g\\d{15,}$/i.test(publicIdentity)) merged.sourceId = publicIdentity;\n      this.people[stableId] = merged;\n      added.push(stableId);'''
+          )
+          PY
       - name: Run tests, syntax checks, and data validation
         run: |
           npm test

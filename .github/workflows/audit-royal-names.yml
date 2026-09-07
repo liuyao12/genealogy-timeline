@@ -1,4 +1,4 @@
-# Retry 2: preserve the shared monochrome tree mask while removing search-only controls.
+# Retry 3: make the browser regression independent of the initially focused profile.
 name: Verify royal names and side-panel tree action
 on:
   push:

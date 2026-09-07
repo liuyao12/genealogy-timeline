@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const starter = JSON.parse(readFileSync(new URL('../data/british-royal-line.json', import.meta.url), 'utf8'));
+const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const people = starter.people;
 
 const expectedDefaults = {
+  'profile-g6000000003409427757': 'Arthur, Prince of Wales',
   'profile-g6000000000307240333': 'Adolphus, Duke of Cambridge',
   'profile-g6000000001260403655': 'Augusta, Duchess of Cambridge',
   'profile-g6000000003245250586': 'Mary Adelaide, Duchess of Teck',
@@ -25,12 +27,33 @@ const expectedDefaults = {
   'profile-g5466010055340136751': 'Katherine Willoughby, Duchess of Suffolk'
 };
 
+const staleStarterNames = [
+  'Arthur Tudor',
+  'Adolphus of Cambridge',
+  'Augusta of Hesse-Kassel',
+  'Mary Adelaide of Cambridge',
+  'Alice of the United Kingdom',
+  'Louis of Battenberg',
+  'Victoria of Hesse',
+  'Andrew of Greece and Denmark',
+  'Alice of Battenberg',
+  'Ernest Augustus of Hanover',
+  'Sophia of Hanover',
+  'Elizabeth Stuart',
+  'Mary Stuart',
+  'Anne Hyde',
+  'George of Denmark',
+  'Augusta of Saxe-Gotha',
+  'Frances Brandon',
+  'Katherine Willoughby'
+];
+
 function defaultName(person) {
   return person.namePeriods.find(period => period.id === person.defaultNamePeriodId)?.name;
 }
 
 test('the bundled royal example advances its migration version', () => {
-  assert.equal(starter.version, 24);
+  assert.equal(starter.version, 25);
 });
 
 test('substantive titles are displayed as titles rather than territorial surnames', () => {
@@ -64,18 +87,13 @@ test('genuine conventional bynames remain unchanged', () => {
 });
 
 test('the known malformed territorial-title forms have been removed', () => {
-  const oldNames = new Set([
-    'Adolphus of Cambridge',
-    'Mary Adelaide of Cambridge',
-    'Alice of the United Kingdom',
-    'Louis of Battenberg',
-    'Victoria of Hesse',
-    'Andrew of Greece and Denmark',
-    'Alice of Battenberg',
-    'Ernest Augustus of Hanover',
-    'Sophia of Hanover',
-    'Mary Stuart',
-    'George of Denmark'
-  ]);
-  Object.values(people).forEach(person => assert.ok(!oldNames.has(person.displayName), person.displayName));
+  const names = new Set(Object.values(people).map(person => person.displayName));
+  for (const oldName of staleStarterNames) assert.ok(!names.has(oldName), oldName);
+});
+
+test('the starter upgrade repairs every exact stale title label without replacing arbitrary local names', () => {
+  assert.match(app, /const revisedStarterDisplayNames = \{/);
+  for (const oldName of staleStarterNames) assert.ok(app.includes(`'${oldName}'`), oldName);
+  assert.match(app, /staleStarterNames\.includes\(saved\.displayName\)/);
+  assert.match(app, /clean\(period\.id\)\.startsWith\('name-'\)/);
 });

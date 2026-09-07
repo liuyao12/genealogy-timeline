@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 24,
+  "version": 25,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -2127,8 +2127,8 @@
       "id": "profile-g6000000003409427757",
       "firstName": "Arthur",
       "lastName": "Tudor",
-      "displayName": "Arthur Tudor",
-      "title": "",
+      "displayName": "Arthur, Prince of Wales",
+      "title": "Prince of Wales",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1486",
@@ -2156,21 +2156,21 @@
       "relationshipEndStatuses": {},
       "namePeriods": [
         {
-          "id": "arthur-tudor-name-1486",
+          "id": "arthur-wales-name-1486",
           "name": "Arthur Tudor",
           "startYear": 1486,
           "endYear": 1489,
-          "sourceUrl": "https://en.wikipedia.org/wiki/Arthur%2C_Prince_of_Wales"
+          "sourceUrl": "https://www.npg.org.uk/collections/search/person/mp15191/arthur-prince-of-wales"
         },
         {
-          "id": "arthur-tudor-name-1489",
+          "id": "arthur-wales-name-1489",
           "name": "Arthur, Prince of Wales",
           "startYear": 1489,
           "endYear": 1502,
-          "sourceUrl": "https://en.wikipedia.org/wiki/Arthur%2C_Prince_of_Wales"
+          "sourceUrl": "https://www.npg.org.uk/collections/search/person/mp15191/arthur-prince-of-wales"
         }
       ],
-      "defaultNamePeriodId": "arthur-tudor-name-1486",
+      "defaultNamePeriodId": "arthur-wales-name-1489",
       "personalEvents": [],
       "sourceUrl": "https://www.geni.com/profile/index/6000000003409427757",
       "sourceId": "profile-g6000000003409427757",

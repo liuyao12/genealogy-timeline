@@ -35,3 +35,18 @@ test('the timeline starts at the oldest known paternal ancestor', () => {
   assert.match(app, /const preferredTreeRootId = datedIds\.has\(scope\.treeRootId\)/);
   assert.match(app, /scope\.paternalAncestorIds\.has\(id\)/);
 });
+
+
+test('focus emphasis uses a thicker gender-coloured outline rather than black', () => {
+  assert.match(styles, /\.timeline-node\.focus\.male \.lifespan-outline \{ stroke: #69a9cf; \}/);
+  assert.match(styles, /\.timeline-node\.focus\.female \.lifespan-outline \{ stroke: #e580b5; \}/);
+  assert.match(styles, /\.timeline-node\.focus\.selected \.lifespan-outline \{ stroke-width: 4\.8; \}/);
+  assert.doesNotMatch(styles, /\.timeline-node\.focus \.lifespan-outline \{ stroke: #111/);
+});
+
+test('the renderer attaches spouses to paternal ancestors as well as descendants', () => {
+  assert.match(app, /scope\.spouseOwnerIds\.has\(partnerId\)/);
+  assert.match(app, /datedVisibleSpouseOwners/);
+  assert.match(app, /candidateFocusScope\.paternalSpouseIds\.size/);
+  assert.match(app, /candidateFocusScope\.paternalSiblingIds\.size/);
+});

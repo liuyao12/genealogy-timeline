@@ -40,21 +40,35 @@ function fatherIdFor(records, parentsByChild, childId) {
   return parents.find(parentId => normalizedGender(records[parentId]) === 'male') || '';
 }
 
+function formalSpouseIds(person) {
+  const formallyEndedPartners = Object.entries(person?.relationshipEndStatuses || {})
+    .filter(([, status]) => ['annulled', 'divorced'].includes(String(status || '').toLowerCase()))
+    .map(([partnerId]) => partnerId);
+  return uniqueIds([
+    ...ids(person?.spouses),
+    ...ids(person?.divorcedSpouses),
+    ...Object.keys(person?.marriageYears || {}),
+    ...formallyEndedPartners
+  ]);
+}
+
 /**
  * Compute the one focus tree rooted conceptually at `rootId`.
  *
- * The visible lineal structure contains:
+ * The projection contains:
  *   1. the focus person and every lineal descendant reachable through
  *      parent/child data;
- *   2. the focus person's direct paternal line (father, paternal grandfather,
- *      and so on), without opening the ancestors' collateral branches;
- *   3. formal spouses of the focus person and descendants, one affinal layer.
+ *   2. the focus person's direct paternal line, continuing as far upward as
+ *      the stored data identifies a father;
+ *   3. every formal spouse and every direct child of each paternal ancestor,
+ *      so each generation appears as a complete paternal household;
+ *   4. formal spouses of the focus person and descendants, one affinal layer.
  *
- * A focus change therefore keeps the selected person's descendants while
- * exchanging the paternal chain above them. It deliberately does not recurse
- * through a spouse's parents, siblings, other marriages, or unrelated children.
+ * Siblings in the paternal households are terminal in this projection: their
+ * own spouses and descendants do not open collateral mini-trees. Choosing one
+ * of them as the focus recomputes the projection from that person's viewpoint.
  * Parent/child indexes are repaired in both directions in memory so sparse
- * imported records do not split one focus tree into detached mini-trees.
+ * imported records do not split a focus tree into detached components.
  */
 export function computeDescendantScope(people = {}, rootId = '') {
   const records = people && typeof people === 'object' ? people : {};
@@ -95,12 +109,29 @@ export function computeDescendantScope(people = {}, rootId = '') {
     paternalChildId = fatherId;
   }
   const paternalLineIds = [...paternalLineFromFocus].reverse();
+  const paternalLineSet = new Set(paternalLineIds);
   const paternalAncestorIds = new Set(paternalLineFromFocus.slice(1));
-  const linealIds = new Set([...paternalAncestorIds, ...descendantIds]);
   const treeRootId = paternalLineIds[0] || root;
+
+  // Add every direct child of every paternal ancestor. These are the focus
+  // person's paternal siblings, uncles/aunts, great-uncles/aunts, and so on.
+  // They remain terminal unless one of them is explicitly chosen as the focus.
+  const paternalHouseholdChildIds = new Set();
+  paternalAncestorIds.forEach(ancestorId => {
+    (allChildrenByParent.get(ancestorId) || []).forEach(childId => paternalHouseholdChildIds.add(childId));
+  });
+  const paternalSiblingIds = new Set(
+    [...paternalHouseholdChildIds].filter(id => !paternalLineSet.has(id) && !descendantIds.has(id))
+  );
+
+  // `linealIds` is retained as the renderer's structural-node set. It now also
+  // contains the terminal siblings displayed beside each paternal generation.
+  const linealIds = new Set([...paternalAncestorIds, ...paternalSiblingIds, ...descendantIds]);
+  const spouseOwnerIds = new Set([...paternalAncestorIds, ...descendantIds]);
 
   const spousePairs = new Set();
   const spouseIdsByPerson = new Map();
+  const paternalSpouseIds = new Set();
   const addSpousePair = (firstId, secondId) => {
     if (!records[firstId] || !records[secondId] || firstId === secondId) return;
     const key = descendantPairKey(firstId, secondId);
@@ -109,22 +140,16 @@ export function computeDescendantScope(people = {}, rootId = '') {
     if (!spouseIdsByPerson.has(secondId)) spouseIdsByPerson.set(secondId, new Set());
     spouseIdsByPerson.get(firstId).add(secondId);
     spouseIdsByPerson.get(secondId).add(firstId);
+    if (paternalAncestorIds.has(firstId)) paternalSpouseIds.add(secondId);
+    if (paternalAncestorIds.has(secondId)) paternalSpouseIds.add(firstId);
   };
 
+  // Read spouse facts from both directions. A pair is included only when one
+  // member owns a household here: a paternal ancestor, the focus person, or a
+  // descendant. Siblings' marriages stay outside the projection.
   Object.entries(records).forEach(([id, person]) => {
-    const formallyEndedPartners = Object.entries(person?.relationshipEndStatuses || {})
-      .filter(([, status]) => ['annulled', 'divorced'].includes(String(status || '').toLowerCase()))
-      .map(([partnerId]) => partnerId);
-    const formalSpouses = new Set([
-      ...ids(person?.spouses),
-      ...ids(person?.divorcedSpouses),
-      ...Object.keys(person?.marriageYears || {}),
-      ...formallyEndedPartners
-    ]);
-    formalSpouses.forEach(spouseId => {
-      // Ancestors are shown only as the direct paternal line. Their other
-      // marriages must not open additional households above the focus.
-      if (descendantIds.has(id) || descendantIds.has(spouseId)) addSpousePair(id, spouseId);
+    formalSpouseIds(person).forEach(spouseId => {
+      if (spouseOwnerIds.has(id) || spouseOwnerIds.has(spouseId)) addSpousePair(id, spouseId);
     });
   });
 
@@ -135,17 +160,25 @@ export function computeDescendantScope(people = {}, rootId = '') {
     allowedIds.add(secondId);
   });
   const affinalIds = new Set([...allowedIds].filter(id => !linealIds.has(id)));
+  const paternalHouseholdIds = new Set([
+    ...paternalAncestorIds,
+    ...paternalSiblingIds,
+    ...paternalSpouseIds
+  ]);
 
-  // Project the repaired relationship graph down to the one focus tree. All
-  // descendants keep every parent who is in scope; ancestors keep only the
-  // single father-child edge that leads to the focus.
+  // Project the repaired graph down to this focus tree. Descendants retain all
+  // in-scope parents. Every child in a paternal household likewise retains all
+  // in-scope parents, grouping siblings under the correct ancestor and spouse.
   const childrenByParent = new Map();
   const parentsByChild = new Map();
-  descendantIds.forEach(childId => {
+  const projectedChildIds = new Set([...descendantIds, ...paternalHouseholdChildIds]);
+  projectedChildIds.forEach(childId => {
     (allParentsByChild.get(childId) || []).forEach(parentId => {
       if (allowedIds.has(parentId)) addParentChild(childrenByParent, parentsByChild, parentId, childId, records);
     });
   });
+  // Preserve the father chain even when a sparse record exposes only an
+  // explicit father field and no reciprocal parent/child array.
   fatherByChild.forEach((fatherId, childId) => {
     addParentChild(childrenByParent, parentsByChild, fatherId, childId, records);
   });
@@ -157,6 +190,11 @@ export function computeDescendantScope(people = {}, rootId = '') {
     paternalAncestorIds,
     paternalLineIds,
     fatherByChild,
+    paternalHouseholdChildIds,
+    paternalSiblingIds,
+    paternalSpouseIds,
+    paternalHouseholdIds,
+    spouseOwnerIds,
     linealIds,
     affinalIds,
     allowedIds,

@@ -1,6 +1,7 @@
 import { computeDescendantScope } from './descendant-scope.js?v=1';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=2';
+import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -1648,11 +1649,12 @@ async function saveTimelineImage() {
     // The live canvas includes generous drag space on every side. It is useful
     // while navigating, but an exported image should end at the actual layout
     // bounds rather than preserving those four panning margins.
+    const contentTop = Math.max(0, Number(timelineRulerGeometry?.contentTop) || 0);
     const exportBox = {
       x: timelineBox.x + TIMELINE_PAN_MARGIN.left,
-      y: timelineBox.y + TIMELINE_PAN_MARGIN.top,
+      y: timelineBox.y + TIMELINE_PAN_MARGIN.top + contentTop,
       width: timelineBox.width - TIMELINE_PAN_MARGIN.left - TIMELINE_PAN_MARGIN.right,
-      height: timelineBox.height - TIMELINE_PAN_MARGIN.top - TIMELINE_PAN_MARGIN.bottom
+      height: timelineBox.height - TIMELINE_PAN_MARGIN.top - TIMELINE_PAN_MARGIN.bottom - contentTop
     };
     const logicalWidth = Math.ceil(exportBox.width);
     const logicalHeight = Math.ceil(rulerHeight + exportBox.height);
@@ -2288,7 +2290,6 @@ function renderTimeline() {
   const yearWidth = state.timelineYearWidth;
   const rowHeight = state.timelineNodeHeight;
   const rowStep = rowHeight + 6;
-  const top = 58;
   const left = 36;
   const birthYear = person => numericYear(person.birthYear);
   // Living profiles always terminate exactly at the current-year line. A
@@ -2698,19 +2699,45 @@ function renderTimeline() {
     xForYear(maxYear) + 42,
     ...layoutNodes.map(node => node.x + node.occupancyWidth + 48)
   );
+  const globalEventLabelLayout = layoutGlobalEventLabels(state.globalEvents, {
+    minYear,
+    maxYear,
+    xForYear,
+    left,
+    right: xForYear(maxYear),
+    estimateWidth: estimateTextWidth
+  });
+  const globalEventLabelLaneStep = 22;
+  const globalEventLabelAreaHeight = globalEventLabelLayout.laneCount
+    ? globalEventLabelLayout.laneCount * globalEventLabelLaneStep + 8
+    : 0;
+  const rulerCoreOffset = globalEventLabelAreaHeight;
+  const rulerBaseline = rulerCoreOffset + 43;
+  const rulerHeight = rulerBaseline + 1;
+  const top = rulerHeight;
   const contentHeight = Math.max(560, top + Math.max(...layoutNodes.map(node => node.y)) + rowHeight + 38);
   const width = contentWidth + TIMELINE_PAN_MARGIN.left + TIMELINE_PAN_MARGIN.right;
   const height = contentHeight + TIMELINE_PAN_MARGIN.top + TIMELINE_PAN_MARGIN.bottom;
-  const rulerBaseline = 43;
-  const rulerHeight = 60;
   const eventTop = -TIMELINE_PAN_MARGIN.top;
   const eventBottom = contentHeight + TIMELINE_PAN_MARGIN.bottom;
   canvas.setAttribute('width', width); canvas.setAttribute('height', height);
   canvas.setAttribute('viewBox', `${-TIMELINE_PAN_MARGIN.left} ${-TIMELINE_PAN_MARGIN.top} ${width} ${height}`);
   ruler.toggleAttribute('hidden', false);
   ruler.setAttribute('width', width); ruler.setAttribute('height', rulerHeight); ruler.setAttribute('viewBox', `${-TIMELINE_PAN_MARGIN.left} 0 ${width} ${rulerHeight}`);
+  ruler.style.height = `${rulerHeight}px`;
+  ruler.style.marginBottom = `-${rulerHeight}px`;
   ruler.style.transform = `scaleX(${state.zoom})`;
-  timelineRulerGeometry = { minYear, maxYear, left, yearWidth, viewBoxX: -TIMELINE_PAN_MARGIN.left, viewBoxWidth: width };
+  timelineRulerGeometry = {
+    minYear,
+    maxYear,
+    left,
+    yearWidth,
+    viewBoxX: -TIMELINE_PAN_MARGIN.left,
+    viewBoxWidth: width,
+    contentTop: top,
+    rulerBaseline,
+    rulerHeight
+  };
   const positions = new Map(layoutNodes.map(node => [node.key, { x: node.x, y: top + node.y }]));
 
   // Alternating calendar decades give each lifespan a quiet visual measure of
@@ -2773,18 +2800,18 @@ function renderTimeline() {
     const x = xForYear(year);
     const isMajor = year % 20 === 0;
     const isDecade = year % 10 === 0;
-    rulerMarks.append(svg('line', { x1: x, y1: isMajor ? 29 : isDecade ? 33 : 36, x2: x, y2: rulerBaseline, class: `year-tick ${isMajor ? 'major' : isDecade ? 'decade' : 'minor'}`, 'data-year': year }));
-    if (isDecade && Math.abs(year - currentYear) >= 8) rulerMarks.append(svg('text', { x, y: 22, 'text-anchor': 'middle', class: isMajor ? 'major-label' : 'decade-label' }, String(year)));
+    rulerMarks.append(svg('line', { x1: x, y1: rulerCoreOffset + (isMajor ? 29 : isDecade ? 33 : 36), x2: x, y2: rulerBaseline, class: `year-tick ${isMajor ? 'major' : isDecade ? 'decade' : 'minor'}`, 'data-year': year }));
+    if (isDecade && Math.abs(year - currentYear) >= 8) rulerMarks.append(svg('text', { x, y: rulerCoreOffset + 22, 'text-anchor': 'middle', class: isMajor ? 'major-label' : 'decade-label' }, String(year)));
   }
   const currentYearX = xForYear(currentYear);
-  rulerMarks.append(svg('line', { x1: currentYearX, y1: 25, x2: currentYearX, y2: rulerBaseline, class: 'year-tick current-year' }));
-  rulerMarks.append(svg('text', { x: currentYearX, y: 22, 'text-anchor': 'middle', class: 'current-year-label' }, String(currentYear)));
+  rulerMarks.append(svg('line', { x1: currentYearX, y1: rulerCoreOffset + 25, x2: currentYearX, y2: rulerBaseline, class: 'year-tick current-year' }));
+  rulerMarks.append(svg('text', { x: currentYearX, y: rulerCoreOffset + 22, 'text-anchor': 'middle', class: 'current-year-label' }, String(currentYear)));
   rulerMarks.append(svg('line', { x1: left, y1: rulerBaseline, x2: xForYear(maxYear), y2: rulerBaseline, class: 'ruler-line' }));
   if (historicalYear != null) {
     const historicalX = xForYear(historicalYear);
-    rulerMarks.append(svg('line', { class: 'year-tick as-of-year', x1: historicalX, y1: 7, x2: historicalX, y2: rulerBaseline }));
+    rulerMarks.append(svg('line', { class: 'year-tick as-of-year', x1: historicalX, y1: rulerCoreOffset + 7, x2: historicalX, y2: rulerBaseline }));
     const handle = svg('g', {
-      class: 'timeline-as-of-handle', transform: `translate(${historicalX} 0)`, role: 'slider', tabindex: '0',
+      class: 'timeline-as-of-handle', transform: `translate(${historicalX} ${rulerCoreOffset})`, role: 'slider', tabindex: '0',
       'aria-label': 'Historical snapshot year', 'aria-valuemin': minYear, 'aria-valuemax': maxYear, 'aria-valuenow': historicalYear,
       'aria-valuetext': `As of ${historicalYear}`
     });
@@ -2806,16 +2833,18 @@ function renderTimeline() {
     rulerMarks.append(handle);
   }
   const rulerPreview = svg('g', { class: 'timeline-as-of-preview', hidden: '' });
-  rulerPreview.append(svg('line', { class: 'year-tick as-of-year-preview', x1: 0, y1: 7, x2: 0, y2: rulerBaseline }));
-  rulerPreview.append(svg('rect', { class: 'as-of-preview-box', x: -42, y: 2, width: 84, height: 18, rx: 4 }));
-  rulerPreview.append(svg('text', { class: 'as-of-preview-label', x: 0, y: 14, 'text-anchor': 'middle' }, 'Set As of'));
-  rulerPreview.append(svg('path', { class: 'as-of-preview-pointer', d: 'M -5 20 L 5 20 L 0 27 Z' }));
+  rulerPreview.append(svg('line', { class: 'year-tick as-of-year-preview', x1: 0, y1: rulerCoreOffset + 7, x2: 0, y2: rulerBaseline }));
+  rulerPreview.append(svg('rect', { class: 'as-of-preview-box', x: -42, y: rulerCoreOffset + 2, width: 84, height: 18, rx: 4 }));
+  rulerPreview.append(svg('text', { class: 'as-of-preview-label', x: 0, y: rulerCoreOffset + 14, 'text-anchor': 'middle' }, 'Set As of'));
+  rulerPreview.append(svg('path', { class: 'as-of-preview-pointer', d: `M -5 ${rulerCoreOffset + 20} L 5 ${rulerCoreOffset + 20} L 0 ${rulerCoreOffset + 27} Z` }));
   rulerMarks.append(rulerPreview);
   ruler.append(rulerMarks);
 
   const globalEvents = svg('g', { class: 'global-events' });
+  const stickyGlobalEventGuides = svg('g', { class: 'sticky-global-event-guides' });
   const stickyGlobalEventLabels = svg('g', { class: 'sticky-global-event-labels' });
-  state.globalEvents.forEach(event => {
+  const globalEventLabelsByIndex = new Map(globalEventLabelLayout.items.map(item => [item.index, item]));
+  state.globalEvents.forEach((event, index) => {
     const rawStartYear = numericYear(event.startYear);
     const rawEndYear = numericYear(event.endYear) ?? rawStartYear;
     if (rawStartYear == null || rawEndYear < minYear || rawStartYear > maxYear) return;
@@ -2829,8 +2858,47 @@ function renderTimeline() {
     globalEvents.append(band);
     globalEvents.append(svg('line', { class: 'global-event-edge', x1: x, y1: eventTop, x2: x, y2: eventBottom, stroke: color }));
     if (eventWidth > 2) globalEvents.append(svg('line', { class: 'global-event-edge', x1: x + eventWidth, y1: eventTop, x2: x + eventWidth, y2: eventBottom, stroke: color }));
-    stickyGlobalEventLabels.append(svg('text', { class: 'global-event-label', x: x + 4, y: 56, fill: color }, event.name));
+    const labelGeometry = globalEventLabelsByIndex.get(index);
+    if (labelGeometry) {
+      const labelY = 2 + labelGeometry.lane * globalEventLabelLaneStep;
+      const pointerX = labelGeometry.pointerOffset;
+      stickyGlobalEventGuides.append(svg('line', {
+        class: 'global-event-label-guide',
+        x1: labelGeometry.anchorX,
+        y1: labelY + 25,
+        x2: labelGeometry.anchorX,
+        y2: rulerBaseline,
+        stroke: color
+      }));
+      const label = svg('g', {
+        class: 'global-event-label',
+        transform: `translate(${labelGeometry.centerX} ${labelY})`
+      });
+      label.append(svg('title', {}, `${event.name} · ${formatEventYearRange(event.startYear, event.endYear)}`));
+      label.append(svg('rect', {
+        class: 'global-event-label-box',
+        x: -labelGeometry.width / 2,
+        y: 0,
+        width: labelGeometry.width,
+        height: 18,
+        rx: 4,
+        fill: color
+      }));
+      label.append(svg('text', {
+        class: 'global-event-label-text',
+        x: 0,
+        y: 12,
+        'text-anchor': 'middle'
+      }, labelGeometry.displayName));
+      label.append(svg('path', {
+        class: 'global-event-label-pointer',
+        d: `M ${pointerX - 5} 18 L ${pointerX + 5} 18 L ${pointerX} 25 Z`,
+        fill: color
+      }));
+      stickyGlobalEventLabels.append(label);
+    }
   });
+  rulerMarks.insertBefore(stickyGlobalEventGuides, rulerMarks.querySelector('.year-tick'));
   ruler.append(stickyGlobalEventLabels);
   timelineContent.append(globalEvents);
   timelineContent.append(svg('line', { class: 'timeline-current-year-line', x1: currentYearX, y1: eventTop, x2: currentYearX, y2: eventBottom, 'aria-label': `Current year ${currentYear}` }));

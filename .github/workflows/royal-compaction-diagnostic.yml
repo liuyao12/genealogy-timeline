@@ -1,10 +1,10 @@
-name: British royal compaction diagnostic
+name: British royal source-order diagnostic
 on:
   push:
     branches: [fix/british-royal-compaction]
   workflow_dispatch:
 concurrency:
-  group: british-royal-compaction
+  group: british-royal-compaction-source-order
   cancel-in-progress: true
 permissions:
   contents: read

@@ -19,23 +19,7 @@ jobs:
       - name: Center labels and compact ruler lanes
         run: |
           python3 .github/scripts/refine_global_event_labels.py
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('tests/timeline-event-labels.test.mjs')
-          text = path.read_text()
-          old = """  assert.deepEqual(layout.items.map(item => item.lane), [0, 1, 2]);
-          assert.deepEqual(layout.items.map(item => item.anchorX), [56, 60, 64]);
-          """
-          new = """  assert.deepEqual(layout.items.map(item => item.lane), [0, 1, 2]);
-          const byName = Object.fromEntries(layout.items.map(item => [item.name, item]));
-          assert.equal(byName['Long event one'].anchorX, 56);
-          assert.equal(byName['Long event two'].anchorX, 60);
-          assert.equal(byName['Long event three'].anchorX, 64);
-          """
-          if text.count(old) != 1:
-              raise SystemExit('Could not update the order-independent midpoint assertion')
-          path.write_text(text.replace(old, new, 1))
-          PY
+          python3 .github/scripts/make_midpoint_test_order_independent.py
       - name: Run unit tests and syntax checks
         run: |
           npm test
@@ -57,6 +41,7 @@ jobs:
       - name: Commit verified changes
         run: |
           rm .github/scripts/refine_global_event_labels.py
+          rm .github/scripts/make_midpoint_test_order_independent.py
           rm .github/scripts/check_centered_event_labels.mjs
           rm .github/workflows/refine-global-event-labels.yml
           git config user.name "github-actions[bot]"

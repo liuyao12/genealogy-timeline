@@ -173,3 +173,15 @@ test('all expanded family links are reciprocal and point to stored profiles', ()
     }
   }
 });
+
+
+test('a refocused bundled example remains eligible for starter upgrades', () => {
+  const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+  const start = app.indexOf('function upgradeBundledBritishRoyalLine()');
+  const end = app.indexOf('function migrateGeniPeople', start);
+  assert.ok(start >= 0 && end > start, 'starter upgrade function should exist');
+  const upgrade = app.slice(start, end);
+  assert.match(upgrade, /const hasBundledRoot = state\.people\[starterRootId\]\?\.starterProfile === true/);
+  assert.match(upgrade, /starterProfiles\.length >= 10/);
+  assert.doesNotMatch(upgrade, /state\.rootId === starterRootId/);
+});

@@ -1,0 +1,53 @@
+name: Verify refocused bundled-example upgrade
+on:
+  push:
+    branches: [fix/upgrade-refocused-bundled-example]
+    paths: [.github/workflows/verify-refocused-starter-upgrade.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/upgrade-refocused-bundled-example
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply the refocused-starter upgrade fix
+        run: python3 .github/scripts/fix_refocused_starter_upgrade.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check .github/scripts/check_refocused_starter_upgrade.mjs
+          git diff --check
+      - name: Start the application
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          echo $! >/tmp/lineage-http.pid
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+      - name: Verify a version-25 refocused tree upgrades in place
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/lineage-refocused-upgrade about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          echo $! >/tmp/lineage-chrome.pid
+          node .github/scripts/check_refocused_starter_upgrade.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit the verified fix
+        run: |
+          rm .github/scripts/fix_refocused_starter_upgrade.py
+          rm .github/scripts/check_refocused_starter_upgrade.mjs
+          rm .github/workflows/verify-refocused-starter-upgrade.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upgrade refocused bundled examples in place"
+          git push origin HEAD:fix/upgrade-refocused-bundled-example

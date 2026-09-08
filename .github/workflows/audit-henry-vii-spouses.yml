@@ -21,6 +21,7 @@ jobs:
         run: |
           python3 .github/scripts/add_henry_vii_cousin_spouse_lines.py
           python3 .github/scripts/sort_cousin_line_children.py
+          python3 .github/scripts/fix_cousin_cache_assertions.py
       - name: Run automated and structural checks
         run: |
           npm test
@@ -57,6 +58,7 @@ jobs:
             .github/scripts/probe_geni_browser.mjs \
             .github/scripts/add_henry_vii_cousin_spouse_lines.py \
             .github/scripts/sort_cousin_line_children.py \
+            .github/scripts/fix_cousin_cache_assertions.py \
             .github/scripts/check_henry_vii_cousin_spouse_lines.mjs \
             .github/workflows/audit-henry-vii-spouses.yml
           git config user.name "github-actions[bot]"

@@ -29,6 +29,14 @@ HEADERS = {
     'User-Agent': 'Lineage-genealogy-audit/1.0 (https://github.com/liuyao12/genealogy-timeline)'
 }
 
+# Wikidata's P2600 claim for Princess Augusta has disappeared, but the same
+# identity was independently verified from Geni's public people search in the
+# earlier audit. Keep this stable fallback so regenerating the curated starter
+# does not depend on a mutable third-party claim.
+VERIFIED_GENI_FALLBACKS = {
+    'Princess Augusta of Great Britain': 'profile-g312092994390004595',
+}
+
 
 def get_json(url: str) -> dict:
     request = urllib.request.Request(url, headers=HEADERS)
@@ -83,8 +91,11 @@ for requested_title in TITLES:
         value = claim.get('mainsnak', {}).get('datavalue', {}).get('value')
         if value:
             values.append(canonical_geni(value))
+    fallback = VERIFIED_GENI_FALLBACKS.get(requested_title)
+    if not values and fallback:
+        values = [fallback]
     if not values:
-        raise SystemExit(f'No Geni.com profile ID (Wikidata P2600) for {requested_title} [{qid}]')
+        raise SystemExit(f'No Geni.com profile ID (Wikidata P2600) or verified fallback for {requested_title} [{qid}]')
     resolved[requested_title] = {
         'qid': qid,
         'geniId': values[0],

@@ -1,4 +1,4 @@
-# Retry 3: keep legacy scope tests meaningful under the two-parent birth policy.
+# Retry 4: distinguish the projected parent map from the complete parent map.
 name: Verify birth filtering and Geni identity merging
 on:
   push:

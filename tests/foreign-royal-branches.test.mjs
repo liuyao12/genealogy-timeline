@@ -51,8 +51,8 @@ function descendantPath(startName, endName) {
   return path.reverse().map(personId => people[personId].displayName);
 }
 
-test('the expanded bundled example advances to version 27', () => {
-  assert.equal(starter.version, 27);
+test('the expanded bundled example advances to version 28', () => {
+  assert.equal(starter.version, 28);
   assert.equal(Object.keys(people).length, 168);
 });
 

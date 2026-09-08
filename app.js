@@ -3,6 +3,7 @@ import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=4';
 import { duplicateGeniIdentityGroups, remapPeopleByGeniIdentity } from './geni-identity.js?v=2';
 import { monarchGroupFromProfile } from './monarch-events.js?v=1';
+import { normalizeBritishRoyalPlaceName } from './royal-title-style.js?v=1';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
 import { birthOrderPairs, packTimelineRunsSourceFirst } from './timeline-compaction.js?v=3';
 
@@ -345,11 +346,12 @@ function normalizePersonalEvents(events) {
 
 function normalizeNamePeriods(periods) {
   const normalized = (Array.isArray(periods) ? periods : []).map(period => {
-    const name = clean(period?.name || period?.displayName || period?.display_name || period?.label)
-      .replace(/^(?:(?:H\.?R\.?H\.?|H\.?M\.?)|(?:His|Her) Royal Highness|(?:His|Her) Majesty)\s+/i, '');
     let startYear = numericYear(period?.startYear ?? period?.start_year ?? period?.fromYear ?? period?.from);
     let endYear = numericYear(period?.endYear ?? period?.end_year ?? period?.toYear ?? period?.to);
     if (startYear != null && endYear != null && endYear < startYear) [startYear, endYear] = [endYear, startYear];
+    const rawName = clean(period?.name || period?.displayName || period?.display_name || period?.label)
+      .replace(/^(?:(?:H\.?R\.?H\.?|H\.?M\.?)|(?:His|Her) Royal Highness|(?:His|Her) Majesty)\s+/i, '');
+    const name = normalizeBritishRoyalPlaceName(rawName, startYear ?? endYear);
     return {
       id: clean(period?.id) || `name-${encodeURIComponent(name.toLocaleLowerCase())}-${startYear ?? 'open'}-${endYear ?? 'open'}`,
       name,
@@ -463,6 +465,11 @@ function normalizePerson(source, fallbackId) {
   const birth = source.birth || source.birth_date_parts || {};
   const death = source.death || source.death_date_parts || {};
   const dateYear = value => clean(value).match(/-?\d{3,4}/)?.[0] || '';
+  const birthYear = clean(source.birthYear || source.bYear || birth.year || birth.date?.year || dateYear(source.birth_date));
+  const deathYear = clean(source.deathYear || source.dYear || death.year || death.date?.year || dateYear(source.death_date));
+  const isLiving = source.isLiving === true || source.is_alive === true;
+  const displayReferenceYear = numericYear(deathYear)
+    ?? (isLiving ? new Date().getFullYear() : numericYear(birthYear));
   const sourceUrl = validPublicUrl(source.sourceUrl || source.profile_url || source.profileUrl || '');
   const marriageYears = Object.fromEntries(Object.entries(source.marriageYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
   const relationshipEndYears = Object.fromEntries(Object.entries(source.relationshipEndYears || source.divorceYears || {}).map(([partnerId, year]) => [refId(partnerId), clean(year)]).filter(([partnerId, year]) => partnerId && numericYear(year) != null));
@@ -473,9 +480,18 @@ function normalizePerson(source, fallbackId) {
   const namePeriods = normalizeNamePeriods(rawNamePeriods);
   const requestedDefaultPeriodId = clean(source.defaultNamePeriodId || source.default_name_period_id);
   const rawDefaultPeriod = (Array.isArray(rawNamePeriods) ? rawNamePeriods : []).find(period => clean(period?.id) === requestedDefaultPeriodId);
-  const normalizedRawDefaultName = clean(rawDefaultPeriod?.name || rawDefaultPeriod?.displayName || rawDefaultPeriod?.display_name || rawDefaultPeriod?.label)
+  const rawDefaultName = clean(rawDefaultPeriod?.name || rawDefaultPeriod?.displayName || rawDefaultPeriod?.display_name || rawDefaultPeriod?.label)
     .replace(/^(?:(?:H\.?R\.?H\.?|H\.?M\.?)|(?:His|Her) Royal Highness|(?:His|Her) Majesty)\s+/i, '');
-  const displayName = clean(source.displayName || source.display_name || (typeof source.name === 'string' ? source.name : ''));
+  const rawDefaultStartYear = numericYear(rawDefaultPeriod?.startYear ?? rawDefaultPeriod?.start_year ?? rawDefaultPeriod?.fromYear ?? rawDefaultPeriod?.from);
+  const rawDefaultEndYear = numericYear(rawDefaultPeriod?.endYear ?? rawDefaultPeriod?.end_year ?? rawDefaultPeriod?.toYear ?? rawDefaultPeriod?.to);
+  const normalizedRawDefaultName = normalizeBritishRoyalPlaceName(
+    rawDefaultName,
+    rawDefaultStartYear ?? rawDefaultEndYear ?? displayReferenceYear
+  );
+  const displayName = normalizeBritishRoyalPlaceName(
+    clean(source.displayName || source.display_name || (typeof source.name === 'string' ? source.name : '')),
+    displayReferenceYear
+  );
   const defaultNamePeriodId = namePeriods.find(period => period.id === requestedDefaultPeriodId)?.id
     || namePeriods.find(period => normalizedRawDefaultName && period.name === normalizedRawDefaultName)?.id
     || namePeriods.find(period => displayName && period.name.toLocaleLowerCase() === displayName.toLocaleLowerCase())?.id
@@ -483,16 +499,16 @@ function normalizePerson(source, fallbackId) {
   return {
     id,
     firstName: clean(source.firstName || source.firstname || source.first_name),
-    lastName: clean(source.lastName || source.surname || source.last_name || source.maiden_name),
+    lastName: normalizeBritishRoyalPlaceName(clean(source.lastName || source.surname || source.last_name || source.maiden_name), displayReferenceYear),
     displayName,
-    title: clean(source.title || source.display_title || source.occupation),
+    title: normalizeBritishRoyalPlaceName(clean(source.title || source.display_title || source.occupation), displayReferenceYear),
     nameOrder: 'western',
     gender: rawGender === 'm' ? 'male' : rawGender === 'f' ? 'female' : ['male', 'female'].includes(rawGender) ? rawGender : 'unknown',
-    birthYear: clean(source.birthYear || source.bYear || birth.year || birth.date?.year || dateYear(source.birth_date)),
-    deathYear: clean(source.deathYear || source.dYear || death.year || death.date?.year || dateYear(source.death_date)),
-    isLiving: source.isLiving === true || source.is_alive === true,
+    birthYear,
+    deathYear,
+    isLiving,
     place: clean(source.place || source.hometown || source.jiguan || birth.location?.place_name || birth.location?.city),
-    note: clean(source.note || source.addendum || source.about_me),
+    note: normalizeBritishRoyalPlaceName(clean(source.note || source.addendum || source.about_me), displayReferenceYear),
     parents: uniqueRefs(source.parents || [source.fatherId, source.motherId]),
     children: uniqueRefs(source.children),
     // `partners` preserves the complete imported graph. Only `spouses` is
@@ -616,10 +632,10 @@ function upgradeBundledBritishRoyalLine() {
   migrateBundledStarterProfileIds();
   const bundledPeople = createBritishRoyalSample();
   const revisedImperialNamePeriods = {
-    [canonicalGeniProfileId('6000000001651648070')]: ['edward-vii-name-1901', 'Edward VII, King of the United Kingdom'],
-    [canonicalGeniProfileId('6000000000701511040')]: ['george-v-name-1910', 'George V, King of the United Kingdom'],
-    [canonicalGeniProfileId('5031922362950130285')]: ['edward-viii-name-1936', 'Edward VIII, King of the United Kingdom'],
-    [canonicalGeniProfileId('6000000001217955606')]: ['george-vi-name-1936', 'George VI, King of the United Kingdom']
+    [canonicalGeniProfileId('6000000001651648070')]: ['edward-vii-name-1901', 'Edward VII, King of Great Britain and Ireland'],
+    [canonicalGeniProfileId('6000000000701511040')]: ['george-v-name-1910', 'George V, King of Great Britain and Ireland'],
+    [canonicalGeniProfileId('5031922362950130285')]: ['edward-viii-name-1936', 'Edward VIII, King of Great Britain and Northern Ireland'],
+    [canonicalGeniProfileId('6000000001217955606')]: ['george-vi-name-1936', 'George VI, King of Great Britain and Northern Ireland']
   };
   const revisedStarterDisplayNames = {
     [canonicalGeniProfileId('6000000003409427757')]: ['Arthur Tudor'],
@@ -678,7 +694,7 @@ function upgradeBundledBritishRoyalLine() {
     if (id === canonicalGeniProfileId('6000000008852088113')) {
       merged.namePeriods = normalizeNamePeriods(merged.namePeriods.map(period => (
         period.id === 'victoria-name-1837'
-          && period.name === 'Victoria, Queen of the United Kingdom'
+          && period.name === 'Victoria, Queen of Great Britain and Ireland'
           && numericYear(period.endYear) === 1901
           ? { ...period, endYear: 1876 }
           : period

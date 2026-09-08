@@ -7,6 +7,7 @@ on:
       - .github/scripts/audit_starter_ids_events.py
       - .github/scripts/inspect_event_code.py
       - .github/scripts/resolve_geni_ids_via_wikidata.py
+      - .github/scripts/probe_geni_public_profiles.py
 permissions:
   contents: read
 jobs:
@@ -25,3 +26,5 @@ jobs:
         run: python .github/scripts/inspect_event_code.py
       - name: Resolve Geni identities through Wikidata
         run: python .github/scripts/resolve_geni_ids_via_wikidata.py
+      - name: Probe public Geni profiles
+        run: python .github/scripts/probe_geni_public_profiles.py

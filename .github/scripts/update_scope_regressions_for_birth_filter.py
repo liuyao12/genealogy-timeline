@@ -30,7 +30,8 @@ new = """test('repairs sparse parent-child links in both directions for one conn
   assert.deepEqual([...scope.childrenByParent.get('root')], ['child']);
   assert.deepEqual([...scope.parentsByChild.get('child')].sort(), ['root', 'root-spouse']);
   assert.deepEqual([...scope.childrenByParent.get('child')], ['grandchild']);
-  assert.deepEqual([...scope.parentsByChild.get('grandchild')].sort(), ['child', 'grandchild-other-parent']);
+  assert.deepEqual([...scope.parentsByChild.get('grandchild')], ['child']);
+  assert.deepEqual([...scope.allParentsByChild.get('grandchild')].sort(), ['child', 'grandchild-other-parent']);
 });
 """
 if text.count(old) != 1:

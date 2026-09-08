@@ -26,8 +26,29 @@ replace_once(
 # Version 27 is asserted in both royal-data test suites.
 path = Path('tests/royal-name-style.test.mjs')
 text = path.read_text(encoding='utf-8')
-text = text.replace("test('the bundled royal example advances its migration version'", "test('the bundled royal example advances its migration version'", 1)
 count = text.count('assert.equal(starter.version, 26);')
 if count != 1:
     raise SystemExit(f'Expected one version-26 assertion, found {count}')
 path.write_text(text.replace('assert.equal(starter.version, 26);', 'assert.equal(starter.version, 27);', 1), encoding='utf-8')
+
+# Recent Chrome versions require PUT when creating a new CDP target.
+replace_once(
+    '.github/scripts/check_claude_monarch_events.mjs',
+    """async function json(url) {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    try {
+      const response = await fetch(url);
+""",
+    """async function json(url, options = {}) {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    try {
+      const response = await fetch(url, options);
+""",
+)
+replace_once(
+    '.github/scripts/check_claude_monarch_events.mjs',
+    """const target = (await json(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(baseUrl)}`)).webSocketDebuggerUrl;
+""",
+    """const target = (await json(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(baseUrl)}`, { method: 'PUT' })).webSocketDebuggerUrl;
+""",
+)

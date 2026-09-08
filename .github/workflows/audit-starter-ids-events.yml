@@ -6,6 +6,7 @@ on:
       - .github/workflows/audit-starter-ids-events.yml
       - .github/scripts/audit_starter_ids_events.py
       - .github/scripts/inspect_event_code.py
+      - .github/scripts/resolve_geni_ids_via_wikidata.py
 permissions:
   contents: read
 jobs:
@@ -22,3 +23,5 @@ jobs:
         run: python .github/scripts/audit_starter_ids_events.py
       - name: Inspect event controls
         run: python .github/scripts/inspect_event_code.py
+      - name: Resolve Geni identities through Wikidata
+        run: python .github/scripts/resolve_geni_ids_via_wikidata.py

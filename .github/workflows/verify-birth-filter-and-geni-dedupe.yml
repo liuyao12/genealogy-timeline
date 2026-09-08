@@ -1,4 +1,4 @@
-# Retry 2: target only the saved-profile relationship migration.
+# Retry 3: keep legacy scope tests meaningful under the two-parent birth policy.
 name: Verify birth filtering and Geni identity merging
 on:
   push:
@@ -21,6 +21,7 @@ jobs:
         run: |
           python3 .github/scripts/fix_birth_filter_patch_script.py
           python3 .github/scripts/apply_birth_filter_and_geni_dedupe.py
+          python3 .github/scripts/update_scope_regressions_for_birth_filter.py
       - name: Run automated tests and syntax checks
         run: |
           npm test
@@ -74,6 +75,7 @@ jobs:
         run: |
           rm .github/scripts/apply_birth_filter_and_geni_dedupe.py
           rm .github/scripts/fix_birth_filter_patch_script.py
+          rm .github/scripts/update_scope_regressions_for_birth_filter.py
           rm .github/scripts/check_birth_filter_and_geni_dedupe.mjs
           rm .github/workflows/verify-birth-filter-and-geni-dedupe.yml
           git config user.name "github-actions[bot]"

@@ -1,0 +1,17 @@
+name: Audit Henry VII spouse lines
+on:
+  push:
+    branches: [data/add-henry-vii-cousin-spouse-lines]
+    paths:
+      - .github/workflows/audit-henry-vii-spouses.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: data/add-henry-vii-cousin-spouse-lines
+      - name: List spouse gateways outside the current descendant closure
+        run: python3 .github/scripts/audit_henry_vii_spouses.py

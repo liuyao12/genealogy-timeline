@@ -1,0 +1,14 @@
+name: Audit Henry VII-descended spouses
+on:
+  push:
+    branches: [data/henry-vii-descended-spouses]
+    paths: [.github/workflows/audit-henry-vii-descended-spouses.yml]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: data/henry-vii-descended-spouses
+      - name: Audit spouse ancestry in bundled example
+        run: python3 .github/scripts/audit_henry_vii_descended_spouses.py

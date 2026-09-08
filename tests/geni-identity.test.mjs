@@ -127,3 +127,32 @@ test('reports duplicate stored profiles linked to the same Geni identity', () =>
     ids: ['local', 'canonical']
   }]);
 });
+
+
+test('matches a compact starter Geni alias to a later public-GUID API record', () => {
+  const existing = {
+    francis: {
+      id: 'profile-4695498',
+      sourceId: 'profile-4695498',
+      geniAliases: ['profile-4695498'],
+      displayName: 'Francis I, King of France'
+    }
+  };
+  const incoming = {
+    'profile-g6000000999999999999': {
+      id: 'profile-g6000000999999999999',
+      sourceId: 'profile-g6000000999999999999',
+      geniAliases: ['profile-4695498', 'profile-g6000000999999999999'],
+      displayName: 'François I',
+      parents: [], children: [], partners: [], spouses: [], nonSpouses: [], divorcedSpouses: [],
+      marriageYears: {}, relationshipEndYears: {}, relationshipEndStatuses: {}, geniImmediateFamilyIds: []
+    }
+  };
+  const remapped = remapPeopleByGeniIdentity(incoming, existing);
+  assert.equal(remapped.idMap['profile-g6000000999999999999'], 'francis');
+  assert.ok(remapped.people.francis);
+  assert.deepEqual(remapped.people.francis.geniAliases.sort(), [
+    'profile-4695498',
+    'profile-g6000000999999999999'
+  ]);
+});

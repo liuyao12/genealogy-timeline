@@ -95,6 +95,11 @@ function displayNameForProfile(raw) {
 
 export function profileToLineagePerson(raw, fallbackId = '', importedAt = new Date().toISOString()) {
   const id = stableProfileId(raw, fallbackId);
+  const apiId = canonicalGeniProfileId(refId(raw?.id || raw?.url));
+  const publicId = profileIdFromGeniInput(raw?.profile_url);
+  const guid = clean(raw?.guid);
+  const guidId = /^\d{15,}$/.test(guid) ? `profile-g${guid}` : '';
+  const geniAliases = unique([id, apiId, publicId, guidId].filter(Boolean));
   const birth = raw?.birth || {};
   const death = raw?.death || {};
   return {
@@ -124,6 +129,7 @@ export function profileToLineagePerson(raw, fallbackId = '', importedAt = new Da
     sourceId: id,
     sourceProvider: 'geni',
     importedAt,
+    geniAliases,
     geniParentUnionStatus: '',
     geniNonMaritalBirth: false,
     geniImmediateFamilyLoaded: false,
@@ -146,6 +152,7 @@ export function mergeLineagePerson(existing, incoming) {
   merged.marriageYears = { ...(incoming.marriageYears || {}), ...(existing.marriageYears || {}) };
   merged.relationshipEndYears = { ...(incoming.relationshipEndYears || {}), ...(existing.relationshipEndYears || {}) };
   merged.relationshipEndStatuses = { ...(incoming.relationshipEndStatuses || {}), ...(existing.relationshipEndStatuses || {}) };
+  merged.geniAliases = unique([...(incoming.geniAliases || []), ...(existing.geniAliases || [])]);
   merged.geniParentUnionStatus = clean(incoming.geniParentUnionStatus) || clean(existing.geniParentUnionStatus);
   merged.geniNonMaritalBirth = incoming.geniNonMaritalBirth === true || existing.geniNonMaritalBirth === true;
   merged.geniImmediateFamilyLoaded = incoming.geniImmediateFamilyLoaded || existing.geniImmediateFamilyLoaded;

@@ -35,6 +35,13 @@ export function geniIdentityCandidates(person = {}, fallbackId = '') {
   const provider = clean(person?.sourceProvider || person?.source_provider || person?.provenance?.provider).toLowerCase();
   const urls = [person?.profile_url, person?.profileUrl, person?.sourceUrl, person?.url]
     .map(canonicalGeniIdentity).filter(Boolean);
+  // `geniAliases` keeps both the compact API node ID and the public GUID when
+  // Geni exposes them together. Either form can therefore match an older
+  // starter record or a later API response.
+  const explicitAliases = unique([
+    ...(Array.isArray(person?.geniAliases) ? person.geniAliases : []),
+    ...(Array.isArray(person?.geni_ids) ? person.geni_ids : [])
+  ]).map(canonicalGeniIdentity).filter(Boolean);
   const allowBareId = provider === 'geni' || urls.length > 0 || /^\d{15,}$/.test(guid);
   const idCandidate = value => {
     const raw = clean(value);
@@ -42,6 +49,7 @@ export function geniIdentityCandidates(person = {}, fallbackId = '') {
     return allowBareId && /^g?\d+$/i.test(raw) ? canonicalGeniIdentity(raw) : '';
   };
   const candidates = [
+    ...explicitAliases,
     idCandidate(person?.sourceId),
     idCandidate(person?.source_id),
     ...urls,
@@ -99,6 +107,7 @@ function mergeIncomingRecords(previous, incoming) {
   for (const field of MAP_REFERENCE_FIELDS) {
     merged[field] = { ...(previous[field] || {}), ...(incoming[field] || {}) };
   }
+  merged.geniAliases = unique([...(previous.geniAliases || []), ...(incoming.geniAliases || [])]);
   merged.geniNonMaritalBirth = previous.geniNonMaritalBirth === true || incoming.geniNonMaritalBirth === true;
   merged.geniParentUnionStatus = clean(incoming.geniParentUnionStatus) || clean(previous.geniParentUnionStatus);
   return merged;
@@ -165,6 +174,11 @@ export function remapPeopleByGeniIdentity(incomingPeople = {}, existingPeople = 
       record[field] = mapped;
     }
     if (identity) record.sourceId = identity;
+    record.geniAliases = unique([
+      ...(source.geniAliases || []).map(canonicalGeniIdentity),
+      ...geniIdentityCandidates(source, incomingId),
+      identity
+    ].filter(Boolean));
     records[targetId] = mergeIncomingRecords(records[targetId], record);
   });
 

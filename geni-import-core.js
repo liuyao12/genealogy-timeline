@@ -15,7 +15,7 @@ import {
   stableProfileId,
   unionChildRefs,
   unique
-} from './geni-model.js?v=3';
+} from './geni-model.js?v=4';
 import {
   GeniApiError,
   apiProfileIdentifier,
@@ -461,6 +461,9 @@ export function lineageTreeSnapshot(pkg, { id = `tree-${cryptoId()}`, title = ''
     people: sanitizedTreePackage(pkg),
     globalEvents: [],
     reignColor: '#c62828',
+    otherMonarchColor: '#3949ab',
+    showPersonalEvents: true,
+    showDecadeBands: true,
     timelineYearWidth: 4,
     timelineNodeHeight: 28,
     asOfYear: null,

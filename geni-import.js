@@ -8,9 +8,9 @@ import {
   GENI_TOKEN_SESSION_KEY,
   WORKSPACE_STORAGE_KEY
 } from './geni-config.js?v=2';
-import { clean, profileIdFromGeniInput } from './geni-model.js?v=3';
+import { clean, profileIdFromGeniInput } from './geni-model.js?v=4';
 import { GeniJsonpClient, cryptoId } from './geni-api.js?v=2';
-import { GeniDescendantImporter, lineageTreeSnapshot } from './geni-import-core.js?v=3';
+import { GeniDescendantImporter, lineageTreeSnapshot } from './geni-import-core.js?v=4';
 
 function storageJson(storage, key, fallback = null) {
   try {

@@ -53,7 +53,7 @@ function defaultName(person) {
 }
 
 test('the bundled royal example advances its migration version', () => {
-  assert.equal(starter.version, 26);
+  assert.equal(starter.version, 27);
 });
 
 test('substantive titles are displayed as titles rather than territorial surnames', () => {

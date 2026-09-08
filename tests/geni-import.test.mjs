@@ -51,6 +51,7 @@ test('retains only life-event years from a Geni profile', () => {
   assert.equal(person.birthYear, '1901');
   assert.equal(person.deathYear, '1988');
   assert.equal(person.place, '');
+  assert.deepEqual(person.geniAliases.sort(), ['profile-42', 'profile-g6000000000000000042']);
   assert.doesNotMatch(JSON.stringify(person), /Beijing|San Francisco|"month"|"day"/);
 });
 

@@ -1,3 +1,4 @@
+# Retry 2: target only the saved-profile relationship migration.
 name: Verify birth filtering and Geni identity merging
 on:
   push:

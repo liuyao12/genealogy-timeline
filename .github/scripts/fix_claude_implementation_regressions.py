@@ -52,3 +52,47 @@ replace_once(
     """const target = (await json(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(baseUrl)}`, { method: 'PUT' })).webSocketDebuggerUrl;
 """,
 )
+
+# Charles IX is stored but is outside Henry VII's default focus projection.
+# Exercise whichever non-British monarch is actually visible in the rendered
+# focus tree (normally a foreign royal spouse), rather than hard-coding a
+# profile that the projection intentionally omits.
+replace_once(
+    '.github/scripts/check_claude_monarch_events.mjs',
+    """  const nodeStrokes = name => {
+    const id = idByName(name);
+    const node = document.querySelector('.timeline-node[data-person-id=\"' + CSS.escape(id) + '\"]');
+    return node ? [...node.querySelectorAll('.personal-event-edge,.personal-event-point')].map(mark => mark.getAttribute('stroke')) : [];
+  };
+  return {
+""",
+    """  const nodeStrokesById = id => {
+    const node = document.querySelector('.timeline-node[data-person-id=\"' + CSS.escape(id) + '\"]');
+    return node ? [...node.querySelectorAll('.personal-event-edge,.personal-event-point')].map(mark => mark.getAttribute('stroke')) : [];
+  };
+  const nodeStrokes = name => nodeStrokesById(idByName(name));
+  const visibleOtherMonarch = entries.find(([id, person]) =>
+    person.personalEvents?.some(event => event.kind === 'monarch-reign' && event.monarchGroup === 'other')
+    && document.querySelector('.timeline-node[data-person-id=\"' + CSS.escape(id) + '\"]')
+  );
+  return {
+""",
+)
+replace_once(
+    '.github/scripts/check_claude_monarch_events.mjs',
+    """    britishStrokes: nodeStrokes('Henry VIII, King of England'),
+    otherStrokes: nodeStrokes('Charles IX, King of France'),
+""",
+    """    britishStrokes: nodeStrokes('Henry VIII, King of England'),
+    otherMonarch: visibleOtherMonarch?.[1]?.displayName || '',
+    otherStrokes: visibleOtherMonarch ? nodeStrokesById(visibleOtherMonarch[0]) : [],
+""",
+)
+replace_once(
+    '.github/scripts/check_claude_monarch_events.mjs',
+    """assert.ok(initial.otherStrokes.length > 0);
+""",
+    """assert.ok(initial.otherMonarch, 'the default focus should contain a visible non-British monarch');
+assert.ok(initial.otherStrokes.length > 0);
+""",
+)

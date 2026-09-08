@@ -10,10 +10,10 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     env:
-      AUDIT_VERSION: "6"
+      AUDIT_VERSION: "7"
     steps:
       - uses: actions/checkout@v4
         with:
           ref: data/add-henry-vii-cousin-spouse-lines
-      - name: Inspect FactGrid identifiers for Princess Augusta
-        run: python3 .github/scripts/inspect_factgrid_augusta.py
+      - name: Search Geni’s public profile indexes for Princess Augusta
+        run: python3 .github/scripts/search_geni_popular_augusta.py

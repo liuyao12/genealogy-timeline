@@ -4073,23 +4073,23 @@ function renderRelationshipHouseholds(person) {
   const visibleOccurrences = [...els['timeline-canvas'].querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(person.id)}"]`)];
   const shownOnlyAsSpouse = visibleOccurrences.length > 0 && visibleOccurrences.every(node => node.classList.contains('spouse'));
   const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]));
-  const partnerIds = scopedSpouseIds(person, scope).sort((firstId, secondId) => {
+  const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
     const firstYear = marriageYearFor(person.id, firstId);
     const secondYear = marriageYearFor(person.id, secondId);
     if (firstYear != null || secondYear != null) return (firstYear ?? Number.POSITIVE_INFINITY) - (secondYear ?? Number.POSITIVE_INFINITY);
-    const firstChildYear = Math.min(...scopedHouseholdChildren(person.id, firstId, scope).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
-    const secondChildYear = Math.min(...scopedHouseholdChildren(person.id, secondId, scope).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    const firstChildYear = Math.min(...householdChildren(person.id, firstId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
+    const secondChildYear = Math.min(...householdChildren(person.id, secondId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
     return firstChildYear - secondChildYear || byBirth(firstId, secondId);
   });
   const assignedChildren = new Set();
   const groups = partnerIds.map(partnerId => {
-    const children = scopedHouseholdChildren(person.id, partnerId, scope).sort(byBirth);
+    const children = householdChildren(person.id, partnerId).sort(byBirth);
     children.forEach(id => assignedChildren.add(id));
     return { partnerId, children };
   });
-  const ungroupedChildren = scopedChildIds(person.id, scope).filter(id => !assignedChildren.has(id)).sort(byBirth);
+  const ungroupedChildren = unique(person.children).filter(id => state.people[id] && !assignedChildren.has(id)).sort(byBirth);
   if (ungroupedChildren.length) groups.push({ partnerId: '', children: ungroupedChildren });
-  const parentIds = scopedParentIds(person.id, scope).sort(byBirth);
+  const parentIds = unique(person.parents).filter(id => state.people[id]).sort(byBirth);
 
   if (!groups.length && !parentIds.length) {
     const empty = document.createElement('p');
@@ -4207,7 +4207,7 @@ function renderRelationshipHouseholds(person) {
     }
     group.children.forEach(childId => {
       const visible = visibility.visibleIds.has(childId) && visibility.childEdgeVisible(person.id, childId);
-      const childRelationKeys = scopedParentIds(childId, scope)
+      const childRelationKeys = unique(state.people[childId]?.parents).filter(parentId => state.people[parentId])
         .map(parentId => childRelationKey(parentId, childId));
       household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}`, relationKeys: childRelationKeys }));
     });

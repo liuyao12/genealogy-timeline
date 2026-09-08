@@ -61,7 +61,7 @@ index = INDEX.read_text(encoding='utf-8')
 index = replace_once(index, './app.js?v=143', './app.js?v=144')
 INDEX.write_text(index, encoding='utf-8')
 
-TEST.write_text("""import test from 'node:test';
+TEST.write_text(r"""import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 

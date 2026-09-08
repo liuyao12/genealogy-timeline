@@ -20,13 +20,14 @@ function numericYear(value) {
 export function normalizeBritishRoyalPlaceName(value, referenceYear = null) {
   const text = value == null ? '' : String(value);
   const year = numericYear(referenceYear);
-  if (!text || year == null || !SOVEREIGN_UNITED_KINGDOM_PATTERN.test(text)) {
-    SOVEREIGN_UNITED_KINGDOM_PATTERN.lastIndex = 0;
-    return text;
-  }
-  SOVEREIGN_UNITED_KINGDOM_PATTERN.lastIndex = 0;
+  if (!text || year == null) return text;
   const places = year >= 1927
     ? 'Great Britain and Northern Ireland'
     : 'Great Britain and Ireland';
-  return text.replace(SOVEREIGN_UNITED_KINGDOM_PATTERN, (_match, rank) => `${rank} of ${places}`);
+  return text
+    .replace(SOVEREIGN_UNITED_KINGDOM_PATTERN, (_match, rank) => `${rank} of ${places}`)
+    .replace(
+      new RegExp(`\\b(${places.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}) and (Emperor|Empress) of India\\b`, 'g'),
+      '$1, $2 of India'
+    );
 }

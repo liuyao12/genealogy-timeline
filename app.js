@@ -2,6 +2,7 @@ import { computeDescendantScope } from './descendant-scope.js?v=4';
 import { asOfMaskSegments, decadeBandRects } from './timeline-bands.js?v=2';
 import { graphUnionRecords } from './geni-import-core.js?v=4';
 import { duplicateGeniIdentityGroups, remapPeopleByGeniIdentity } from './geni-identity.js?v=2';
+import { monarchGroupFromProfile } from './monarch-events.js?v=1';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
 import { birthOrderPairs, packTimelineRunsSourceFirst } from './timeline-compaction.js?v=3';
 
@@ -436,7 +437,12 @@ function extractGeniReignFacts(profile) {
   visit(profile?.custom_facts);
   visit(profile?.details);
   visit(profile?.detail_strings);
-  return normalizePersonalEvents(found);
+  const monarchGroup = monarchGroupFromProfile(profile);
+  return normalizePersonalEvents(found.map(event => (
+    isMonarchReignEvent(event)
+      ? { ...event, kind: 'monarch-reign', monarchGroup }
+      : event
+  )));
 }
 
 function reignEvents(person) {

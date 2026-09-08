@@ -122,7 +122,10 @@ export function remapPeopleByGeniIdentity(incomingPeople = {}, existingPeople = 
     const existingTarget = [primary, ...candidates]
       .map(identity => existingIndex.get(identity))
       .find(Boolean);
-    const targetId = clean(forcedTarget || existingTarget || incomingId);
+    const incomingTarget = [primary, ...candidates]
+      .map(identity => incomingIdentityTargets.get(identity))
+      .find(Boolean);
+    const targetId = clean(forcedTarget || existingTarget || incomingTarget || incomingId);
     idMap[incomingId] = targetId;
     if (person?.id) idMap[clean(person.id)] = targetId;
     for (const identity of candidates) {

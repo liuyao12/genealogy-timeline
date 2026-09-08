@@ -1,0 +1,14 @@
+name: Audit place-based titles and George III family
+on:
+  push:
+    branches: [fix/place-based-royal-titles-and-george-family]
+    paths: [.github/workflows/audit-place-titles-george-family.yml]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/place-based-royal-titles-and-george-family
+      - name: Audit bundled royal data
+        run: python3 .github/scripts/audit_place_titles_george_family.py

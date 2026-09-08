@@ -10,10 +10,10 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     env:
-      AUDIT_VERSION: "5"
+      AUDIT_VERSION: "6"
     steps:
       - uses: actions/checkout@v4
         with:
           ref: data/add-henry-vii-cousin-spouse-lines
-      - name: Trace confirmed spouse descents to Henry VII
-        run: python3 .github/scripts/trace_confirmed_spouse_paths.py
+      - name: Inspect FactGrid identifiers for Princess Augusta
+        run: python3 .github/scripts/inspect_factgrid_augusta.py

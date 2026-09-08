@@ -15,3 +15,5 @@ jobs:
           ref: data/add-henry-vii-cousin-spouse-lines
       - name: List spouse gateways outside the current descendant closure
         run: python3 .github/scripts/audit_henry_vii_spouses.py
+      - name: Trace spouse gateways to Henry VII through Wikidata parents
+        run: python3 .github/scripts/audit_spouse_wikidata.py

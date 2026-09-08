@@ -1,0 +1,86 @@
+name: Implement Claude identity and monarch event groups
+on:
+  push:
+    branches: [fix/claude-geni-monarch-events]
+    paths:
+      - .github/workflows/implement-claude-geni-monarch-events.yml
+      - .github/scripts/apply_claude_geni_monarch_events.py
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/claude-geni-monarch-events
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply production and data changes
+        run: python3 .github/scripts/apply_claude_geni_monarch_events.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check geni-identity.js
+          node --check geni-model.js
+          node --check geni-import-core.js
+          node --check geni-import.js
+          node --check .github/scripts/check_claude_monarch_events.mjs
+          git diff --check
+      - name: Validate starter identities and event groups
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          import { duplicateGeniIdentityGroups, primaryGeniIdentity } from './geni-identity.js';
+          const starter = JSON.parse(readFileSync('./data/british-royal-line.json', 'utf8'));
+          assert.equal(starter.version, 27);
+          assert.equal(Object.keys(starter.people).length, 168);
+          assert.equal(Object.keys(starter.idAliases).length, 41);
+          for (const [id, person] of Object.entries(starter.people)) {
+            assert.match(id, /^profile-g?\d+$/i);
+            assert.ok(primaryGeniIdentity(person, id));
+          }
+          assert.deepEqual(duplicateGeniIdentityGroups(starter.people), []);
+          const claudes = Object.entries(starter.people).filter(([, person]) => person.displayName?.startsWith('Claude, Queen of France'));
+          assert.deepEqual(claudes.map(([id]) => id), ['profile-g6000000003219788110']);
+          const events = Object.values(starter.people).flatMap(person => person.personalEvents || []).filter(event => event.kind === 'monarch-reign');
+          assert.equal(events.length, 51);
+          assert.ok(events.some(event => event.monarchGroup === 'british'));
+          assert.ok(events.some(event => event.monarchGroup === 'other'));
+          assert.ok(events.every(event => event.color === (event.monarchGroup === 'british' ? '#c62828' : '#3949ab')));
+          console.log(JSON.stringify({ profiles: Object.keys(starter.people).length, aliases: Object.keys(starter.idAliases).length, monarchEvents: events.length }));
+          NODE
+      - name: Start the application and Chrome
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          for attempt in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/lineage-claude-events about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+      - name: Verify canonical migration, colours, and shared toggle in Chrome
+        run: node .github/scripts/check_claude_monarch_events.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit verified implementation
+        run: |
+          rm -f .github/scripts/audit_starter_ids_events.py
+          rm -f .github/scripts/inspect_event_code.py
+          rm -f .github/scripts/resolve_geni_ids_via_wikidata.py
+          rm -f .github/scripts/probe_geni_public_profiles.py
+          rm -f .github/scripts/resolve_compact_geni_guids.py
+          rm -f .github/scripts/apply_claude_geni_monarch_events.py
+          rm -f .github/scripts/check_claude_monarch_events.mjs
+          rm -f .github/workflows/audit-starter-ids-events.yml
+          rm -f .github/workflows/implement-claude-geni-monarch-events.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Canonicalize starter Geni IDs and group monarch events"
+          git push origin HEAD:fix/claude-geni-monarch-events

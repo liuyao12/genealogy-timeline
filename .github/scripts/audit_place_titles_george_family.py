@@ -52,3 +52,9 @@ for person_id in (george_id, charlotte_id):
     print(' parents', person.get('parents', []))
     print(' children', [(child_id, people.get(child_id, {}).get('displayName')) for child_id in person.get('children', [])])
     print(' spouses', [(spouse_id, people.get(spouse_id, {}).get('displayName')) for spouse_id in person.get('spouses', [])])
+
+app = Path('app.js').read_text(encoding='utf-8')
+start = app.index('function upgradeBundledBritishRoyalLine()')
+end = app.index('\nfunction ', start + len('function upgradeBundledBritishRoyalLine()'))
+print('\nSTARTER UPGRADE FUNCTION')
+print(app[start:end])

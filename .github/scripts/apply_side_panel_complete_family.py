@@ -2,6 +2,7 @@ from pathlib import Path
 
 
 APP = Path('app.js')
+INDEX = Path('index.html')
 TEST = Path('tests/side-panel-immediate-family.test.mjs')
 
 
@@ -56,11 +57,16 @@ text = replace_once(
 
 APP.write_text(text, encoding='utf-8')
 
+index = INDEX.read_text(encoding='utf-8')
+index = replace_once(index, './app.js?v=143', './app.js?v=144')
+INDEX.write_text(index, encoding='utf-8')
+
 TEST.write_text("""import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const start = app.indexOf('function renderRelationshipHouseholds(person) {');
 const end = app.indexOf('\nfunction renderGeniFamily', start);
 const section = app.slice(start, end > start ? end : app.length);
@@ -78,5 +84,6 @@ test('the side panel lists the selected profile complete stored immediate family
   assert.doesNotMatch(section, /const children = scopedHouseholdChildren/);
   assert.doesNotMatch(section, /const ungroupedChildren = scopedChildIds/);
   assert.doesNotMatch(section, /const parentIds = scopedParentIds/);
+  assert.match(html, /\.\/app\.js\?v=144/);
 });
 """, encoding='utf-8')

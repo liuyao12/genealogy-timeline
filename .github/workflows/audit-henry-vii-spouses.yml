@@ -10,10 +10,10 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     env:
-      AUDIT_VERSION: "8"
+      AUDIT_VERSION: "9"
     steps:
       - uses: actions/checkout@v4
         with:
           ref: data/add-henry-vii-cousin-spouse-lines
-      - name: Search the exact indexed Geni page for Princess Augusta
-        run: python3 .github/scripts/search_geni_popular_augusta.py
+      - name: Query Geni’s public family API with the configured app ID
+        run: python3 .github/scripts/probe_geni_family_pages.py

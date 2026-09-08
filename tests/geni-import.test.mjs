@@ -80,6 +80,23 @@ test('reconstructs spouse, child, and marriage-year links from a union', () => {
 });
 
 
+test('leaves a status-less undated union unclassified rather than assuming non-marital', () => {
+  const people = Object.fromEntries(['parent-a', 'parent-b', 'child'].map(id => [
+    `profile-${id}`,
+    profileToLineagePerson({ id: `profile-${id}`, name: id }, `profile-${id}`)
+  ]));
+  applyUnionToPeople(people, {
+    id: 'union-unknown',
+    partners: ['profile-parent-a', 'profile-parent-b'],
+    children: ['profile-child']
+  }, value => value);
+  assert.deepEqual(people['profile-parent-a'].partners, ['profile-parent-b']);
+  assert.deepEqual(people['profile-parent-a'].spouses, []);
+  assert.deepEqual(people['profile-parent-a'].nonSpouses, []);
+  assert.equal(people['profile-child'].geniParentUnionStatus, '');
+  assert.equal(people['profile-child'].geniNonMaritalBirth, false);
+});
+
 test('marks children of an explicit Geni partner union as non-marital', () => {
   const people = Object.fromEntries(['parent-a', 'parent-b', 'child'].map(id => [
     `profile-${id}`,

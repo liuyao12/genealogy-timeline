@@ -846,8 +846,9 @@ function inferRelationsFromUnions(nodes, preferredIds = {}) {
     const isEndedUnion = Boolean(relationshipEndStatus);
     partners.forEach(id => {
       profileMap[id].partners = unique([...(profileMap[id].partners || []), ...partners.filter(other => other !== id)]);
-      const relationKey = isSpouseUnion ? 'spouses' : 'nonSpouses';
-      profileMap[id][relationKey] = unique([...(profileMap[id][relationKey] || []), ...partners.filter(other => other !== id)]);
+      const otherPartners = partners.filter(other => other !== id);
+      if (isSpouseUnion) profileMap[id].spouses = unique([...(profileMap[id].spouses || []), ...otherPartners]);
+      else if (nonMaritalUnion) profileMap[id].nonSpouses = unique([...(profileMap[id].nonSpouses || []), ...otherPartners]);
       if (isEndedUnion) profileMap[id].divorcedSpouses = unique([...(profileMap[id].divorcedSpouses || []), ...partners.filter(other => other !== id)]);
       if (relationshipEndStatus) {
         profileMap[id].relationshipEndStatuses = { ...(profileMap[id].relationshipEndStatuses || {}) };

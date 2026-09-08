@@ -220,6 +220,21 @@ test('hides incomplete, infant, placeholder, and non-marital births without dele
   assert.ok(people['non-marital'], 'hidden records remain stored and searchable');
 });
 
+test('does not hide a person merely because their note mentions somebody else’s fragile birth', () => {
+  const people = {
+    root: { id: 'root', parents: [], children: ['child'], spouses: ['spouse'] },
+    spouse: { id: 'spouse', parents: [], children: ['child'], spouses: ['root'] },
+    child: {
+      id: 'child', displayName: 'Ordinary Child', birthYear: '1900', deathYear: '1980',
+      note: 'Father of an illegitimate son and a stillborn daughter.',
+      parents: ['root', 'spouse'], children: [], spouses: []
+    }
+  };
+  const scope = computeDescendantScope(people, 'root');
+  assert.equal(scope.allowedIds.has('child'), true);
+  assert.equal(scope.suppressionReasons.has('child'), false);
+});
+
 test('keeps a suppressed profile visible when it is explicitly chosen as the focus', () => {
   const people = {
     father: { id: 'father', gender: 'male', parents: [], children: ['focus'], spouses: [] },

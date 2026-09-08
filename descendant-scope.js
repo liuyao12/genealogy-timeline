@@ -64,9 +64,12 @@ function profileNameValues(person) {
     person?.firstName,
     person?.lastName,
     person?.title,
-    person?.note,
     ...(Array.isArray(person?.namePeriods) ? person.namePeriods.map(period => period?.name) : [])
   ].filter(Boolean).map(String);
+}
+
+function selfDescriptionNote(person) {
+  return String(person?.note || '').trim();
 }
 
 function hasPlaceholderName(person) {
@@ -110,19 +113,24 @@ export function treeBirthSuppressionReason(records = {}, childId = '', parentsBy
   const person = records[childId];
   if (!person) return 'missing-profile';
   const text = profileNameValues(person).join(' ');
-  if (/\bstill[-\s]?born\b|\bstill[-\s]?birth\b/i.test(text)) return 'stillbirth';
+  const note = selfDescriptionNote(person);
+  const noteMarksStillbirth = /^(?:still[-\s]?born|still[-\s]?birth)\b/i.test(note);
+  if (/\bstill[-\s]?born\b|\bstill[-\s]?birth\b/i.test(text) || noteMarksStillbirth) return 'stillbirth';
   const birthYear = numericYear(person.birthYear);
   const deathYear = person.isLiving ? null : numericYear(person.deathYear);
-  if (birthYear != null && deathYear != null && deathYear <= birthYear + 1) return 'infant-death';
+  const noteMarksInfantDeath = /^(?:died\s+(?:in infancy|as an? infant)|infant death)\b/i.test(note);
+  if ((birthYear != null && deathYear != null && deathYear <= birthYear + 1) || noteMarksInfantDeath) return 'infant-death';
   if (hasPlaceholderName(person)) return 'placeholder-name';
 
   const parentIds = orderedParentIds(records, parentsByChild, childId);
   if (parentIds.length < 2) return 'missing-parent';
 
   const unionStatus = String(person.geniParentUnionStatus || '').toLowerCase().replace(/[\s-]+/g, '_');
+  const noteMarksNonMaritalBirth = /^(?:illegitimate|natural\s+(?:son|daughter|child)|bastard)\b/i.test(note);
   const explicitlyNonMarital = person.geniNonMaritalBirth === true
     || ['partner', 'ex_partner', 'unmarried', 'mistress', 'lover', 'concubine'].includes(unionStatus)
-    || /\billegitimate\b|\bnatural\s+(?:son|daughter|child)\b|\bbastard\b/i.test(text);
+    || /\billegitimate\b|\bnatural\s+(?:son|daughter|child)\b|\bbastard\b/i.test(text)
+    || noteMarksNonMaritalBirth;
   if (explicitlyNonMarital) return 'non-marital-parent-union';
   if (!parentPairIsFormal(records, parentIds) && parentPairIsExplicitlyNonFormal(records, parentIds)) {
     return 'non-marital-parent-union';

@@ -31,17 +31,23 @@ export function canonicalGeniIdentity(value) {
 }
 
 export function geniIdentityCandidates(person = {}, fallbackId = '') {
-  const candidates = [
-    person?.sourceId,
-    person?.source_id,
-    person?.profile_url,
-    person?.profileUrl,
-    person?.sourceUrl,
-    person?.url,
-    person?.id,
-    fallbackId
-  ].map(canonicalGeniIdentity).filter(Boolean);
   const guid = clean(person?.guid);
+  const provider = clean(person?.sourceProvider || person?.source_provider || person?.provenance?.provider).toLowerCase();
+  const urls = [person?.profile_url, person?.profileUrl, person?.sourceUrl, person?.url]
+    .map(canonicalGeniIdentity).filter(Boolean);
+  const allowBareId = provider === 'geni' || urls.length > 0 || /^\d{15,}$/.test(guid);
+  const idCandidate = value => {
+    const raw = clean(value);
+    if (/^profile-g?\d+$/i.test(raw)) return canonicalGeniIdentity(raw);
+    return allowBareId && /^g?\d+$/i.test(raw) ? canonicalGeniIdentity(raw) : '';
+  };
+  const candidates = [
+    idCandidate(person?.sourceId),
+    idCandidate(person?.source_id),
+    ...urls,
+    idCandidate(person?.id),
+    idCandidate(fallbackId)
+  ].filter(Boolean);
   if (/^\d{15,}$/.test(guid)) candidates.unshift(`profile-g${guid}`);
   return unique(candidates);
 }

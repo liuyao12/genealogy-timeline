@@ -18,6 +18,14 @@ test('canonicalizes public Geni IDs and URLs without treating local IDs as Geni 
   assert.equal(canonicalGeniIdentity('https://example.com/6000000000000000042'), '');
 });
 
+test('does not treat another provider’s bare numeric source ID as a Geni identity', () => {
+  const people = {
+    local: { id: 'local', sourceId: '42', sourceProvider: 'other-service', sourceUrl: 'https://example.com/42' }
+  };
+  const index = indexPeopleByGeniIdentity(people);
+  assert.equal(index.has('profile-42'), false);
+});
+
 test('indexes a locally named profile by its linked Geni source ID', () => {
   const people = {
     'local-mary': {

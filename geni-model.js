@@ -184,8 +184,8 @@ export function applyUnionToPeople(people, union, resolveStableId) {
     const partner = people[partnerId];
     const others = partnerIds.filter(id => id !== partnerId);
     partner.partners = unique([...(partner.partners || []), ...others]);
-    const relationField = formal ? 'spouses' : 'nonSpouses';
-    partner[relationField] = unique([...(partner[relationField] || []), ...others]);
+    if (formal) partner.spouses = unique([...(partner.spouses || []), ...others]);
+    else if (nonMaritalUnion) partner.nonSpouses = unique([...(partner.nonSpouses || []), ...others]);
     partner.children = unique([...(partner.children || []), ...childIds]);
     for (const otherId of others) {
       if (marriageYear) partner.marriageYears[otherId] = marriageYear;

@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 27,
+  "version": 28,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -1397,7 +1397,7 @@
       "deathYear": "1820",
       "isLiving": false,
       "place": "",
-      "note": "King of Great Britain and Ireland; later United Kingdom",
+      "note": "King of Great Britain and Ireland, 1760–1820",
       "parents": [
         "profile-g6000000003891739213",
         "profile-g6000000003891753089"
@@ -1482,7 +1482,8 @@
       "place": "",
       "note": "Fourth son of George III; father of Victoria",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [
         "profile-g6000000008852088113"
@@ -1519,15 +1520,15 @@
       "id": "profile-g6000000008852088113",
       "firstName": "Victoria",
       "lastName": "",
-      "displayName": "Victoria, Queen of the United Kingdom and Empress of India",
-      "title": "Queen of the United Kingdom",
+      "displayName": "Victoria, Queen of Great Britain and Ireland, Empress of India",
+      "title": "Queen of Great Britain and Ireland",
       "nameOrder": "western",
       "gender": "female",
       "birthYear": "1819",
       "deathYear": "1901",
       "isLiving": false,
       "place": "",
-      "note": "Queen of the United Kingdom, 1837–1901; Empress of India, 1876–1901",
+      "note": "Queen of Great Britain and Ireland, 1837–1901; Empress of India, 1876–1901",
       "parents": [
         "profile-g4087038607800049893",
         "profile-g6000000000697437319"
@@ -1559,14 +1560,14 @@
         },
         {
           "id": "victoria-name-1837",
-          "name": "Victoria, Queen of the United Kingdom",
+          "name": "Victoria, Queen of Great Britain and Ireland",
           "startYear": 1837,
           "endYear": 1876,
           "sourceUrl": "https://www.nationalgallery.org.uk/people/victoria-queen-of-the-united-kingdom-of-great-britain-and-ireland-and-empress-of-india"
         },
         {
           "id": "victoria-name-1876",
-          "name": "Victoria, Queen of the United Kingdom and Empress of India",
+          "name": "Victoria, Queen of Great Britain and Ireland, Empress of India",
           "startYear": 1876,
           "endYear": 1901,
           "sourceUrl": "https://www.nationalgallery.org.uk/people/victoria-queen-of-the-united-kingdom-of-great-britain-and-ireland-and-empress-of-india"
@@ -1661,15 +1662,15 @@
       "id": "profile-g6000000001651648070",
       "firstName": "Edward",
       "lastName": "VII",
-      "displayName": "Edward VII, King of the United Kingdom",
-      "title": "King of the United Kingdom",
+      "displayName": "Edward VII, King of Great Britain and Ireland",
+      "title": "King of Great Britain and Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1841",
       "deathYear": "1910",
       "isLiving": false,
       "place": "",
-      "note": "King of the United Kingdom, 1901–1910",
+      "note": "King of Great Britain and Ireland, 1901–1910",
       "parents": [
         "profile-g6000000000697518124",
         "profile-g6000000008852088113"
@@ -1700,7 +1701,7 @@
         },
         {
           "id": "edward-vii-name-1901",
-          "name": "Edward VII, King of the United Kingdom and Emperor of India",
+          "name": "Edward VII, King of Great Britain and Ireland, Emperor of India",
           "startYear": 1901,
           "endYear": 1910,
           "sourceUrl": "https://en.wikipedia.org/wiki/Edward_VII"
@@ -1734,15 +1735,15 @@
       "id": "profile-g6000000000701511040",
       "firstName": "George",
       "lastName": "V",
-      "displayName": "George V, King of the United Kingdom",
-      "title": "King of the United Kingdom",
+      "displayName": "George V, King of Great Britain and Northern Ireland",
+      "title": "King of Great Britain and Northern Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1865",
       "deathYear": "1936",
       "isLiving": false,
       "place": "",
-      "note": "King of the United Kingdom, 1910–1936",
+      "note": "King of Great Britain and Ireland, 1910–1927; King of Great Britain and Northern Ireland, 1927–1936; Emperor of India, 1910–1936",
       "parents": [
         "profile-g6000000001651648070",
         "profile-g6000000003070981015"
@@ -1788,13 +1789,20 @@
         },
         {
           "id": "george-v-name-1910",
-          "name": "George V, King of the United Kingdom and Emperor of India",
+          "name": "George V, King of Great Britain and Ireland, Emperor of India",
           "startYear": 1910,
+          "endYear": 1927,
+          "sourceUrl": "https://en.wikipedia.org/wiki/George_V"
+        },
+        {
+          "id": "george-v-name-1927",
+          "name": "George V, King of Great Britain and Northern Ireland, Emperor of India",
+          "startYear": 1927,
           "endYear": 1936,
           "sourceUrl": "https://en.wikipedia.org/wiki/George_V"
         }
       ],
-      "defaultNamePeriodId": "george-v-name-1910",
+      "defaultNamePeriodId": "george-v-name-1927",
       "personalEvents": [
         {
           "name": "Reign",
@@ -1822,15 +1830,15 @@
       "id": "profile-g5031922362950130285",
       "firstName": "Edward",
       "lastName": "VIII",
-      "displayName": "Edward VIII, King of the United Kingdom in 1936",
-      "title": "King of the United Kingdom in 1936",
+      "displayName": "Edward VIII, King of Great Britain and Northern Ireland in 1936",
+      "title": "King of Great Britain and Northern Ireland in 1936",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1894",
       "deathYear": "1972",
       "isLiving": false,
       "place": "",
-      "note": "King of the United Kingdom in 1936; abdicated",
+      "note": "King of Great Britain and Northern Ireland in 1936; abdicated",
       "parents": [
         "profile-g6000000000701511040",
         "profile-g6000000001324056123"
@@ -1873,7 +1881,7 @@
         },
         {
           "id": "edward-viii-name-1936",
-          "name": "Edward VIII, King of the United Kingdom and Emperor of India",
+          "name": "Edward VIII, King of Great Britain and Northern Ireland, Emperor of India",
           "startYear": 1936,
           "endYear": 1937,
           "sourceUrl": "https://en.wikipedia.org/wiki/Edward_VIII"
@@ -1914,15 +1922,15 @@
       "id": "profile-g6000000001217955606",
       "firstName": "George",
       "lastName": "VI",
-      "displayName": "George VI, King of the United Kingdom",
-      "title": "King of the United Kingdom",
+      "displayName": "George VI, King of Great Britain and Northern Ireland",
+      "title": "King of Great Britain and Northern Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1895",
       "deathYear": "1952",
       "isLiving": false,
       "place": "",
-      "note": "King of the United Kingdom, 1936–1952",
+      "note": "King of Great Britain and Northern Ireland, 1936–1952",
       "parents": [
         "profile-g6000000000701511040",
         "profile-g6000000001324056123"
@@ -1974,14 +1982,14 @@
         },
         {
           "id": "george-vi-name-1936",
-          "name": "George VI, King of the United Kingdom and Emperor of India",
+          "name": "George VI, King of Great Britain and Northern Ireland, Emperor of India",
           "startYear": 1936,
           "endYear": 1948,
           "sourceUrl": "https://en.wikipedia.org/wiki/George_VI"
         },
         {
           "id": "george-vi-name-1948",
-          "name": "George VI, King of the United Kingdom",
+          "name": "George VI, King of Great Britain and Northern Ireland",
           "startYear": 1948,
           "endYear": 1952,
           "sourceUrl": "https://en.wikipedia.org/wiki/George_VI"
@@ -2015,15 +2023,15 @@
       "id": "profile-g6000000003075071669",
       "firstName": "Elizabeth",
       "lastName": "II",
-      "displayName": "Elizabeth II, Queen of the United Kingdom",
-      "title": "Queen of the United Kingdom",
+      "displayName": "Elizabeth II, Queen of Great Britain and Northern Ireland",
+      "title": "Queen of Great Britain and Northern Ireland",
       "nameOrder": "western",
       "gender": "female",
       "birthYear": "1926",
       "deathYear": "2022",
       "isLiving": false,
       "place": "",
-      "note": "Queen of the United Kingdom, 1952–2022",
+      "note": "Queen of Great Britain and Northern Ireland, 1952–2022",
       "parents": [
         "profile-g6000000001217955606",
         "profile-g3940609086280075061"
@@ -2068,7 +2076,7 @@
         },
         {
           "id": "elizabeth-ii-name-1952",
-          "name": "Elizabeth II, Queen of the United Kingdom",
+          "name": "Elizabeth II, Queen of Great Britain and Northern Ireland",
           "startYear": 1952,
           "endYear": 2022,
           "sourceUrl": "https://en.wikipedia.org/wiki/Elizabeth_II"
@@ -2165,15 +2173,15 @@
       "id": "profile-g6000000003075030887",
       "firstName": "Charles",
       "lastName": "III",
-      "displayName": "Charles III, King of the United Kingdom",
-      "title": "King of the United Kingdom",
+      "displayName": "Charles III, King of Great Britain and Northern Ireland",
+      "title": "King of Great Britain and Northern Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1948",
       "deathYear": "",
       "isLiving": true,
       "place": "",
-      "note": "Present King of the United Kingdom",
+      "note": "Present King of Great Britain and Northern Ireland",
       "parents": [
         "profile-g6000000003075171096",
         "profile-g6000000003075071669"
@@ -2226,7 +2234,7 @@
         },
         {
           "id": "charles-iii-name-2022",
-          "name": "Charles III, King of the United Kingdom",
+          "name": "Charles III, King of Great Britain and Northern Ireland",
           "startYear": 2022,
           "endYear": null,
           "sourceUrl": "https://en.wikipedia.org/wiki/Charles_III"
@@ -3072,17 +3080,18 @@
       "id": "profile-g4137986493320052463",
       "firstName": "George",
       "lastName": "IV",
-      "displayName": "George IV, King of the United Kingdom",
-      "title": "King of the United Kingdom",
+      "displayName": "George IV, King of Great Britain and Ireland",
+      "title": "King of Great Britain and Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1762",
       "deathYear": "1830",
       "isLiving": false,
       "place": "",
-      "note": "King of the United Kingdom, 1820–1830",
+      "note": "King of Great Britain and Ireland, 1820–1830",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [],
       "partners": [
@@ -3118,7 +3127,7 @@
         },
         {
           "id": "george-iv-name-1820",
-          "name": "George IV, King of the United Kingdom",
+          "name": "George IV, King of Great Britain and Ireland",
           "startYear": 1820,
           "endYear": 1830,
           "sourceUrl": "https://en.wikipedia.org/wiki/George_IV"
@@ -3152,17 +3161,18 @@
       "id": "profile-g4137989648200126749",
       "firstName": "William",
       "lastName": "IV",
-      "displayName": "William IV, King of the United Kingdom",
-      "title": "King of the United Kingdom",
+      "displayName": "William IV, King of Great Britain and Ireland",
+      "title": "King of Great Britain and Ireland",
       "nameOrder": "western",
       "gender": "male",
       "birthYear": "1765",
       "deathYear": "1837",
       "isLiving": false,
       "place": "",
-      "note": "King of the United Kingdom, 1830–1837",
+      "note": "King of Great Britain and Ireland, 1830–1837",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [],
       "partners": [
@@ -3195,7 +3205,7 @@
         },
         {
           "id": "william-iv-name-1830",
-          "name": "William IV, King of the United Kingdom",
+          "name": "William IV, King of Great Britain and Ireland",
           "startYear": 1830,
           "endYear": 1837,
           "sourceUrl": "https://en.wikipedia.org/wiki/William_IV"
@@ -3239,7 +3249,8 @@
       "place": "",
       "note": "Duke of Cambridge; son of George III",
       "parents": [
-        "profile-g6000000003091034586"
+        "profile-g6000000003091034586",
+        "profile-g6000000003891728922"
       ],
       "children": [
         "profile-g6000000003245250586"
@@ -3361,15 +3372,15 @@
       "id": "profile-g6000000001324056123",
       "firstName": "Mary",
       "lastName": "of Teck",
-      "displayName": "Mary of Teck, Queen consort of the United Kingdom",
-      "title": "Queen consort of the United Kingdom",
+      "displayName": "Mary of Teck, Queen consort of Great Britain and Northern Ireland",
+      "title": "Queen consort of Great Britain and Northern Ireland",
       "nameOrder": "western",
       "gender": "female",
       "birthYear": "1867",
       "deathYear": "1953",
       "isLiving": false,
       "place": "",
-      "note": "Queen consort of the United Kingdom; great-granddaughter of George III",
+      "note": "Queen consort of Great Britain and Ireland, 1910–1927; Queen consort of Great Britain and Northern Ireland, 1927–1936; great-granddaughter of George III",
       "parents": [
         "profile-g6000000003245250586",
         "profile-g6000000001543481636"
@@ -3415,8 +3426,15 @@
         },
         {
           "id": "mary-teck-name-1910",
-          "name": "Mary, Queen of the United Kingdom",
+          "name": "Mary, Queen of Great Britain and Ireland, Empress of India",
           "startYear": 1910,
+          "endYear": 1927,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Teck"
+        },
+        {
+          "id": "mary-teck-name-1927",
+          "name": "Mary, Queen of Great Britain and Northern Ireland, Empress of India",
+          "startYear": 1927,
           "endYear": 1936,
           "sourceUrl": "https://en.wikipedia.org/wiki/Mary_of_Teck"
         },
@@ -4351,7 +4369,7 @@
         },
         {
           "id": "caroline-brunswick-name-1820",
-          "name": "Caroline, Queen of the United Kingdom and Hanover",
+          "name": "Caroline, Queen of Great Britain and Ireland and Hanover",
           "startYear": 1820,
           "endYear": 1821,
           "sourceUrl": "https://en.wikipedia.org/wiki/Caroline_of_Brunswick"
@@ -4416,7 +4434,7 @@
         },
         {
           "id": "adelaide-name-1830",
-          "name": "Adelaide, Queen of the United Kingdom and Hanover",
+          "name": "Adelaide, Queen of Great Britain and Ireland and Hanover",
           "startYear": 1830,
           "endYear": 1837,
           "sourceUrl": "https://en.wikipedia.org/wiki/Adelaide_of_Saxe-Meiningen"
@@ -5057,7 +5075,7 @@
         },
         {
           "id": "queen-mother-name-1936",
-          "name": "Elizabeth, Queen of the United Kingdom",
+          "name": "Elizabeth, Queen of Great Britain and Northern Ireland",
           "startYear": 1936,
           "endYear": 1952,
           "sourceUrl": "https://en.wikipedia.org/wiki/Queen_Elizabeth_The_Queen_Mother"
@@ -5134,7 +5152,7 @@
         },
         {
           "id": "alexandra-name-1901",
-          "name": "Alexandra, Queen of the United Kingdom and Empress of India",
+          "name": "Alexandra, Queen of Great Britain and Ireland, Empress of India",
           "startYear": 1901,
           "endYear": 1910,
           "sourceUrl": "https://en.wikipedia.org/wiki/Alexandra_of_Denmark"
@@ -5229,8 +5247,8 @@
     "profile-g6000000003081589893": {
       "id": "profile-g6000000003081589893",
       "firstName": "Camilla",
-      "lastName": "Queen of the United Kingdom",
-      "displayName": "Camilla, Queen of the United Kingdom",
+      "lastName": "Queen of Great Britain and Northern Ireland",
+      "displayName": "Camilla, Queen of Great Britain and Northern Ireland",
       "title": "",
       "nameOrder": "western",
       "gender": "female",
@@ -5292,7 +5310,7 @@
         },
         {
           "id": "camilla-name-2023",
-          "name": "Camilla, Queen of the United Kingdom",
+          "name": "Camilla, Queen of Great Britain and Northern Ireland",
           "startYear": 2023,
           "endYear": null,
           "sourceUrl": "https://en.wikipedia.org/wiki/Queen_Camilla"
@@ -5454,7 +5472,12 @@
       "place": "",
       "note": "Queen consort; wife of George III",
       "parents": [],
-      "children": [],
+      "children": [
+        "profile-g4137986493320052463",
+        "profile-g4137989648200126749",
+        "profile-g4087038607800049893",
+        "profile-g6000000000307240333"
+      ],
       "partners": [
         "profile-g6000000003091034586"
       ],
@@ -5485,7 +5508,7 @@
         },
         {
           "id": "charlotte-mecklenburg-name-1801",
-          "name": "Charlotte, Queen of the United Kingdom",
+          "name": "Charlotte, Queen of Great Britain and Ireland",
           "startYear": 1801,
           "endYear": 1818,
           "sourceUrl": "https://en.wikipedia.org/wiki/Charlotte_of_Mecklenburg-Strelitz"
@@ -7831,7 +7854,7 @@
       "deathYear": "",
       "isLiving": false,
       "place": "",
-      "note": "First husband of Camilla, Queen of the United Kingdom",
+      "note": "First husband of Camilla, Queen of Great Britain and Northern Ireland",
       "parents": [],
       "children": [],
       "partners": [

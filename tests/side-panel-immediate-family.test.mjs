@@ -21,5 +21,5 @@ test('the side panel lists the selected profile complete stored immediate family
   assert.doesNotMatch(section, /const children = scopedHouseholdChildren/);
   assert.doesNotMatch(section, /const ungroupedChildren = scopedChildIds/);
   assert.doesNotMatch(section, /const parentIds = scopedParentIds/);
-  assert.match(html, /\.\/app\.js\?v=145/);
+  assert.match(html, /\.\/app\.js\?v=146/);
 });

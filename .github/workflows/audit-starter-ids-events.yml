@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/audit-starter-ids-events.yml
       - .github/scripts/audit_starter_ids_events.py
+      - .github/scripts/inspect_event_code.py
 permissions:
   contents: read
 jobs:
@@ -19,3 +20,5 @@ jobs:
           python-version: '3.12'
       - name: Audit starter data
         run: python .github/scripts/audit_starter_ids_events.py
+      - name: Inspect event controls
+        run: python .github/scripts/inspect_event_code.py

@@ -1,0 +1,21 @@
+name: Audit starter identities and monarch events
+on:
+  push:
+    branches: [fix/claude-geni-monarch-events]
+    paths:
+      - .github/workflows/audit-starter-ids-events.yml
+      - .github/scripts/audit_starter_ids_events.py
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/claude-geni-monarch-events
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit starter data
+        run: python .github/scripts/audit_starter_ids_events.py

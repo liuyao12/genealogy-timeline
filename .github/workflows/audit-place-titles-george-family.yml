@@ -18,7 +18,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply title normalization and relationship repair
-        run: python3 .github/scripts/apply_place_titles_george_family.py
+        run: |
+          python3 .github/scripts/apply_place_titles_george_family.py
+          python3 .github/scripts/fix_place_title_test_expectations.py
       - name: Run automated and structural checks
         run: |
           npm test
@@ -46,6 +48,7 @@ jobs:
         run: |
           rm -f .github/scripts/audit_place_titles_george_family.py
           rm -f .github/scripts/apply_place_titles_george_family.py
+          rm -f .github/scripts/fix_place_title_test_expectations.py
           rm -f .github/scripts/check_place_titles_george_family.mjs
           rm -f .github/workflows/audit-place-titles-george-family.yml
           git config user.name "github-actions[bot]"

@@ -8,6 +8,7 @@ on:
       - .github/scripts/inspect_event_code.py
       - .github/scripts/resolve_geni_ids_via_wikidata.py
       - .github/scripts/probe_geni_public_profiles.py
+      - .github/scripts/resolve_compact_geni_guids.py
 permissions:
   contents: read
 jobs:
@@ -28,3 +29,5 @@ jobs:
         run: python .github/scripts/resolve_geni_ids_via_wikidata.py
       - name: Probe public Geni profiles
         run: python .github/scripts/probe_geni_public_profiles.py
+      - name: Resolve compact Geni IDs
+        run: python .github/scripts/resolve_compact_geni_guids.py

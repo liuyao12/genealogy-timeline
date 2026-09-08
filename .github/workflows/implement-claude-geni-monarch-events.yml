@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/implement-claude-geni-monarch-events.yml
       - .github/scripts/apply_claude_geni_monarch_events.py
+      - .github/scripts/fix_claude_implementation_regressions.py
 permissions:
   contents: write
 jobs:
@@ -19,7 +20,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply production and data changes
-        run: python3 .github/scripts/apply_claude_geni_monarch_events.py
+        run: |
+          python3 .github/scripts/apply_claude_geni_monarch_events.py
+          python3 .github/scripts/fix_claude_implementation_regressions.py
       - name: Run tests and syntax checks
         run: |
           npm test
@@ -76,6 +79,7 @@ jobs:
           rm -f .github/scripts/probe_geni_public_profiles.py
           rm -f .github/scripts/resolve_compact_geni_guids.py
           rm -f .github/scripts/apply_claude_geni_monarch_events.py
+          rm -f .github/scripts/fix_claude_implementation_regressions.py
           rm -f .github/scripts/check_claude_monarch_events.mjs
           rm -f .github/workflows/audit-starter-ids-events.yml
           rm -f .github/workflows/implement-claude-geni-monarch-events.yml

@@ -44,9 +44,15 @@ replace_once(
 """,
 )
 
+replace_once('index.html', './app.js?v=144', './app.js?v=145')
+
 Path('tests/monarch-events.test.mjs').write_text(r"""import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { monarchGroupFromProfile } from '../monarch-events.js';
+
+const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 test('classifies British monarchs from their Geni title or display name', () => {
   assert.equal(monarchGroupFromProfile({ display_name: 'Henry VIII', title: 'King of England' }), 'british');
@@ -66,5 +72,12 @@ test('does not call a foreign monarch British merely because unrelated prose men
     title: 'King of Exampleland',
     note: 'His daughter later became Queen of England.'
   }), 'other');
+});
+
+test('Geni reign extraction applies the profile-derived monarch group', () => {
+  assert.match(app, /import \{ monarchGroupFromProfile \} from '\.\/monarch-events\.js\?v=1'/);
+  assert.match(app, /const monarchGroup = monarchGroupFromProfile\(profile\)/);
+  assert.match(app, /\? \{ \.\.\.event, kind: 'monarch-reign', monarchGroup \}/);
+  assert.match(html, /\.\/app\.js\?v=145/);
 });
 """, encoding='utf-8')

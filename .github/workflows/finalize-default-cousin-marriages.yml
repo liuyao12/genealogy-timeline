@@ -2,7 +2,9 @@ name: Finalize default cousin marriages
 on:
   push:
     branches: [fix/default-cousin-marriages]
-    paths: [.github/workflows/finalize-default-cousin-marriages.yml]
+    paths:
+      - .github/workflows/finalize-default-cousin-marriages.yml
+      - .github/scripts/resolve_henry_vii_spouse_branch_ids.py
 permissions:
   contents: write
 jobs:

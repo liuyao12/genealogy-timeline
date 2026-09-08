@@ -116,6 +116,6 @@ test('reports duplicate stored profiles linked to the same Geni identity', () =>
   };
   assert.deepEqual(duplicateGeniIdentityGroups(people), [{
     identity: 'profile-g6000000000000000042',
-    ids: ['local', 'profile-g6000000000000000042']
+    ids: ['local', 'canonical']
   }]);
 });

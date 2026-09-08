@@ -79,6 +79,23 @@ test('reconstructs spouse, child, and marriage-year links from a union', () => {
   assert.doesNotMatch(JSON.stringify(people), /London|"month"|"day"/);
 });
 
+
+test('marks children of an explicit Geni partner union as non-marital', () => {
+  const people = Object.fromEntries(['parent-a', 'parent-b', 'child'].map(id => [
+    `profile-${id}`,
+    profileToLineagePerson({ id: `profile-${id}`, name: id }, `profile-${id}`)
+  ]));
+  applyUnionToPeople(people, {
+    id: 'union-partner',
+    partners: ['profile-parent-a', 'profile-parent-b'],
+    children: ['profile-child'],
+    status: 'partner'
+  }, value => value);
+  assert.deepEqual(people['profile-parent-a'].nonSpouses, ['profile-parent-b']);
+  assert.equal(people['profile-child'].geniParentUnionStatus, 'partner');
+  assert.equal(people['profile-child'].geniNonMaritalBirth, true);
+});
+
 test('includes adopted and foster children even when Geni lists them separately', () => {
   const people = Object.fromEntries(['parent-a', 'parent-b', 'adopted', 'foster'].map(id => [
     `profile-${id}`,

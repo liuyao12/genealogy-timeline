@@ -124,6 +124,8 @@ export function profileToLineagePerson(raw, fallbackId = '', importedAt = new Da
     sourceId: id,
     sourceProvider: 'geni',
     importedAt,
+    geniParentUnionStatus: '',
+    geniNonMaritalBirth: false,
     geniImmediateFamilyLoaded: false,
     geniImmediateFamilyVerifiedAt: '',
     geniImmediateFamilyIds: []
@@ -144,6 +146,8 @@ export function mergeLineagePerson(existing, incoming) {
   merged.marriageYears = { ...(incoming.marriageYears || {}), ...(existing.marriageYears || {}) };
   merged.relationshipEndYears = { ...(incoming.relationshipEndYears || {}), ...(existing.relationshipEndYears || {}) };
   merged.relationshipEndStatuses = { ...(incoming.relationshipEndStatuses || {}), ...(existing.relationshipEndStatuses || {}) };
+  merged.geniParentUnionStatus = clean(incoming.geniParentUnionStatus) || clean(existing.geniParentUnionStatus);
+  merged.geniNonMaritalBirth = incoming.geniNonMaritalBirth === true || existing.geniNonMaritalBirth === true;
   merged.geniImmediateFamilyLoaded = incoming.geniImmediateFamilyLoaded || existing.geniImmediateFamilyLoaded;
   merged.geniImmediateFamilyVerifiedAt = incoming.geniImmediateFamilyVerifiedAt || existing.geniImmediateFamilyVerifiedAt;
   return merged;
@@ -170,6 +174,8 @@ export function applyUnionToPeople(people, union, resolveStableId) {
   const divorceYear = relationshipYear(union?.divorce, union?.divorce_date);
   const status = clean(union?.status || union?.relationship_status || union?.type).toLowerCase().replace(/[\s-]+/g, '_');
   const formal = ['spouse', 'ex_spouse', 'current', 'ex', 'married', 'divorced', 'annulled'].includes(status) || Boolean(marriageYear);
+  const nonMaritalUnion = !formal
+    && ['partner', 'ex_partner', 'unmarried', 'mistress', 'lover', 'concubine'].includes(status);
   const endStatus = status === 'annulled' ? 'annulled'
     : union?.divorce || divorceYear || status === 'divorced' ? 'divorced'
       : ['ex_spouse', 'ex'].includes(status) ? 'ended' : '';
@@ -196,6 +202,8 @@ export function applyUnionToPeople(people, union, resolveStableId) {
     const child = people[childId];
     child.parents = unique([...(child.parents || []), ...partnerIds]);
     child.geniImmediateFamilyIds = unique([...(child.geniImmediateFamilyIds || []), ...partnerIds]);
+    if (status) child.geniParentUnionStatus = status;
+    if (nonMaritalUnion) child.geniNonMaritalBirth = true;
     const parentage = adoptedIds.has(childId) ? 'adopted' : fosterIds.has(childId) ? 'foster' : '';
     if (parentage) {
       child.geniParentage = parentage;

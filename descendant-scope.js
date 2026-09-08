@@ -52,6 +52,92 @@ function formalSpouseIds(person) {
   ]);
 }
 
+function numericYear(value) {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function profileNameValues(person) {
+  return [
+    person?.displayName,
+    typeof person?.name === 'string' ? person.name : '',
+    person?.firstName,
+    person?.lastName,
+    person?.title,
+    ...(Array.isArray(person?.namePeriods) ? person.namePeriods.map(period => period?.name) : [])
+  ].filter(Boolean).map(String);
+}
+
+function selfDescriptionNote(person) {
+  return String(person?.note || '').trim();
+}
+
+function hasPlaceholderName(person) {
+  const values = [
+    person?.displayName,
+    typeof person?.name === 'string' ? person.name : '',
+    person?.firstName,
+    person?.lastName,
+    ...(Array.isArray(person?.namePeriods) ? person.namePeriods.map(period => period?.name) : [])
+  ].filter(Boolean).map(String);
+  const nn = /(?:^|[^\p{L}\p{N}])N\.?\s*\.?\s*N\.?(?:$|[^\p{L}\p{N}])/iu;
+  const generic = /^(?:unnamed|unknown|still[-\s]?born|still[-\s]?birth|infant|baby)(?:\s+(?:child|son|daughter|boy|girl))?(?:\s+of\b.*)?$/i;
+  return values.some(value => nn.test(value) || generic.test(value.trim()));
+}
+
+function parentPairIsFormal(records, parentIds) {
+  for (let first = 0; first < parentIds.length; first += 1) {
+    for (let second = first + 1; second < parentIds.length; second += 1) {
+      const firstId = parentIds[first];
+      const secondId = parentIds[second];
+      if (formalSpouseIds(records[firstId]).includes(secondId)
+        || formalSpouseIds(records[secondId]).includes(firstId)) return true;
+    }
+  }
+  return false;
+}
+
+function parentPairIsExplicitlyNonFormal(records, parentIds) {
+  for (let first = 0; first < parentIds.length; first += 1) {
+    for (let second = first + 1; second < parentIds.length; second += 1) {
+      const firstId = parentIds[first];
+      const secondId = parentIds[second];
+      if (ids(records[firstId]?.nonSpouses).includes(secondId)
+        || ids(records[secondId]?.nonSpouses).includes(firstId)) return true;
+    }
+  }
+  return false;
+}
+
+export function treeBirthSuppressionReason(records = {}, childId = '', parentsByChild = new Map()) {
+  const person = records[childId];
+  if (!person) return 'missing-profile';
+  const text = profileNameValues(person).join(' ');
+  const note = selfDescriptionNote(person);
+  const noteMarksStillbirth = /^(?:still[-\s]?born|still[-\s]?birth)\b/i.test(note);
+  if (/\bstill[-\s]?born\b|\bstill[-\s]?birth\b/i.test(text) || noteMarksStillbirth) return 'stillbirth';
+  const birthYear = numericYear(person.birthYear);
+  const deathYear = person.isLiving ? null : numericYear(person.deathYear);
+  const noteMarksInfantDeath = /^(?:died\s+(?:in infancy|as an? infant)|infant death)\b/i.test(note);
+  if ((birthYear != null && deathYear != null && deathYear <= birthYear + 1) || noteMarksInfantDeath) return 'infant-death';
+  if (hasPlaceholderName(person)) return 'placeholder-name';
+
+  const parentIds = orderedParentIds(records, parentsByChild, childId);
+  if (parentIds.length < 2) return 'missing-parent';
+
+  const unionStatus = String(person.geniParentUnionStatus || '').toLowerCase().replace(/[\s-]+/g, '_');
+  const noteMarksNonMaritalBirth = /^(?:illegitimate|natural\s+(?:son|daughter|child)|bastard)\b/i.test(note);
+  const explicitlyNonMarital = person.geniNonMaritalBirth === true
+    || ['partner', 'ex_partner', 'unmarried', 'mistress', 'lover', 'concubine'].includes(unionStatus)
+    || /\billegitimate\b|\bnatural\s+(?:son|daughter|child)\b|\bbastard\b/i.test(text)
+    || noteMarksNonMaritalBirth;
+  if (explicitlyNonMarital) return 'non-marital-parent-union';
+  if (!parentPairIsFormal(records, parentIds) && parentPairIsExplicitlyNonFormal(records, parentIds)) {
+    return 'non-marital-parent-union';
+  }
+  return '';
+}
+
 /**
  * Compute the one focus tree rooted conceptually at `rootId`.
  *
@@ -85,13 +171,23 @@ export function computeDescendantScope(people = {}, rootId = '') {
     if (explicitMother) addParentChild(allChildrenByParent, allParentsByChild, explicitMother, id, records);
   });
 
+  const suppressionReasons = new Map();
+  const childIsVisible = childId => {
+    if (!records[childId] || childId === root) return Boolean(records[childId]);
+    const reason = treeBirthSuppressionReason(records, childId, allParentsByChild);
+    if (reason) suppressionReasons.set(childId, reason);
+    return !reason;
+  };
+
   const descendantIds = new Set();
   const descendantQueue = records[root] ? [root] : [];
   for (let index = 0; index < descendantQueue.length; index += 1) {
     const id = descendantQueue[index];
     if (!records[id] || descendantIds.has(id)) continue;
     descendantIds.add(id);
-    (allChildrenByParent.get(id) || []).forEach(childId => descendantQueue.push(childId));
+    (allChildrenByParent.get(id) || []).forEach(childId => {
+      if (childIsVisible(childId)) descendantQueue.push(childId);
+    });
   }
 
   // Walk one direct father chain. Requiring an explicitly male (or explicitly
@@ -118,7 +214,14 @@ export function computeDescendantScope(people = {}, rootId = '') {
   // They remain terminal unless one of them is explicitly chosen as the focus.
   const paternalHouseholdChildIds = new Set();
   paternalAncestorIds.forEach(ancestorId => {
-    (allChildrenByParent.get(ancestorId) || []).forEach(childId => paternalHouseholdChildIds.add(childId));
+    (allChildrenByParent.get(ancestorId) || []).forEach(childId => {
+      // The direct father chain and current focus remain visible even when an
+      // earlier source omitted the other parent; collateral births use the
+      // same quality filter as ordinary descendants.
+      if (paternalLineSet.has(childId) || descendantIds.has(childId) || childIsVisible(childId)) {
+        paternalHouseholdChildIds.add(childId);
+      }
+    });
   });
   const paternalSiblingIds = new Set(
     [...paternalHouseholdChildIds].filter(id => !paternalLineSet.has(id) && !descendantIds.has(id))
@@ -203,6 +306,8 @@ export function computeDescendantScope(people = {}, rootId = '') {
     childrenByParent,
     parentsByChild,
     allChildrenByParent,
-    allParentsByChild
+    allParentsByChild,
+    suppressedIds: new Set(suppressionReasons.keys()),
+    suppressionReasons
   };
 }

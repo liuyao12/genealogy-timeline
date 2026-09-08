@@ -15,7 +15,7 @@ import {
   stableProfileId,
   unionChildRefs,
   unique
-} from './geni-model.js?v=2';
+} from './geni-model.js?v=3';
 import {
   GeniApiError,
   apiProfileIdentifier,

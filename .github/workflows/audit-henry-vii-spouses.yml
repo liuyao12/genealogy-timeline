@@ -10,12 +10,12 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     env:
-      AUDIT_VERSION: "2"
+      AUDIT_VERSION: "3"
     steps:
       - uses: actions/checkout@v4
         with:
           ref: data/add-henry-vii-cousin-spouse-lines
       - name: List spouse gateways outside the current descendant closure
         run: python3 .github/scripts/audit_henry_vii_spouses.py
-      - name: Trace spouse gateways to Henry VII through Wikidata parents
-        run: python3 .github/scripts/audit_spouse_wikidata.py
+      - name: Resolve Geni IDs for the compact cousin lines
+        run: python3 .github/scripts/resolve_new_royal_geni_ids.py

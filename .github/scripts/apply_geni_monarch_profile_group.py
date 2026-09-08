@@ -45,6 +45,11 @@ replace_once(
 )
 
 replace_once('index.html', './app.js?v=144', './app.js?v=145')
+replace_once(
+    'tests/side-panel-immediate-family.test.mjs',
+    "assert.match(html, /\\.\\/app\\.js\\?v=144/);",
+    "assert.match(html, /\\.\\/app\\.js\\?v=145/);",
+)
 
 Path('tests/monarch-events.test.mjs').write_text(r"""import test from 'node:test';
 import assert from 'node:assert/strict';

@@ -51,4 +51,26 @@ if text.count(old) != 1:
     raise SystemExit(f'Expected one immediate-family insertion bug, found {text.count(old)}')
 text = text.replace(old, new, 1)
 
+old = '''old = """    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses'].forEach(field => {
+"""
+new = """    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses', 'geniImmediateFamilyIds'].forEach(field => {
+"""
+if app.count(old) != 1:
+    raise SystemExit(f'Expected one Geni migration reference list, found {app.count(old)}')
+app = app.replace(old, new, 1)
+'''
+new = '''old = """    normalized.sourceId = remap(normalized.sourceId);
+    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses'].forEach(field => {
+"""
+new = """    normalized.sourceId = remap(normalized.sourceId);
+    ['parents', 'children', 'partners', 'spouses', 'nonSpouses', 'divorcedSpouses', 'geniImmediateFamilyIds'].forEach(field => {
+"""
+if app.count(old) != 1:
+    raise SystemExit(f'Expected one Geni migration reference list, found {app.count(old)}')
+app = app.replace(old, new, 1)
+'''
+if text.count(old) != 1:
+    raise SystemExit(f'Expected one broad migration patch, found {text.count(old)}')
+text = text.replace(old, new, 1)
+
 path.write_text(text)

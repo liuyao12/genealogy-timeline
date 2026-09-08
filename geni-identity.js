@@ -13,23 +13,21 @@ function unique(values) {
 export function canonicalGeniIdentity(value) {
   const raw = clean(value);
   if (!raw) return '';
-  const direct = raw.match(/profile-g?\d+/i);
-  const candidate = direct?.[0] || (/^g?\d+$/i.test(raw) ? raw : '');
-  if (candidate) {
-    const match = candidate.match(/^(?:profile-)?(g?)(\d+)$/i);
-    if (!match) return '';
-    const [, prefix, digits] = match;
-    return `profile-${prefix || digits.length >= 15 ? 'g' : ''}${digits}`;
+  if (/^https?:/i.test(raw) || raw.includes('://')) {
+    try {
+      const url = new URL(raw);
+      if (!/(^|\.)geni\.com$/i.test(url.hostname)) return '';
+      const part = [...url.pathname.split('/').filter(Boolean)].reverse()
+        .find(item => /^(?:profile-)?g?\d+$/i.test(item));
+      return part ? canonicalGeniIdentity(part) : '';
+    } catch {
+      return '';
+    }
   }
-  try {
-    const url = new URL(/^https?:/i.test(raw) ? raw : `https://${raw}`);
-    if (!/(^|\.)geni\.com$/i.test(url.hostname)) return '';
-    const part = [...url.pathname.split('/').filter(Boolean)].reverse()
-      .find(item => /^(?:profile-)?g?\d+$/i.test(item));
-    return part ? canonicalGeniIdentity(part) : '';
-  } catch {
-    return '';
-  }
+  const match = raw.match(/^(?:profile-)?(g?)(\d+)$/i);
+  if (!match) return '';
+  const [, prefix, digits] = match;
+  return `profile-${prefix || digits.length >= 15 ? 'g' : ''}${digits}`;
 }
 
 export function geniIdentityCandidates(person = {}, fallbackId = '') {
@@ -125,7 +123,7 @@ export function remapPeopleByGeniIdentity(incomingPeople = {}, existingPeople = 
     const incomingTarget = [primary, ...candidates]
       .map(identity => incomingIdentityTargets.get(identity))
       .find(Boolean);
-    const targetId = clean(forcedTarget || existingTarget || incomingTarget || incomingId);
+    const targetId = clean(forcedTarget || existingTarget || incomingTarget || primary || incomingId);
     idMap[incomingId] = targetId;
     if (person?.id) idMap[clean(person.id)] = targetId;
     for (const identity of candidates) {

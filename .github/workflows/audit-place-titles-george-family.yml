@@ -2,7 +2,9 @@ name: Audit place-based titles and George III family
 on:
   push:
     branches: [fix/place-based-royal-titles-and-george-family]
-    paths: [.github/workflows/audit-place-titles-george-family.yml]
+    paths:
+      - .github/workflows/audit-place-titles-george-family.yml
+      - .github/scripts/audit_place_titles_george_family.py
 jobs:
   audit:
     runs-on: ubuntu-latest

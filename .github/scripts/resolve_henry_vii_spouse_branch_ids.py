@@ -29,12 +29,19 @@ HEADERS = {
     'User-Agent': 'Lineage-genealogy-audit/1.0 (https://github.com/liuyao12/genealogy-timeline)'
 }
 
-# Wikidata's P2600 claim for Princess Augusta has disappeared, but the same
-# identity was independently verified from Geni's public people search in the
-# earlier audit. Keep this stable fallback so regenerating the curated starter
-# does not depend on a mutable third-party claim.
+# Some familiar English forms are not current Wikipedia titles and an open
+# search can select a similarly named parent instead. Resolve those titles
+# explicitly before consulting Wikidata.
+WIKIPEDIA_TITLE_OVERRIDES = {
+    'Prince William of Prussia (1783–1851)': 'Prince Wilhelm of Prussia (1783–1851)',
+}
+
+# Stable identities independently checked against Geni's public profiles. The
+# Augusta claim has disappeared from Wikidata; the Wilhelm entry is also kept
+# here to guard against future ambiguity between father and son.
 VERIFIED_GENI_FALLBACKS = {
     'Princess Augusta of Great Britain': 'profile-g312092994390004595',
+    'Prince William of Prussia (1783–1851)': 'profile-g6000000003232583515',
 }
 
 
@@ -80,7 +87,8 @@ def page_for_title(title: str) -> dict:
 
 resolved = {}
 for requested_title in TITLES:
-    page = page_for_title(requested_title)
+    lookup_title = WIKIPEDIA_TITLE_OVERRIDES.get(requested_title, requested_title)
+    page = page_for_title(lookup_title)
     qid = page.get('pageprops', {}).get('wikibase_item')
     if not qid:
         raise SystemExit(f'No Wikidata entity for {requested_title}: {page}')
@@ -92,15 +100,15 @@ for requested_title in TITLES:
         if value:
             values.append(canonical_geni(value))
     fallback = VERIFIED_GENI_FALLBACKS.get(requested_title)
-    if not values and fallback:
-        values = [fallback]
+    if fallback:
+        values = [fallback, *[value for value in values if value != fallback]]
     if not values:
         raise SystemExit(f'No Geni.com profile ID (Wikidata P2600) or verified fallback for {requested_title} [{qid}]')
     resolved[requested_title] = {
         'qid': qid,
         'geniId': values[0],
         'allGeniIds': values,
-        'wikipediaTitle': page.get('title', requested_title),
+        'wikipediaTitle': page.get('title', lookup_title),
     }
 
 Path('.github/henry-vii-spouse-branch-ids.json').write_text(

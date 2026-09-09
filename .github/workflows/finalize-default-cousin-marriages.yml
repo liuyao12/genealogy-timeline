@@ -6,6 +6,7 @@ on:
       - .github/workflows/finalize-default-cousin-marriages.yml
       - .github/scripts/resolve_henry_vii_spouse_branch_ids.py
       - .github/scripts/finish_default_cousin_marriages.py
+      - .github/scripts/check_default_cousin_marriages.mjs
 permissions:
   contents: write
 jobs:

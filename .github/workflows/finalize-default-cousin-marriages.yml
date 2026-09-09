@@ -25,13 +25,14 @@ jobs:
           python3 .github/scripts/finish_default_cousin_marriages.py
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('tests/henry-vii-descended-spouses.test.mjs')
-          text = path.read_text(encoding='utf-8')
-          text = text.replace(
-              "assertSpousePairDescends('Mary, Queen of Scots', 'Lord Darnley', descendants);",
-              "assertSpousePairDescends('Mary Stuart, Queen of Scots', 'Lord Darnley', descendants);",
-          )
-          path.write_text(text, encoding='utf-8')
+          for path in [
+              Path('tests/monarch-events.test.mjs'),
+              Path('tests/royal-title-place-style.test.mjs'),
+              Path('tests/side-panel-immediate-family.test.mjs'),
+          ]:
+              text = path.read_text(encoding='utf-8')
+              text = text.replace(r'app\.js\?v=146', r'app\.js\?v=147')
+              path.write_text(text, encoding='utf-8')
           PY
       - name: Run structural and unit tests
         run: |

@@ -102,6 +102,7 @@ const ids = await evaluate(`(async () => {
 
 const selector = id => `.timeline-node[data-person-id="${id}"]`;
 const countExpression = id => `document.querySelectorAll(${JSON.stringify(selector(id))}).length`;
+const spouseCountExpression = id => `document.querySelectorAll(${JSON.stringify(`${selector(id)}.spouse`)}).length`;
 const count = id => evaluate(countExpression(id));
 
 for (const [label, id] of Object.entries(ids)) {
@@ -139,17 +140,21 @@ async function toggleLineage(id, expectedState) {
   await evaluate(`document.querySelector(${JSON.stringify(expanderSelector)}).dispatchEvent(new MouseEvent('click', { bubbles: true })); true`);
 }
 
-// Hide Caroline's natal route: her marriage occurrence remains beside George IV.
+// Hide Caroline's natal route: she remains once as George IV's spouse.
 await toggleLineage(ids.princessAugusta, 'expanded');
 await waitFor(`${countExpression(ids.caroline)} === 1`, 'Caroline retained only on the husband side');
+assert.equal(await evaluate(spouseCountExpression(ids.caroline)), 1);
 assert.equal(await count(ids.georgeIV), 1);
 await toggleLineage(ids.princessAugusta, 'collapsed');
 await waitFor(`${countExpression(ids.caroline)} >= 2`, 'Caroline natal route restored');
 
-// Hide George IV's paternal route: Caroline remains in her Brunswick natal line.
+// Hide George IV's paternal route: he remains once as Caroline's spouse on
+// her Brunswick branch. Hiding either route therefore opens the loop without
+// deleting either member of the marriage.
 await toggleLineage(ids.georgeIII, 'expanded');
 await waitFor(`${countExpression(ids.caroline)} === 1`, 'Caroline retained only on the natal side');
-assert.equal(await count(ids.georgeIV), 0);
+await waitFor(`${countExpression(ids.georgeIV)} === 1`, 'George IV retained only on Caroline side');
+assert.equal(await evaluate(spouseCountExpression(ids.georgeIV)), 1);
 await toggleLineage(ids.georgeIII, 'collapsed');
 await waitFor(`${countExpression(ids.caroline)} >= 2`, 'George IV route restored');
 

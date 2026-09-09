@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 DATA = Path('data/british-royal-line.json')
+APP = Path('app.js')
 TEST = Path('tests/default-cousin-marriages.test.mjs')
 CAROLINE_ID = 'profile-g4138652783200125692'
 
@@ -47,11 +48,28 @@ starter['treeFilter'] = 'king queen'
 
 DATA.write_text(json.dumps(starter, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
+# A keyword filter used to retain the two descendant branches but suppress the
+# marriage between them whenever the couple's child did not itself match. That
+# flattened a cousin marriage into two unrelated-looking nodes. If both spouses
+# survive as lineal descendants, retain their marriage pair as well; the normal
+# transport logic can then draw the second occurrence and the closing loop.
+app = APP.read_text(encoding='utf-8')
+old = """    const defaultVisible = !query || carriesVisibleChild;
+    if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);"""
+new = """    const joinsVisibleLinealBranches = visible.has(firstId) && visible.has(secondId)
+      && scope.linealIds.has(firstId) && scope.linealIds.has(secondId);
+    const defaultVisible = !query || carriesVisibleChild || joinsVisibleLinealBranches;
+    if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);"""
+if old not in app:
+    raise SystemExit('Could not find the filtered spouse-pair visibility clause in app.js')
+APP.write_text(app.replace(old, new), encoding='utf-8')
+
 TEST.write_text(r'''import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const starter = JSON.parse(readFileSync(new URL('../data/british-royal-line.json', import.meta.url), 'utf8'));
+const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const people = starter.people;
 const root = starter.rootId;
 
@@ -108,6 +126,12 @@ test('Caroline keeps her conventional default name and complete historical style
   ].join(' ').toLowerCase();
   assert.match(searchable, /queen/);
   assert.equal(starter.treeFilter, 'king queen');
+});
+
+test('keyword filtering retains marriages joining two visible lineal branches', () => {
+  assert.match(app, /const joinsVisibleLinealBranches = visible\.has\(firstId\) && visible\.has\(secondId\)/);
+  assert.match(app, /scope\.linealIds\.has\(firstId\) && scope\.linealIds\.has\(secondId\)/);
+  assert.match(app, /!query \|\| carriesVisibleChild \|\| joinsVisibleLinealBranches/);
 });
 
 test('George IV and Caroline are first cousins through Frederick, Prince of Wales', () => {

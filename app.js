@@ -6,6 +6,12 @@ import { monarchGroupFromProfile } from './monarch-events.js?v=1';
 import { normalizeBritishRoyalPlaceName } from './royal-title-style.js?v=1';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
 import { birthOrderPairs, packTimelineRunsSourceFirst } from './timeline-compaction.js?v=3';
+import {
+  buildPersonTimelineEvents, childBirthEventKey, marriageEventKey, normalizePersonEventVisibility,
+  personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
+  personEventReferencesProfile, relationshipEndEventKey, remapPersonEventVisibility,
+  setPersonEventVisibility
+} from './person-events.js?v=1';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -330,10 +336,13 @@ function normalizePersonalEvents(events) {
     const endYear = numericYear(event?.endYear ?? event?.end_year ?? endDate?.year ?? date?.end_year ?? date?.year ?? event?.year);
     const isMonarchReign = clean(event?.kind).toLowerCase() === 'monarch-reign' || isReignLabel(name);
     const monarchGroup = isMonarchReign ? monarchGroupForEvent({ ...event, name }) : '';
+    const normalizedEndYear = endYear ?? startYear;
+    const id = personalEventId({ ...event, name, startYear, endYear: normalizedEndYear });
     return {
+      id,
       name,
       startYear,
-      endYear: endYear ?? startYear,
+      endYear: normalizedEndYear,
       source: clean(event?.source || ''),
       ...(isMonarchReign ? { kind: 'monarch-reign', monarchGroup } : {}),
       color: isMonarchReign
@@ -524,6 +533,7 @@ function normalizePerson(source, fallbackId) {
     namePeriods,
     defaultNamePeriodId,
     personalEvents: normalizePersonalEvents([...(Array.isArray(source.personalEvents) ? source.personalEvents : []), ...extractGeniReignFacts(source)]),
+    eventVisibility: normalizePersonEventVisibility(source.eventVisibility || source.timelineEventVisibility),
     sourceUrl,
     sourceId: clean(source.sourceId || (/^profile-/i.test(id) ? id : '')),
     sourceProvider: clean(source.sourceProvider || source.provenance?.provider || sourceProviderFromUrl(sourceUrl)),
@@ -748,6 +758,7 @@ function migrateGeniPeople(rawPeople) {
     normalized.marriageYears = remapMap(normalized.marriageYears);
     normalized.relationshipEndYears = remapMap(normalized.relationshipEndYears);
     normalized.relationshipEndStatuses = remapMap(normalized.relationshipEndStatuses);
+    normalized.eventVisibility = remapPersonEventVisibility(normalized.eventVisibility, remap);
     people[normalized.id] = people[normalized.id] ? mergePersonRecords(people[normalized.id], normalized) : normalized;
   });
   return { people, migrated };
@@ -1369,6 +1380,10 @@ function mergePersonRecords(existing, incoming) {
     merged.defaultNamePeriodId = merged.namePeriods.find(period => formerDefaultName && period.name === formerDefaultName)?.id || '';
   }
   merged.personalEvents = normalizePersonalEvents([...incoming.personalEvents, ...existing.personalEvents]);
+  merged.eventVisibility = {
+    ...normalizePersonEventVisibility(incoming.eventVisibility),
+    ...normalizePersonEventVisibility(existing.eventVisibility)
+  };
   merged.sourceUrl = incoming.sourceUrl || existing.sourceUrl;
   merged.sourceId = incoming.sourceId || existing.sourceId;
   merged.sourceProvider = incoming.sourceProvider || existing.sourceProvider;
@@ -1423,6 +1438,7 @@ function rewriteStateProfileIds(replacements) {
       });
       person[field] = mapped;
     });
+    person.eventVisibility = remapPersonEventVisibility(person.eventVisibility, resolve);
   });
   state.rootId = resolve(state.rootId);
   state.selectedId = resolve(state.selectedId);
@@ -3211,13 +3227,17 @@ function renderTimeline() {
     // short sections that cross the married profiles when the year is known.
     if (recordedMarriageYear != null && parentIds.length === 2) {
       parentIds.forEach((parentId, parentIndex) => {
+        const partnerId = parentIds.find(id => id !== parentId);
+        const eventKey = marriageEventKey(partnerId);
+        if (!state.showPersonalEvents || !personEventIsVisible(state.people[parentId], eventKey)) return;
         const parentKey = parentKeys[parentIndex];
         if (!marriageOverlaysByParent.has(parentKey)) marriageOverlaysByParent.set(parentKey, []);
         marriageOverlaysByParent.get(parentKey).push({
           x: trunkX,
           year: recordedMarriageYear,
+          eventKey,
           className: marriageClass,
-          title: `Married ${visibleName(state.people[parentIds.find(id => id !== parentId)])} in ${recordedMarriageYear}`
+          title: `Married ${visibleName(state.people[partnerId])} in ${recordedMarriageYear}`
         });
       });
     }
@@ -3315,7 +3335,8 @@ function renderTimeline() {
     const person = state.people[id];
     const pos = positions.get(nodeKey);
     const lifespanWidth = lifespanWidthFor(person);
-    const hasReign = state.showPersonalEvents && reignEvents(person).length > 0;
+    const visiblePersonalEvents = person.personalEvents.filter(event => personEventIsVisible(person, personalEventKey(event)));
+    const hasReign = state.showPersonalEvents && visiblePersonalEvents.some(isMonarchReignEvent);
     const isSpouseNode = layoutNode.isSpouse;
     const cornerRadius = Math.min(5, rowHeight / 4);
     const nodeShape = attrs => person.isLiving
@@ -3334,26 +3355,29 @@ function renderTimeline() {
     eventClip.append(nodeShape({}));
     nodeDefs.append(eventClip);
     const personalEventLayer = svg('g', { class: 'personal-event-layer', 'clip-path': `url(#${eventClipId})` });
-    if (state.showPersonalEvents) person.personalEvents.forEach(event => {
+    if (state.showPersonalEvents) visiblePersonalEvents.forEach(event => {
       const start = Math.max(birthYear(person), event.startYear);
       const finish = Math.min(endYear(person), event.endYear ?? event.startYear);
       if (finish < start) return;
       const eventX = (start - birthYear(person)) * yearWidth;
       const eventWidth = Math.max(0, (finish - start) * yearWidth);
       const eventColor = personalEventColor(event);
+      const eventKey = personalEventKey(event);
+      const eventMark = svg('g', { class: 'personal-event-mark', 'data-event-key': eventKey });
       if (eventWidth > 0) {
         const mark = svg('rect', { class: 'personal-event-range', x: eventX, y: 0, width: eventWidth, height: rowHeight, fill: personalEventFill(eventColor) });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
-        personalEventLayer.append(mark);
-        personalEventLayer.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 0, x2: eventX, y2: rowHeight, stroke: eventColor }));
-        personalEventLayer.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 0, x2: eventX + eventWidth, y2: rowHeight, stroke: eventColor }));
+        eventMark.append(mark);
+        eventMark.append(svg('line', { class: 'personal-event-edge', x1: eventX, y1: 0, x2: eventX, y2: rowHeight, stroke: eventColor }));
+        eventMark.append(svg('line', { class: 'personal-event-edge', x1: eventX + eventWidth, y1: 0, x2: eventX + eventWidth, y2: rowHeight, stroke: eventColor }));
       } else {
         const mark = svg('line', { class: 'personal-event-point', x1: eventX, y1: 0, x2: eventX, y2: rowHeight, stroke: eventColor });
         const yearLabel = formatEventYearRange(event.startYear, event.endYear);
         mark.append(svg('title', {}, `${event.name} · ${yearLabel}`));
-        personalEventLayer.append(mark);
+        eventMark.append(mark);
       }
+      personalEventLayer.append(eventMark);
     });
     // The opaque event layer is clipped to the rounded lifespan, then painted
     // over the base outline so no gender-color trace crosses an event segment.
@@ -3393,7 +3417,8 @@ function renderTimeline() {
       const overlay = svg('line', {
         class: `timeline-edge marriage-node-overlay vertical ${marriage.className}`,
         x1: localX, y1: 0, x2: localX, y2: rowHeight,
-        'data-marriage-year': marriage.year
+        'data-marriage-year': marriage.year,
+        'data-event-key': marriage.eventKey
       });
       overlay.append(svg('title', {}, marriage.title));
       group.append(overlay);
@@ -3404,7 +3429,8 @@ function renderTimeline() {
     formalMarriagePartnerIds(id).forEach(partnerId => {
       const partner = state.people[partnerId];
       const marriageYear = marriageYearFor(id, partnerId);
-      if (!partner || marriageYear == null) return;
+      const eventKey = marriageEventKey(partnerId);
+      if (!partner || marriageYear == null || !state.showPersonalEvents || !personEventIsVisible(person, eventKey)) return;
       const localX = (marriageYear - birthYear(person)) * yearWidth;
       if (localX < 0 || localX > lifespanWidth) return;
       const isDivorced = marriageIsDivorced([id, partnerId]);
@@ -3412,11 +3438,42 @@ function renderTimeline() {
         class: `timeline-edge marriage-date-marker vertical${isDivorced ? ' divorced' : ''}`,
         x1: localX, y1: 0, x2: localX, y2: rowHeight,
         'data-marriage-year': marriageYear,
-        'data-partner-id': partnerId
+        'data-partner-id': partnerId,
+        'data-event-key': eventKey
       });
       marker.append(svg('title', {}, `Married ${visibleName(partner)} in ${marriageYear}`));
       group.append(marker);
     });
+    if (state.showPersonalEvents) {
+      buildPersonTimelineEvents(person, state.people, { nameAtYear })
+        .filter(event => ['relationship', 'child-birth', 'relationship-end'].includes(event.kind))
+        .forEach(event => {
+          if (!personEventIsVisible(person, event.key)) return;
+          const localX = (event.startYear - birthYear(person)) * yearWidth;
+          if (localX < 0 || localX > lifespanWidth) return;
+          const mark = svg('g', {
+            class: `family-event-mark ${event.kind}${event.status ? ` ${event.status}` : ''}`,
+            'data-event-key': event.key,
+            'data-event-year': event.startYear
+          });
+          mark.append(svg('title', {}, `${event.label} · ${event.startYear}`));
+          if (event.kind === 'child-birth') {
+            mark.append(svg('line', { class: 'family-event-halo', x1: localX, y1: 1, x2: localX, y2: rowHeight - 1 }));
+            mark.append(svg('line', { class: 'family-event-child-birth-line', x1: localX, y1: 1, x2: localX, y2: rowHeight - 1 }));
+            mark.append(svg('circle', { class: 'family-event-child-birth-dot', cx: localX, cy: 4, r: 2.2 }));
+          } else if (event.kind === 'relationship') {
+            const half = 3;
+            mark.append(svg('path', { class: 'family-event-halo', d: `M ${localX} 1 L ${localX + half} ${rowHeight / 2} L ${localX} ${rowHeight - 1} L ${localX - half} ${rowHeight / 2} Z` }));
+            mark.append(svg('path', { class: 'family-event-relationship-line', d: `M ${localX} 1 L ${localX + half} ${rowHeight / 2} L ${localX} ${rowHeight - 1} L ${localX - half} ${rowHeight / 2} Z` }));
+          } else {
+            const secondSlash = event.status === 'annulled' ? ` M ${localX + 2} 2 L ${localX + 7} ${rowHeight - 2}` : '';
+            const path = `M ${localX - 4} 2 L ${localX + 1} ${rowHeight - 2}${secondSlash}`;
+            mark.append(svg('path', { class: 'family-event-halo', d: path }));
+            mark.append(svg('path', { class: 'family-event-relationship-end-line', d: path }));
+          }
+          group.append(mark);
+        });
+    }
     const childrenShownAtAnotherOccurrence = transportedChildrenByNatalId.get(id) || new Set();
     const hasChildren = scopedChildIds(id, scope).some(childId =>
       !childrenShownAtAnotherOccurrence.has(childId) && expandableIds.has(childId) && childEdgeVisible(id, childId)
@@ -3945,14 +4002,6 @@ function eventEditorRow(event, onSave, onColor, onDelete, fallback = DEFAULT_PER
   return row;
 }
 
-function personalEventAgePrefix(person, event) {
-  const birthYear = numericYear(person?.birthYear);
-  const startYear = numericYear(event?.startYear);
-  if (birthYear == null || startYear == null || startYear < birthYear) return '';
-  const startAge = startYear - birthYear + 1;
-  return `Age ${startAge}`;
-}
-
 function formatNamePeriod(period) {
   const start = period.startYear == null ? 'earlier' : period.startYear;
   const end = period.endYear == null ? 'later' : period.endYear;
@@ -4026,20 +4075,75 @@ function renderNamePeriods(person) {
   }));
 }
 
-function renderPersonalEvents(person) {
-  const list = els['personal-events-list'];
-  if (!person?.personalEvents?.length) {
-    const empty = document.createElement('span');
-    empty.className = 'event-editor-empty';
-    empty.textContent = 'No personal events yet.';
-    list.replaceChildren(empty);
-    return;
-  }
-  list.replaceChildren(...person.personalEvents.map((event, index) => eventEditorRow(event, updated => {
+function personEventKindSymbol(event) {
+  if (event.kind === 'marriage') return '⚭';
+  if (event.kind === 'relationship') return '◇';
+  if (event.kind === 'child-birth') return '•';
+  if (event.kind === 'relationship-end') return event.status === 'annulled' ? '≠' : '∕';
+  return '';
+}
+
+function personEventAgeCell(person, event) {
+  const age = document.createElement('span');
+  age.className = 'person-event-age';
+  age.textContent = personEventAgeLabel(person, event);
+  age.title = 'Approximate age from year-only dates; the exact age can be one year lower.';
+  return age;
+}
+
+function personEventVisibilityButton(person, event, shown) {
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'person-event-visibility';
+  toggle.textContent = shown ? 'Hide' : 'Show';
+  toggle.setAttribute('aria-pressed', String(shown));
+  toggle.setAttribute('aria-label', `${shown ? 'Hide' : 'Show'} the ${event.label} mark on ${visibleName(person)}'s timeline`);
+  toggle.title = `${shown ? 'Hide' : 'Show'} this mark; family relationships and event data remain unchanged`;
+  toggle.addEventListener('click', () => {
+    setPersonEventVisibility(person, event.key, !shown);
+    persist(`${event.label} mark ${shown ? 'hidden' : 'shown'}`);
+    render();
+  });
+  return toggle;
+}
+
+function beginPersonalEventEdit(row, person, summary) {
+  const index = summary.personalIndex;
+  const event = person.personalEvents[index];
+  if (!event) return;
+  row.classList.add('editing');
+  const shown = personEventIsVisible(person, summary.key);
+  const age = personEventAgeCell(person, summary);
+  const editor = document.createElement('div');
+  editor.className = 'person-event-editor';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'person-event-editor-name';
+  nameInput.value = event.name;
+  nameInput.setAttribute('aria-label', 'Event name');
+  const startInput = inlineYearInput(event.startYear, 'Start year');
+  const endInput = inlineYearInput(event.endYear, 'End year');
+  const monarchGroup = isMonarchReignEvent(event) ? monarchGroupForEvent(event) : '';
+  const eventFallback = monarchGroup === 'british' ? DEFAULT_REIGN_EVENT_COLOR
+    : monarchGroup === 'other' ? DEFAULT_OTHER_MONARCH_EVENT_COLOR : DEFAULT_PERSONAL_EVENT_COLOR;
+  const draftColor = eventColorPalette(personalEventColor(event), `Colour for ${event.name}`, () => {}, eventFallback);
+  const save = rowActionButton('row-save', '✓', `Save ${event.name}`, () => {
+    const nextName = clean(nameInput.value);
+    let startYear = numericYear(startInput.value);
+    let endYear = numericYear(endInput.value) ?? startYear;
+    if (!nextName || startYear == null) return toast('Enter an event name and start year.', true);
+    if (endYear < startYear) [startYear, endYear] = [endYear, startYear];
+    const updated = {
+      ...event,
+      name: nextName,
+      startYear,
+      endYear,
+      color: paletteColor(draftColor.value, eventFallback)
+    };
     if (isReignLabel(updated.name)) {
       updated.kind = 'monarch-reign';
       updated.monarchGroup = monarchGroupForEvent({ ...updated, monarchGroup: '' });
-      applySharedMonarchColor(updated.monarchGroup, updated.color);
+      updated.color = applySharedMonarchColor(updated.monarchGroup, updated.color);
     } else {
       delete updated.kind;
       delete updated.monarchGroup;
@@ -4048,16 +4152,71 @@ function renderPersonalEvents(person) {
     person.personalEvents = normalizePersonalEvents(person.personalEvents);
     persist('Personal event saved');
     render();
-  }, value => {
-    if (isMonarchReignEvent(event)) return setSharedMonarchColor(monarchGroupForEvent(event), value);
-    person.personalEvents[index].color = paletteColor(value, DEFAULT_PERSONAL_EVENT_COLOR);
-    persist('Event colour saved');
-    render();
-  }, () => {
+  });
+  const cancel = rowActionButton('row-cancel', '↶', `Cancel editing ${event.name}`, () => render());
+  const remove = rowActionButton('row-delete', '×', `Delete ${event.name}`, () => {
     person.personalEvents.splice(index, 1);
+    if (person.eventVisibility) delete person.eventVisibility[summary.key];
     persist('Personal event deleted');
     render();
-  }, DEFAULT_PERSONAL_EVENT_COLOR, personalEventAgePrefix(person, event), true)));
+  });
+  const details = document.createElement('div');
+  details.className = 'person-event-editor-details';
+  details.append(startInput, endInput, draftColor, save, cancel, remove);
+  editor.append(nameInput, details);
+  row.replaceChildren(age, editor, personEventVisibilityButton(person, summary, shown));
+  nameInput.focus();
+  nameInput.select();
+}
+
+function renderPersonalEvents(person) {
+  const list = els['personal-events-list'];
+  const events = buildPersonTimelineEvents(person, state.people, { nameAtYear });
+  const header = document.createElement('div');
+  header.className = 'person-event-table-header';
+  ['Age', 'Event', 'Mark'].forEach(label => {
+    const cell = document.createElement('span');
+    cell.textContent = label;
+    header.append(cell);
+  });
+  if (!events.length) {
+    const empty = document.createElement('span');
+    empty.className = 'event-editor-empty person-event-empty';
+    empty.textContent = 'No dated family or personal events yet.';
+    list.replaceChildren(header, empty);
+    return;
+  }
+  const rows = events.map(event => {
+    const shown = personEventIsVisible(person, event.key);
+    const row = document.createElement('div');
+    row.className = `person-event-row ${event.kind}${shown ? '' : ' is-hidden'}`;
+    row.dataset.eventKey = event.key;
+    row.dataset.eventKind = event.kind;
+    row.dataset.eventYear = String(event.startYear);
+    const copy = document.createElement('div');
+    copy.className = 'person-event-copy';
+    const title = document.createElement('div');
+    title.className = 'person-event-title';
+    const kind = document.createElement('span');
+    kind.className = `person-event-kind ${event.kind}`;
+    kind.textContent = personEventKindSymbol(event);
+    if (event.kind === 'personal') kind.style.setProperty('--event-color', personalEventColor(event.sourceEvent));
+    kind.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('strong');
+    name.textContent = event.label;
+    title.append(kind, name);
+    if (event.editable) {
+      const edit = rowActionButton('person-event-edit row-edit', '✎', `Edit ${event.label}`, () => beginPersonalEventEdit(row, person, event));
+      title.append(edit);
+    }
+    const years = document.createElement('small');
+    years.className = 'person-event-years';
+    years.textContent = formatEventYearRange(event.startYear, event.endYear);
+    copy.append(title, years);
+    row.append(personEventAgeCell(person, event), copy, personEventVisibilityButton(person, event, shown));
+    return row;
+  });
+  list.replaceChildren(header, ...rows);
 }
 
 function renderGlobalEventsEditor() {
@@ -4997,6 +5156,9 @@ els['delete-person'].addEventListener('click', () => {
     delete other.marriageYears[id];
     delete other.relationshipEndYears[id];
     delete other.relationshipEndStatuses[id];
+    other.eventVisibility = Object.fromEntries(
+      Object.entries(other.eventVisibility || {}).filter(([key]) => !personEventReferencesProfile(key, id))
+    );
   });
   state.rootId = state.rootId === id ? Object.keys(state.people)[0] || '' : state.rootId; state.selectedId = '';
   persist('Profile deleted'); render();

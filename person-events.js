@@ -199,12 +199,10 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
     }
   });
 
-  const childIds = unique([
-    ...values(person.children),
-    ...Object.values(people)
-      .filter(child => child && values(child.parents).includes(personId))
-      .map(child => child.id)
-  ]);
+  // Family normalization keeps this relationship reciprocal. Reading the
+  // selected person's child list avoids scanning the entire tree once per
+  // visible timeline occurrence.
+  const childIds = unique(values(person.children));
   childIds.forEach(childId => {
     const child = people[childId];
     const birthYear = numericYear(child?.birthYear);

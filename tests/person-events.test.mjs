@@ -92,8 +92,12 @@ test('normalizes and remaps saved profile-backed event keys', () => {
 });
 
 test('omits undated family facts because they cannot make timeline marks', () => {
-  const person = { ...structuredClone(people.p), marriageYears: {}, relationshipEndYears: {} };
-  const events = buildPersonTimelineEvents(person, people);
+  const undatedPeople = structuredClone(people);
+  undatedPeople.p.marriageYears = {};
+  undatedPeople.p.relationshipEndYears = {};
+  undatedPeople.s.marriageYears = {};
+  undatedPeople.s.relationshipEndYears = {};
+  const events = buildPersonTimelineEvents(undatedPeople.p, undatedPeople);
   assert.equal(events.some(event => event.kind === 'marriage'), false);
   assert.equal(events.some(event => event.kind === 'relationship-end'), false);
   assert.equal(events.filter(event => event.kind === 'child-birth').length, 2);

@@ -2208,7 +2208,9 @@ function buildTimelineVisibility() {
       ...scopedHouseholdChildren(firstId, secondId, scope),
       ...scopedHouseholdChildren(secondId, firstId, scope)
     ]).some(childId => visible.has(childId));
-    const defaultVisible = !query || carriesVisibleChild;
+    const joinsVisibleLinealBranches = visible.has(firstId) && visible.has(secondId)
+      && scope.linealIds.has(firstId) && scope.linealIds.has(secondId);
+    const defaultVisible = !query || carriesVisibleChild || joinsVisibleLinealBranches;
     if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);
   });
 

@@ -4,6 +4,7 @@ on:
     branches: [feature/side-panel-life-events]
     paths:
       - .github/workflows/retry-side-panel-life-events.yml
+      - tests/person-events.test.mjs
 permissions:
   contents: write
 jobs:

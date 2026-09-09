@@ -7,9 +7,9 @@ import { normalizeBritishRoyalPlaceName } from './royal-title-style.js?v=1';
 import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
 import { birthOrderPairs, packTimelineRunsSourceFirst } from './timeline-compaction.js?v=3';
 import {
-  buildPersonTimelineEvents, childBirthEventKey, marriageEventKey, normalizePersonEventVisibility,
+  buildPersonTimelineEvents, marriageEventKey, normalizePersonEventVisibility,
   personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
-  personEventReferencesProfile, relationshipEndEventKey, remapPersonEventVisibility,
+  personEventReferencesProfile, remapPersonEventVisibility,
   setPersonEventVisibility
 } from './person-events.js?v=1';
 

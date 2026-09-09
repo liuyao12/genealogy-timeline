@@ -1,0 +1,59 @@
+name: Polish side-panel life events
+on:
+  push:
+    branches: [feature/side-panel-life-events]
+    paths:
+      - .github/workflows/polish-side-panel-life-events.yml
+permissions:
+  contents: write
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/side-panel-life-events
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Use reader-facing terminology and remove unused imports
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          old = 'Show or hide all marriage, child-birth, relationship-end, and authored marks together'
+          new = 'Show or hide marks for marriages, children’s births, divorces or annulments, and authored events'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one settings description, found {text.count(old)}')
+          index.write_text(text.replace(old, new), encoding='utf-8')
+
+          app = Path('app.js')
+          text = app.read_text(encoding='utf-8')
+          old = '''  buildPersonTimelineEvents, childBirthEventKey, marriageEventKey, normalizePersonEventVisibility,
+            personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
+            personEventReferencesProfile, relationshipEndEventKey, remapPersonEventVisibility,'''
+          new = '''  buildPersonTimelineEvents, marriageEventKey, normalizePersonEventVisibility,
+            personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
+            personEventReferencesProfile, remapPersonEventVisibility,'''
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one event import block, found {text.count(old)}')
+          app.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+      - name: Run complete test suite
+        run: |
+          npm test
+          node --check app.js
+          node --check person-events.js
+          python3 -m json.tool data/british-royal-line.json >/dev/null
+          git diff --check
+      - name: Commit the polish
+        run: |
+          rm -f .github/workflows/polish-side-panel-life-events.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Polish life-event panel language [skip ci]"
+          git push origin HEAD:feature/side-panel-life-events

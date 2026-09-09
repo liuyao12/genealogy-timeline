@@ -30,7 +30,7 @@ test('does not rewrite United Kingdom as a princely byname', () => {
 });
 
 test('the bundled example contains no United Kingdom sovereign-title phrases', () => {
-  assert.equal(starter.version, 28);
+  assert.equal(starter.version, 29);
   for (const person of Object.values(people)) {
     for (const field of ['displayName', 'title', 'lastName', 'note']) {
       assert.doesNotMatch(String(person[field] || ''), sovereignUnitedKingdom, `${person.displayName} ${field}`);
@@ -65,5 +65,5 @@ test('future imports and old saved trees pass through the same title normalizer'
   assert.match(app, /const name = normalizeBritishRoyalPlaceName\(rawName, startYear \?\? endYear\)/);
   assert.match(app, /title: normalizeBritishRoyalPlaceName/);
   assert.match(app, /note: normalizeBritishRoyalPlaceName/);
-  assert.match(html, /\.\/app\.js\?v=146/);
+  assert.match(html, /\.\/app\.js\?v=147/);
 });

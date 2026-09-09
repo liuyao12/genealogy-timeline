@@ -51,9 +51,9 @@ function descendantPath(startName, endName) {
   return path.reverse().map(personId => people[personId].displayName);
 }
 
-test('the expanded bundled example advances to version 28', () => {
-  assert.equal(starter.version, 28);
-  assert.equal(Object.keys(people).length, 168);
+test('the expanded bundled example advances to version 29', () => {
+  assert.equal(starter.version, 29);
+  assert.equal(Object.keys(people).length, 186);
 });
 
 test('Louis XII reaches Francis II through the direct Valois descent', () => {

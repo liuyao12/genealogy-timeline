@@ -1,70 +1,4 @@
-from __future__ import annotations
-
-import json
-from pathlib import Path
-
-DATA = Path('data/british-royal-line.json')
-APP = Path('app.js')
-TEST = Path('tests/default-cousin-marriages.test.mjs')
-CAROLINE_ID = 'profile-g4138652783200125692'
-
-starter = json.loads(DATA.read_text(encoding='utf-8'))
-people = starter['people']
-caroline = people[CAROLINE_ID]
-
-# Keep the conventional biographical name as the default, while retaining the
-# historically changing styles used by the As-of view and making her royal
-# status explicit to the default king/queen filter.
-caroline['firstName'] = 'Caroline'
-caroline['lastName'] = 'of Brunswick'
-caroline['displayName'] = 'Caroline of Brunswick'
-caroline['title'] = 'Queen consort of Great Britain and Ireland and Hanover'
-caroline['note'] = 'Queen consort; wife and first cousin of George IV'
-caroline['namePeriods'] = [
-    {
-        'id': 'caroline-brunswick-name-1768',
-        'name': 'Caroline of Brunswick',
-        'startYear': 1768,
-        'endYear': 1795,
-        'sourceUrl': 'https://en.wikipedia.org/wiki/Caroline_of_Brunswick',
-    },
-    {
-        'id': 'caroline-brunswick-name-1795',
-        'name': 'Caroline, Princess of Wales',
-        'startYear': 1795,
-        'endYear': 1820,
-        'sourceUrl': 'https://en.wikipedia.org/wiki/Caroline_of_Brunswick',
-    },
-    {
-        'id': 'caroline-brunswick-name-1820',
-        'name': 'Caroline, Queen of Great Britain and Ireland and Hanover',
-        'startYear': 1820,
-        'endYear': 1821,
-        'sourceUrl': 'https://en.wikipedia.org/wiki/Caroline_of_Brunswick',
-    },
-]
-caroline['defaultNamePeriodId'] = 'caroline-brunswick-name-1768'
-starter['treeFilter'] = 'king queen'
-
-DATA.write_text(json.dumps(starter, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-
-# A keyword filter used to retain the two descendant branches but suppress the
-# marriage between them whenever the couple's child did not itself match. That
-# flattened a cousin marriage into two unrelated-looking nodes. If both spouses
-# survive as lineal descendants, retain their marriage pair as well; the normal
-# transport logic can then draw the second occurrence and the closing loop.
-app = APP.read_text(encoding='utf-8')
-old = """    const defaultVisible = !query || carriesVisibleChild;
-    if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);"""
-new = """    const joinsVisibleLinealBranches = visible.has(firstId) && visible.has(secondId)
-      && scope.linealIds.has(firstId) && scope.linealIds.has(secondId);
-    const defaultVisible = !query || carriesVisibleChild || joinsVisibleLinealBranches;
-    if (override === true || matchedPartnerPairs.has(key) || defaultVisible) renderedPartnerPairs.add(key);"""
-if old not in app:
-    raise SystemExit('Could not find the filtered spouse-pair visibility clause in app.js')
-APP.write_text(app.replace(old, new), encoding='utf-8')
-
-TEST.write_text(r'''import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
@@ -159,11 +93,3 @@ test('all intended cousin and double-descendant marriages survive in the starter
     ['Elizabeth II, Queen of Great Britain', 'Philip, Duke of Edinburgh'],
   ]) assertDescendedSpouses(first, second, descendants);
 });
-''', encoding='utf-8')
-
-print(json.dumps({
-    'version': starter['version'],
-    'profiles': len(people),
-    'carolineTitle': caroline['title'],
-    'carolineDefault': caroline['defaultNamePeriodId'],
-}, indent=2))

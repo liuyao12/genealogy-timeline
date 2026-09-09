@@ -47,6 +47,38 @@ jobs:
           PY
       - name: Generate the side-panel life-event implementation
         run: python3 .github/scripts/build_side_panel_life_events.py
+      - name: Polish child-event lookup and browser assertions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          module = Path('person-events.js')
+          text = module.read_text(encoding='utf-8')
+          old = '''  const childIds = unique([
+              ...values(person.children),
+              ...Object.values(people)
+                .filter(child => child && values(child.parents).includes(personId))
+                .map(child => child.id)
+            ]);'''
+          new = '''  // Family normalization keeps this relationship reciprocal. Reading the
+            // selected person's child list avoids scanning the entire tree once per
+            // visible timeline occurrence.
+            const childIds = unique(values(person.children));'''
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one reverse-child scan, found {text.count(old)}')
+          module.write_text(text.replace(old, new), encoding='utf-8')
+
+          checker = Path('.github/scripts/check_side_panel_life_events.mjs')
+          text = checker.read_text(encoding='utf-8')
+          old = "assert.equal(await evaluate(`document.querySelector('.person-event-table-header').textContent.replace(/\\\\s+/g, ' ').trim()`), 'Age Event Mark');"
+          new = """assert.deepEqual(
+            await evaluate(`Array.from(document.querySelectorAll('.person-event-table-header span')).map(node => node.textContent.trim())`),
+            ['Age', 'Event', 'Mark']
+          );"""
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one header assertion, found {text.count(old)}')
+          checker.write_text(text.replace(old, new), encoding='utf-8')
+          PY
       - name: Run unit and structural checks
         run: |
           npm test

@@ -19,6 +19,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Align the refinement with the current settings wording
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/refine_compact_life_events.py')
+          text = path.read_text(encoding='utf-8')
+          old_source = "'Show or hide all marriage, child-birth, relationship-end, and authored marks together'"
+          new_source = "'Show or hide marks for marriages, children’s births, divorces or annulments, and authored events'"
+          old_target = "'Show or hide all marriage, child-birth, and authored marks together'"
+          new_target = "'Show or hide marks for marriages, children’s births, and authored events'"
+          if text.count(old_source) != 1 or text.count(old_target) != 1:
+              raise SystemExit('Could not locate the settings-copy replacement in the refinement script.')
+          path.write_text(text.replace(old_source, new_source).replace(old_target, new_target), encoding='utf-8')
+          PY
       - name: Generate compact life-event chronology
         run: python3 .github/scripts/refine_compact_life_events.py
       - name: Run unit and structural checks

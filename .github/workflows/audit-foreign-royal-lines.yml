@@ -4,6 +4,8 @@ on:
     branches: [audit/foreign-royal-lines-2026-09-10]
     paths:
       - .github/scripts/audit_foreign_royal_lines.py
+      - .github/scripts/lookup_royal_expansion_ids.py
+      - research/royal-expansion-targets.json
       - .github/workflows/audit-foreign-royal-lines.yml
 permissions:
   contents: write
@@ -18,15 +20,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Generate audit
+      - name: Generate local audit
         run: |
           python3 -m py_compile .github/scripts/audit_foreign_royal_lines.py
           python3 .github/scripts/audit_foreign_royal_lines.py
-      - name: Commit audit report
+      - name: Resolve Wikidata and Geni identities
+        run: |
+          python3 -m py_compile .github/scripts/lookup_royal_expansion_ids.py
+          python3 .github/scripts/lookup_royal_expansion_ids.py
+      - name: Commit research reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add audit/foreign-royal-lines.md audit/foreign-royal-lines.json
+          git add \
+            audit/foreign-royal-lines.md \
+            audit/foreign-royal-lines.json \
+            research/royal-expansion-identities.md \
+            research/royal-expansion-identities.json
           git diff --cached --quiet && exit 0
-          git commit -m "Record foreign royal-line audit [skip ci]"
+          git commit -m "Record foreign royal-line identity research [skip ci]"
           git push origin HEAD:audit/foreign-royal-lines-2026-09-10

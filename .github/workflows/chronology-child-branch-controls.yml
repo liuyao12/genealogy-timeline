@@ -4,6 +4,7 @@ on:
     branches: [fix/chronology-child-branch-controls]
     paths:
       - .github/scripts/clarify_chronology_branch_controls.py
+      - .github/scripts/refine_chronology_branch_circle.py
       - .github/scripts/check_chronology_branch_controls.mjs
       - .github/workflows/chronology-child-branch-controls.yml
 permissions:
@@ -20,7 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Move child controls into the side-panel chronology
-        run: python3 .github/scripts/clarify_chronology_branch_controls.py
+        run: |
+          python3 .github/scripts/clarify_chronology_branch_controls.py
+          python3 .github/scripts/refine_chronology_branch_circle.py
       - name: Run unit, syntax, JSON, and whitespace checks
         run: |
           set +e
@@ -29,12 +32,7 @@ jobs:
           set -e
           cat /tmp/chronology-tests.log
           if [ "$STATUS" -ne 0 ]; then
-            {
-              grep -E '^(not ok|# Subtest:|  error:|    Expected|    actual:|    expected:|    operator:|    at |# fail )' /tmp/chronology-tests.log || true
-              echo
-              echo '--- tail ---'
-              tail -n 100 /tmp/chronology-tests.log
-            } > .github/chronology-test-failure.txt
+            awk '/^not ok /{capture=1} capture{print} capture && /^  \.\.\./{capture=0; print ""}' /tmp/chronology-tests.log > .github/chronology-test-failure.txt
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add .github/chronology-test-failure.txt
@@ -85,6 +83,7 @@ jobs:
           rm -f \
             .github/chronology-test-failure.txt \
             .github/scripts/clarify_chronology_branch_controls.py \
+            .github/scripts/refine_chronology_branch_circle.py \
             .github/scripts/check_chronology_branch_controls.mjs \
             .github/workflows/chronology-child-branch-controls.yml
           git config user.name "github-actions[bot]"

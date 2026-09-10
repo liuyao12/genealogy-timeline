@@ -4,6 +4,7 @@ on:
     branches: [data/complete-foreign-royal-lines]
     paths:
       - .github/scripts/audit_royal_gateways.py
+      - .github/scripts/audit_monarch_spouses.py
       - .github/workflows/audit-royal-gateways.yml
 permissions:
   contents: write
@@ -15,13 +16,15 @@ jobs:
         with:
           ref: data/complete-foreign-royal-lines
           fetch-depth: 0
-      - name: Build royal gateway audit
-        run: python3 .github/scripts/audit_royal_gateways.py
-      - name: Commit audit report
+      - name: Build royal gateway audits
+        run: |
+          python3 .github/scripts/audit_royal_gateways.py
+          python3 .github/scripts/audit_monarch_spouses.py
+      - name: Commit audit reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/royal-gateway-audit.md
+          git add .github/royal-gateway-audit.md .github/monarch-spouse-audit.md
           git diff --cached --quiet && exit 0
-          git commit -m "Record foreign royal gateway audit [skip ci]"
+          git commit -m "Record foreign royal and consort audits [skip ci]"
           git push origin HEAD:data/complete-foreign-royal-lines

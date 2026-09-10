@@ -30,5 +30,5 @@ test('Geni reign extraction applies the profile-derived monarch group', () => {
   assert.match(app, /import \{ monarchGroupFromProfile \} from '\.\/monarch-events\.js\?v=1'/);
   assert.match(app, /const monarchGroup = monarchGroupFromProfile\(profile\)/);
   assert.match(app, /\? \{ \.\.\.event, kind: 'monarch-reign', monarchGroup \}/);
-  assert.match(html, /\.\/app\.js\?v=149/);
+  assert.match(html, /\.\/app\.js\?v=150/);
 });

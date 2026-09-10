@@ -3446,31 +3446,20 @@ function renderTimeline() {
     });
     if (state.showPersonalEvents) {
       buildPersonTimelineEvents(person, state.people, { nameAtYear })
-        .filter(event => ['relationship', 'child-birth'].includes(event.kind))
+        .filter(event => event.kind === 'relationship')
         .forEach(event => {
           if (!personEventIsVisible(person, event.key)) return;
           const localX = (event.startYear - birthYear(person)) * yearWidth;
           if (localX < 0 || localX > lifespanWidth) return;
           const mark = svg('g', {
-            class: `family-event-mark ${event.kind}${event.status ? ` ${event.status}` : ''}`,
+            class: 'family-event-mark relationship',
             'data-event-key': event.key,
             'data-event-year': event.startYear
           });
           mark.append(svg('title', {}, `${event.label} · ${event.startYear}`));
-          if (event.kind === 'child-birth') {
-            mark.append(svg('line', { class: 'family-event-halo', x1: localX, y1: 1, x2: localX, y2: rowHeight - 1 }));
-            mark.append(svg('line', { class: 'family-event-child-birth-line', x1: localX, y1: 1, x2: localX, y2: rowHeight - 1 }));
-            mark.append(svg('circle', { class: 'family-event-child-birth-dot', cx: localX, cy: 4, r: 2.2 }));
-          } else if (event.kind === 'relationship') {
-            const half = 3;
-            mark.append(svg('path', { class: 'family-event-halo', d: `M ${localX} 1 L ${localX + half} ${rowHeight / 2} L ${localX} ${rowHeight - 1} L ${localX - half} ${rowHeight / 2} Z` }));
-            mark.append(svg('path', { class: 'family-event-relationship-line', d: `M ${localX} 1 L ${localX + half} ${rowHeight / 2} L ${localX} ${rowHeight - 1} L ${localX - half} ${rowHeight / 2} Z` }));
-          } else {
-            const secondSlash = event.status === 'annulled' ? ` M ${localX + 2} 2 L ${localX + 7} ${rowHeight - 2}` : '';
-            const path = `M ${localX - 4} 2 L ${localX + 1} ${rowHeight - 2}${secondSlash}`;
-            mark.append(svg('path', { class: 'family-event-halo', d: path }));
-            mark.append(svg('path', { class: 'family-event-relationship-end-line', d: path }));
-          }
+          const half = 3;
+          mark.append(svg('path', { class: 'family-event-halo', d: `M ${localX} 1 L ${localX + half} ${rowHeight / 2} L ${localX} ${rowHeight - 1} L ${localX - half} ${rowHeight / 2} Z` }));
+          mark.append(svg('path', { class: 'family-event-relationship-line', d: `M ${localX} 1 L ${localX + half} ${rowHeight / 2} L ${localX} ${rowHeight - 1} L ${localX - half} ${rowHeight / 2} Z` }));
           group.append(mark);
         });
     }
@@ -4116,6 +4105,47 @@ function personEventVisibilityButton(person, event, shown) {
   return toggle;
 }
 
+function childBranchRelationKeys(childId) {
+  return unique(state.people[childId]?.parents)
+    .filter(parentId => state.people[parentId])
+    .map(parentId => childRelationKey(parentId, childId));
+}
+
+function childBranchIsShown(childId) {
+  return !childBranchRelationKeys(childId)
+    .some(key => relationOverride(key) === false);
+}
+
+function childBranchVisibilityButton(person, event, shown) {
+  const child = state.people[event.relativeId];
+  const relationKeys = childBranchRelationKeys(event.relativeId);
+  const scope = activeDescendantScope();
+  const canToggle = Boolean(
+    child
+    && relationKeys.length
+    && scope.allowedIds.has(person.id)
+    && scope.linealIds.has(child.id)
+  );
+  const childName = child ? visibleName(child) : event.label.replace(/^Birth of\s+/i, '');
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'person-event-branch-visibility';
+  toggle.textContent = '';
+  toggle.disabled = !canToggle;
+  toggle.setAttribute('aria-pressed', String(shown));
+  toggle.dataset.branchState = shown ? 'shown' : 'hidden';
+  toggle.title = canToggle
+    ? `${shown ? 'Hide' : 'Show'} ${childName} and the downstream branch in the timeline`
+    : `${childName} is outside the current focus tree`;
+  toggle.setAttribute('aria-label', toggle.title);
+  if (canToggle) toggle.addEventListener('click', () => {
+    relationKeys.forEach(key => { state.relationVisibility[key] = !shown; });
+    persist(`${childName} and downstream branch ${shown ? 'hidden' : 'shown'} in the timeline`);
+    render();
+  });
+  return toggle;
+}
+
 function beginPersonalEventEdit(row, person, summary) {
   const index = summary.personalIndex;
   const event = person.personalEvents[index];
@@ -4196,7 +4226,10 @@ function renderPersonalEvents(person) {
     return;
   }
   const rows = events.map(event => {
-    const shown = personEventIsVisible(person, event.key);
+    const isChildBranch = event.kind === 'child-birth';
+    const shown = isChildBranch
+      ? childBranchIsShown(event.relativeId)
+      : personEventIsVisible(person, event.key);
     const row = document.createElement('div');
     row.className = `person-event-row ${event.kind}${shown ? '' : ' is-hidden'}`;
     row.dataset.eventKey = event.key;
@@ -4211,8 +4244,20 @@ function renderPersonalEvents(person) {
     kind.textContent = personEventKindSymbol(event);
     if (event.kind === 'personal') kind.style.setProperty('--event-color', personalEventColor(event.sourceEvent));
     kind.setAttribute('aria-hidden', 'true');
-    const name = document.createElement('strong');
+    const relative = event.relativeId && state.people[event.relativeId];
+    const name = document.createElement(relative ? 'button' : 'strong');
     name.textContent = event.label;
+    if (relative) {
+      name.type = 'button';
+      name.className = 'person-event-relative';
+      name.title = `Open ${visibleName(relative)}'s profile`;
+      name.setAttribute('aria-label', name.title);
+      name.addEventListener('click', () => {
+        const inCurrentScope = activeDescendantScope().allowedIds.has(relative.id);
+        if (inCurrentScope) selectPerson(relative.id, { center: true });
+        else selectPerson(relative.id, { allowOutsideScope: true });
+      });
+    }
     const years = document.createElement('span');
     years.className = 'person-event-year';
     years.textContent = `· ${personEventYearLabel(event)}`;
@@ -4228,7 +4273,10 @@ function renderPersonalEvents(person) {
       detail.textContent = event.detail;
       copy.append(detail);
     }
-    row.append(personEventAgeCell(person, event), copy, personEventVisibilityButton(person, event, shown));
+    const control = isChildBranch
+      ? childBranchVisibilityButton(person, event, shown)
+      : personEventVisibilityButton(person, event, shown);
+    row.append(personEventAgeCell(person, event), copy, control);
     return row;
   });
   list.replaceChildren(header, ...rows);
@@ -4261,157 +4309,61 @@ function renderGlobalEventsEditor() {
 
 function renderRelationshipHouseholds(person) {
   const container = els['relationship-households'];
-  const activeScope = activeDescendantScope();
   if (!person) { container.replaceChildren(); return; }
-  const inCurrentScope = activeScope.allowedIds.has(person.id);
-  const scope = inCurrentScope ? activeScope : computeDescendantScope(state.people, person.id);
-  const visibility = inCurrentScope
-    ? buildTimelineVisibility()
-    : { visibleIds: new Set(), renderedPartnerPairs: new Set(), childEdgeVisible: () => false };
-  const visibleOccurrences = [...els['timeline-canvas'].querySelectorAll(`.timeline-node[data-person-id="${CSS.escape(person.id)}"]`)];
-  const shownOnlyAsSpouse = visibleOccurrences.length > 0 && visibleOccurrences.every(node => node.classList.contains('spouse'));
-  const byBirth = (firstId, secondId) => (numericYear(state.people[firstId]?.birthYear) ?? 9999) - (numericYear(state.people[secondId]?.birthYear) ?? 9999) || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]));
-  const partnerIds = allPartnerIds(person).sort((firstId, secondId) => {
-    const firstYear = marriageYearFor(person.id, firstId);
-    const secondYear = marriageYearFor(person.id, secondId);
-    if (firstYear != null || secondYear != null) return (firstYear ?? Number.POSITIVE_INFINITY) - (secondYear ?? Number.POSITIVE_INFINITY);
-    const firstChildYear = Math.min(...householdChildren(person.id, firstId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
-    const secondChildYear = Math.min(...householdChildren(person.id, secondId).map(id => numericYear(state.people[id]?.birthYear) ?? 9999), 9999);
-    return firstChildYear - secondChildYear || byBirth(firstId, secondId);
-  });
-  const assignedChildren = new Set();
-  const groups = partnerIds.map(partnerId => {
-    const children = householdChildren(person.id, partnerId).sort(byBirth);
-    children.forEach(id => assignedChildren.add(id));
-    return { partnerId, children };
-  });
-  const ungroupedChildren = unique(person.children).filter(id => state.people[id] && !assignedChildren.has(id)).sort(byBirth);
-  if (ungroupedChildren.length) groups.push({ partnerId: '', children: ungroupedChildren });
-  const parentIds = unique(person.parents).filter(id => state.people[id]).sort(byBirth);
-
-  if (!groups.length && !parentIds.length) {
+  const parentIds = unique(person.parents)
+    .filter(id => state.people[id])
+    .sort((firstId, secondId) =>
+      (numericYear(state.people[firstId]?.birthYear) ?? 9999)
+      - (numericYear(state.people[secondId]?.birthYear) ?? 9999)
+      || visibleName(state.people[firstId]).localeCompare(visibleName(state.people[secondId]))
+    );
+  if (!parentIds.length) {
     const empty = document.createElement('p');
     empty.className = 'relationship-empty';
-    empty.textContent = 'No family members in the local tree.';
+    empty.textContent = 'No parents recorded in this tree.';
     container.replaceChildren(empty);
     return;
   }
 
-  const makeRow = ({ targetId, kind, visible, label, detail, relationKeys = [], canToggle = inCurrentScope, toggleDisabled = false }) => {
+  const origin = document.createElement('div');
+  origin.className = 'relationship-household family-origin';
+  const heading = document.createElement('p');
+  heading.className = 'relationship-group-label';
+  heading.textContent = 'Parents';
+  origin.append(heading);
+  parentIds.forEach(parentId => {
+    const parent = state.people[parentId];
+    const role = parent.gender === 'male' ? 'Father' : parent.gender === 'female' ? 'Mother' : 'Parent';
     const row = document.createElement('div');
-    row.className = `relationship-row ${kind}${visible ? '' : ' is-hidden'}`;
+    row.className = 'relationship-row parent';
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
+    row.setAttribute('aria-label', `Open ${visibleName(parent)}'s profile`);
     const branch = document.createElement('span');
     branch.className = 'relationship-branch';
-    branch.textContent = kind === 'spouse' ? '⚭' : kind === 'parent' ? '↑' : '└';
+    branch.textContent = '↑';
     const copy = document.createElement('span');
     copy.className = 'relationship-copy';
     const name = document.createElement('strong');
-    name.textContent = visibleName(state.people[targetId]);
+    name.textContent = visibleName(parent);
     const meta = document.createElement('small');
-    meta.textContent = detail;
+    meta.textContent = `${role} · ${life(parent)}`;
     copy.append(name, meta);
     row.append(branch, copy);
-
-    const actions = document.createElement('span');
-    actions.className = 'relationship-actions';
-    if (kind === 'spouse') {
-      const focus = document.createElement('button');
-      focus.type = 'button';
-      focus.className = 'relationship-focus tree-action-button';
-      focus.dataset.focusPersonId = targetId;
-      const alreadyFocused = targetId === state.rootId;
-      focus.disabled = alreadyFocused || focusTreeTransitionRunning;
-      focus.setAttribute('aria-pressed', String(alreadyFocused));
-      focus.title = alreadyFocused
-        ? `${label} is the current tree`
-        : `Show ${label}'s tree: father’s line above, all descendants below`;
-      focus.setAttribute('aria-label', focus.title);
-      focus.addEventListener('click', () => focusTreeOn(targetId));
-      actions.append(focus);
-    }
-    if (canToggle) {
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'relationship-visibility';
-      toggle.textContent = visible ? '◉' : '○';
-      toggle.disabled = toggleDisabled;
-      toggle.title = toggleDisabled
-        ? `${label} belongs to another marriage outside the visible tree`
-        : `${visible ? 'Hide' : 'Show'} ${label} in the timeline`;
-      toggle.setAttribute('aria-label', toggle.title);
-      if (!toggleDisabled) toggle.addEventListener('click', () => {
-        const keys = relationKeys.length ? relationKeys
-          : [kind === 'spouse' ? partnerRelationKey(person.id, targetId) : childRelationKey(person.id, targetId)];
-        keys.forEach(key => { state.relationVisibility[key] = !visible; });
-        persist(`${label} ${visible ? 'hidden' : 'shown'} in the timeline`);
-        render();
-        if (!visible && numericYear(state.people[targetId]?.birthYear) == null) {
-          toast(`${fullName(state.people[targetId])} has no birth year, so it cannot be positioned on the timeline yet.`, true);
-        }
-      });
-      actions.append(toggle);
-    }
-    if (actions.childNodes.length) row.append(actions);
-    return row;
-  };
-
-  const sections = [];
-  if (parentIds.length) {
-    const origin = document.createElement('div');
-    origin.className = 'relationship-household family-origin';
-    const heading = document.createElement('p');
-    heading.className = 'relationship-group-label';
-    heading.textContent = 'Parents';
-    origin.append(heading);
-    parentIds.forEach(parentId => {
-      const parent = state.people[parentId];
-      const role = parent.gender === 'male' ? 'Father' : parent.gender === 'female' ? 'Mother' : 'Parent';
-      const key = childRelationKey(parentId, person.id);
-      const visible = visibility.visibleIds.has(parentId) && visibility.childEdgeVisible(parentId, person.id);
-      origin.append(makeRow({ targetId: parentId, kind: 'parent', visible, label: role.toLowerCase(), detail: `${role} · ${life(parent)}`, relationKeys: [key], canToggle: false }));
+    const openParent = () => {
+      const inCurrentScope = activeDescendantScope().allowedIds.has(parentId);
+      if (inCurrentScope) selectPerson(parentId, { center: true });
+      else selectPerson(parentId, { allowOutsideScope: true });
+    };
+    row.addEventListener('click', openParent);
+    row.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      openParent();
     });
-    sections.push(origin);
-  }
-
-  sections.push(...groups.map(group => {
-    const household = document.createElement('div');
-    household.className = 'relationship-household';
-    if (group.partnerId) {
-      const partner = state.people[group.partnerId];
-      const pairKey = partnerRelationKey(person.id, group.partnerId);
-      const visible = visibility.renderedPartnerPairs.has(pairKey);
-      const partnerHasVisibleOccurrence = !!els['timeline-canvas'].querySelector(`.timeline-node[data-person-id="${CSS.escape(group.partnerId)}"]`);
-      const formal = person.spouses.includes(group.partnerId) || partner.spouses.includes(person.id);
-      const divorced = person.divorcedSpouses.includes(group.partnerId) || partner.divorcedSpouses.includes(person.id);
-      const year = clean(person.marriageYears[group.partnerId] || partner.marriageYears[person.id]);
-      const relationshipEndStatus = clean(person.relationshipEndStatuses[group.partnerId] || partner.relationshipEndStatuses[person.id] || (divorced ? 'ended' : ''));
-      const relationshipEndYear = clean(person.relationshipEndYears[group.partnerId] || partner.relationshipEndYears[person.id]);
-      const ended = relationshipEndStatus === 'ended'
-        ? (relationshipEndYear ? `Ended ${relationshipEndYear}` : '')
-        : relationshipEndStatus && `${relationshipEndStatus[0].toUpperCase()}${relationshipEndStatus.slice(1)} ${relationshipEndYear}`.trim();
-      household.append(makeRow({
-        targetId: group.partnerId,
-        kind: 'spouse',
-        visible,
-        label: visibleName(partner),
-        detail: [formal && year && `Married ${year}`, !formal && year && `Relationship ${year}`, ended].filter(Boolean).join(' · '),
-        toggleDisabled: shownOnlyAsSpouse && !partnerHasVisibleOccurrence
-      }));
-    } else {
-      const label = document.createElement('p');
-      label.className = 'relationship-empty';
-      label.textContent = 'Children without another recorded parent';
-      household.append(label);
-    }
-    group.children.forEach(childId => {
-      const visible = visibility.visibleIds.has(childId) && visibility.childEdgeVisible(person.id, childId);
-      const childRelationKeys = unique(state.people[childId]?.parents).filter(parentId => state.people[parentId])
-        .map(parentId => childRelationKey(parentId, childId));
-      household.append(makeRow({ targetId: childId, kind: 'child', visible, label: 'child', detail: `Child · ${life(state.people[childId])}`, relationKeys: childRelationKeys }));
-    });
-    return household;
-  }));
-  container.replaceChildren(...sections);
+    origin.append(row);
+  });
+  container.replaceChildren(origin);
 }
 
 function formatGeniFamilyCheckedAt(value) {
@@ -4487,12 +4439,8 @@ function renderGeniFamilyActions(person, scope) {
     ? 'Link & load immediate family'
     : 'Link, authorize & load family';
 
-  const knownIds = unique([
-    ...scopedParentIds(person.id, scope),
-    ...scopedSpouseIds(person, scope),
-    ...scopedChildIds(person.id, scope)
-  ]);
-  els['known-family-count'].textContent = `${knownIds.length} relative${knownIds.length === 1 ? '' : 's'}`;
+  const knownParentIds = unique(person.parents).filter(id => state.people[id]);
+  els['known-family-count'].textContent = `${knownParentIds.length} parent${knownParentIds.length === 1 ? '' : 's'}`;
 
   const manualNeedsGeniCheck = linked && (!verifiedAt || needsRelationshipRepair);
   els['add-relative'].disabled = importingThisProfile || anotherImportRunning || manualNeedsGeniCheck;

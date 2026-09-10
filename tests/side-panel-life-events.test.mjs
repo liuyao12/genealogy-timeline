@@ -6,14 +6,18 @@ const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 const personEvents = readFileSync(new URL('../person-events.js', import.meta.url), 'utf8');
+const timelineStart = app.indexOf('formalMarriagePartnerIds(id).forEach');
+const timelineEnd = app.indexOf('const childrenShownAtAnotherOccurrence', timelineStart);
+const timelineMarks = app.slice(timelineStart, timelineEnd);
 
-test('the side panel presents Age, Event followed by year, and Mark columns', () => {
+test('the side panel presents a vertical Age, Event, and Mark chronology', () => {
   assert.match(html, /<span class="eyebrow">Life events<\/span>/);
-  assert.match(html, /id="personal-events-list"[^>]*aria-label="Chronological life events"/);
+  assert.match(html, /aria-label="Chronological life events"/);
   assert.match(app, /\['Age', 'Event', 'Mark'\]/);
-  assert.match(app, /years\.className = 'person-event-year'/);
   assert.match(app, /years\.textContent = `· \$\{personEventYearLabel\(event\)\}`/);
-  assert.match(css, /\.person-event-title \{[^}]*grid-template-columns: 17px minmax\(0,1fr\) auto auto/);
+  assert.match(css, /\.person-event-copy::before \{/);
+  assert.match(css, /\.person-event-table-header \+ \.person-event-row \.person-event-copy::before/);
+  assert.match(css, /\.person-event-row:last-child \.person-event-copy::before/);
 });
 
 test('ranged events use their beginning age and marriages carry duration and ending context', () => {
@@ -21,26 +25,47 @@ test('ranged events use their beginning age and marriages carry duration and end
   assert.match(personEvents, /detail: relationshipDurationDetail\(relationshipYear, endState, formal\)/);
   assert.match(personEvents, /return formal \? 'spouse died' : 'partner died'/);
   assert.match(app, /detail\.className = 'person-event-detail'/);
-  assert.match(app, /if \(event\?\.ongoing\) return `\$\{startYear\}–present`/);
 });
 
-test('divorce is not emitted or drawn as a separate chronological event', () => {
+test('divorce is folded into its marriage instead of becoming a separate row', () => {
   assert.doesNotMatch(personEvents, /kind: 'relationship-end'/);
-  assert.match(app, /\.filter\(event => \['relationship', 'child-birth'\]\.includes\(event\.kind\)\)/);
-  assert.doesNotMatch(html, /relationship-end, and authored marks/);
+  assert.doesNotMatch(timelineMarks, /relationship-end/);
 });
 
-test('every dated child remains an individual birth row', () => {
+test('every dated child remains an individual birth row in the side panel', () => {
   assert.match(personEvents, /const childIds = unique\(values\(person\.children\)\)/);
   assert.match(personEvents, /kind: 'child-birth'/);
   assert.match(personEvents, /label: `Birth of \$\{relativeName\(child, birthYear, nameAtYear\)\}`/);
 });
 
-test('every row gets an independent Show or Hide mark control', () => {
+test('child births do not paint marks across node boxes on the main canvas', () => {
+  assert.match(timelineMarks, /\.filter\(event => event\.kind === 'relationship'\)/);
+  assert.doesNotMatch(timelineMarks, /child-birth/);
+  assert.doesNotMatch(timelineMarks, /family-event-child-birth-line/);
+});
+
+test('a child row uses a round branch control rather than a mark button', () => {
+  assert.match(app, /function childBranchVisibilityButton\(person, event, shown\)/);
+  assert.match(app, /toggle\.setAttribute\('aria-pressed', String\(shown\)\)/);
+  assert.match(app, /childBranchRelationKeys\(event\.relativeId\)/);
+  assert.match(app, /state\.relationVisibility\[key\] = !shown/);
+  assert.match(app, /downstream branch/);
+  assert.match(css, /\.person-event-branch-visibility \{[^}]*border-radius: 50%/s);
+  assert.match(css, /\.person-event-branch-visibility\[aria-pressed=\"false\"\] \{ background: #fff; \}/);
+  assert.match(html, /Child circles show or hide downstream branches/);
+});
+
+test('marriages and authored events retain independent timeline-mark controls', () => {
   assert.match(app, /function personEventVisibilityButton\(person, event, shown\)/);
   assert.match(app, /toggle\.textContent = shown \? 'Hide' : 'Show'/);
   assert.match(app, /setPersonEventVisibility\(person, event\.key, !shown\)/);
-  assert.match(html, /One mark per row; family stays connected/);
+  assert.match(html, /Show or hide marriage, relationship, and authored-event marks/);
+});
+
+test('family event names remain profile navigation controls', () => {
+  assert.match(app, /name\.className = 'person-event-relative'/);
+  assert.match(app, /selectPerson\(relative\.id, \{ center: true \}\)/);
+  assert.match(app, /selectPerson\(relative\.id, \{ allowOutsideScope: true \}\)/);
 });
 
 test('event visibility survives normalization, merging, and profile-id remapping', () => {
@@ -52,6 +77,6 @@ test('event visibility survives normalization, merging, and profile-id remapping
 
 test('the revised static assets use fresh cache keys', () => {
   assert.match(app, /from '\.\/person-events\.js\?v=2'/);
-  assert.match(html, /\.\/styles\.css\?v=80/);
-  assert.match(html, /\.\/app\.js\?v=149/);
+  assert.match(html, /\.\/styles\.css\?v=81/);
+  assert.match(html, /\.\/app\.js\?v=150/);
 });

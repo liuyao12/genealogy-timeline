@@ -30,7 +30,7 @@ test('does not rewrite United Kingdom as a princely byname', () => {
 });
 
 test('the bundled example contains no United Kingdom sovereign-title phrases', () => {
-  assert.equal(starter.version, 29);
+  assert.equal(starter.version, 30);
   for (const person of Object.values(people)) {
     for (const field of ['displayName', 'title', 'lastName', 'note']) {
       assert.doesNotMatch(String(person[field] || ''), sovereignUnitedKingdom, `${person.displayName} ${field}`);

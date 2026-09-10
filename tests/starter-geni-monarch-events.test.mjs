@@ -14,7 +14,7 @@ function byName(name) {
 
 test('every bundled profile is keyed and indexed by a Geni identity', () => {
   assert.equal(Object.keys(starter.idAliases || {}).length, 41);
-  assert.equal(Object.keys(people).length, 186);
+  assert.equal(Object.keys(people).length, 187);
   for (const [id, person] of Object.entries(people)) {
     assert.match(id, /^profile-g?\d+$/i, `${person.displayName} has a non-Geni key`);
     assert.match(person.sourceId || '', /^profile-g?\d+$/i, `${person.displayName} lacks a Geni sourceId`);

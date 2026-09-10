@@ -23,11 +23,25 @@ jobs:
         run: python3 .github/scripts/compact_chronology_labels.py
       - name: Run focused chronology checks
         run: |
+          set +e
           node --test \
             tests/person-events.test.mjs \
             tests/side-panel-life-events.test.mjs \
             tests/princess-charlotte-family.test.mjs \
-            tests/side-panel-immediate-family.test.mjs
+            tests/side-panel-immediate-family.test.mjs \
+            > .github/compact-chronology-diagnostic.txt 2>&1
+          TEST_STATUS=$?
+          set -e
+          cat .github/compact-chronology-diagnostic.txt
+          if [ "$TEST_STATUS" -ne 0 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/compact-chronology-diagnostic.txt
+            git commit -m "Capture compact chronology test failure [skip ci]"
+            git push origin HEAD:ui/compact-chronology-labels
+            exit "$TEST_STATUS"
+          fi
+          rm .github/compact-chronology-diagnostic.txt
           node --check app.js
           node --check person-events.js
           node --check .github/scripts/check_compact_chronology_labels.mjs
@@ -72,7 +86,8 @@ jobs:
           rm -f \
             .github/scripts/compact_chronology_labels.py \
             .github/scripts/check_compact_chronology_labels.mjs \
-            .github/workflows/compact-chronology-labels.yml
+            .github/workflows/compact-chronology-labels.yml \
+            .github/compact-chronology-diagnostic.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A

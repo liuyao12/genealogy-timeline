@@ -21,14 +21,20 @@ jobs:
           node-version: 22
       - name: Apply compact chronology labels
         run: python3 .github/scripts/compact_chronology_labels.py
-      - name: Run unit and structural checks
+      - name: Run focused chronology checks
         run: |
-          npm test
+          node --test \
+            tests/person-events.test.mjs \
+            tests/side-panel-life-events.test.mjs \
+            tests/princess-charlotte-family.test.mjs \
+            tests/side-panel-immediate-family.test.mjs
           node --check app.js
           node --check person-events.js
           node --check .github/scripts/check_compact_chronology_labels.mjs
           python3 -m json.tool data/british-royal-line.json >/dev/null
           git diff --check
+      - name: Run complete test suite
+        run: npm test
       - name: Start the application and Chrome
         run: |
           python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &

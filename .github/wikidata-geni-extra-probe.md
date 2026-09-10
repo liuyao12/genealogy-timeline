@@ -10,6 +10,8 @@
 | Duchess Sophia Frederica of Mecklenburg-Schwerin | Duchess Sophia Frederica of Mecklenburg-Schwerin | Q237793 | 6000000003375448733 |
 | Duchess Charlotte Frederica of Mecklenburg-Schwerin | Duchess Charlotte Frederica of Mecklenburg-Schwerin | Q254563 | 4532877 |
 | Juliana Maria of Brunswick-Wolfenbüttel | Juliana Maria of Brunswick-Wolfenbüttel | Q57637 | 4532743 |
+| Ferdinand Albert II, Duke of Brunswick-Wolfenbüttel | Ferdinand Albert II of Brunswick-Wolfenbüttel | Q551123 | 4213961327330041687 |
+| Duchess Antoinette of Brunswick-Wolfenbüttel | Princess Antoinette of Brunswick-Wolfenbüttel | Q259725 | 4213961359040031541 |
 | Marie Joséphine of Savoy | Marie Joséphine of Savoy | Q231844 | — |
 | Edward, Duke of Guimarães | Edward, Duke of Guimarães | Q5341421 | — |
 | Teodósio II, Duke of Braganza | Teodósio II, Duke of Braganza | Q958736 | — |

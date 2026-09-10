@@ -1,6 +1,6 @@
 {
   "schema": "lineage-starter",
-  "version": 29,
+  "version": 30,
   "title": "The British royal line from Henry VII",
   "rootId": "profile-g6000000003760873898",
   "treeFilter": "king queen",
@@ -3100,7 +3100,9 @@
         "profile-g6000000003091034586",
         "profile-g6000000003891728922"
       ],
-      "children": [],
+      "children": [
+        "profile-g5145210727590105956"
+      ],
       "partners": [
         "profile-g6000000000769944531",
         "profile-g4138652783200125692"
@@ -4348,7 +4350,9 @@
         "profile-g311788525210007050",
         "profile-g312092994390004595"
       ],
-      "children": [],
+      "children": [
+        "profile-g5145210727590105956"
+      ],
       "partners": [
         "profile-g4137986493320052463"
       ],
@@ -12190,6 +12194,54 @@
       "starterProfile": true,
       "geniAliases": [
         "profile-g6000000003858695567"
+      ]
+    },
+    "profile-g5145210727590105956": {
+      "id": "profile-g5145210727590105956",
+      "firstName": "Charlotte Augusta",
+      "lastName": "of Wales",
+      "displayName": "Charlotte Augusta of Wales",
+      "title": "",
+      "nameOrder": "western",
+      "gender": "female",
+      "birthYear": "1796",
+      "deathYear": "1817",
+      "isLiving": false,
+      "place": "",
+      "note": "Only child of George IV and Caroline of Brunswick",
+      "parents": [
+        "profile-g4137986493320052463",
+        "profile-g4138652783200125692"
+      ],
+      "children": [],
+      "partners": [],
+      "spouses": [],
+      "nonSpouses": [],
+      "divorcedSpouses": [],
+      "marriageYears": {},
+      "relationshipEndYears": {},
+      "relationshipEndStatuses": {},
+      "namePeriods": [
+        {
+          "id": "charlotte-wales-name-1796",
+          "name": "Charlotte Augusta of Wales",
+          "startYear": 1796,
+          "endYear": 1817,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q132440"
+        }
+      ],
+      "defaultNamePeriodId": "charlotte-wales-name-1796",
+      "personalEvents": [],
+      "sourceUrl": "https://www.geni.com/profile/index/5145210727590105956",
+      "sourceId": "profile-g5145210727590105956",
+      "sourceProvider": "geni",
+      "importedAt": "",
+      "geniImmediateFamilyLoaded": false,
+      "geniImmediateFamilyVerifiedAt": "",
+      "geniImmediateFamilyIds": [],
+      "starterProfile": true,
+      "geniAliases": [
+        "profile-g5145210727590105956"
       ]
     }
   },

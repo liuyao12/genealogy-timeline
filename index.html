@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=80">
+  <link rel="stylesheet" href="./styles.css?v=81">
 </head>
 <body>
   <div class="app-shell">
@@ -142,8 +142,8 @@
 
             <div class="relationship-section">
               <div class="relationship-heading">
-                <span class="eyebrow">Family</span>
-                <small>Immediate family for this profile</small>
+                <span class="eyebrow">Parentage</span>
+                <small>Parents recorded for this profile</small>
               </div>
 
               <div class="geni-family-card" id="geni-family-card">
@@ -164,8 +164,8 @@
               </div>
 
               <div class="known-family-heading">
-                <strong>Known in this tree</strong>
-                <small id="known-family-count">0 relatives</small>
+                <strong>Parents in this tree</strong>
+                <small id="known-family-count">0 parents</small>
               </div>
               <div class="relationship-households" id="relationship-households"></div>
 
@@ -193,7 +193,7 @@
             <div class="event-editor-section life-events-section">
               <div class="life-events-heading">
                 <span class="eyebrow">Life events</span>
-                <small>One mark per row; family stays connected</small>
+                <small>Child circles show or hide downstream branches</small>
               </div>
               <div class="event-editor-list person-event-table" id="personal-events-list" aria-label="Chronological life events"></div>
               <div class="event-add-row personal-event-add-row">
@@ -281,7 +281,7 @@
           <button class="timeline-setting-toggle" id="timeline-as-of-toggle" type="button" aria-pressed="false">Off</button>
         </div>
         <div class="timeline-toggle-setting">
-          <span class="timeline-toggle-label">Life-event marks<small>Show or hide marks for marriages, children’s births, and authored events</small></span>
+          <span class="timeline-toggle-label">Life-event marks<small>Show or hide marriage, relationship, and authored-event marks</small></span>
           <button class="timeline-setting-toggle" id="timeline-personal-events-toggle" type="button" aria-pressed="true">On</button>
         </div>
         <div class="timeline-toggle-setting">
@@ -327,6 +327,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./geni-import.js?v=4"></script>
-  <script type="module" src="./app.js?v=149"></script>
+  <script type="module" src="./app.js?v=150"></script>
 </body>
 </html>

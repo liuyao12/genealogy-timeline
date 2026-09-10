@@ -18,11 +18,11 @@ test('the selected profile exposes a persistent monochrome tree action', () => {
   assert.match(app, /Tree focused on/);
 });
 
-test('spouse rows offer a one-click monochrome tree action', () => {
-  assert.match(app, /className = 'relationship-focus tree-action-button'/);
-  assert.match(app, /focus\.dataset\.focusPersonId = targetId/);
-  assert.match(app, /focusTreeOn\(targetId\)/);
-  assert.match(styles, /\.relationship-focus/);
+test('marriage rows open the spouse profile before its tree action is used', () => {
+  assert.match(app, /name\.className = 'person-event-relative'/);
+  assert.match(app, /selectPerson\(relative\.id, \{ center: true \}\)/);
+  assert.match(app, /selectPerson\(relative\.id, \{ allowOutsideScope: true \}\)/);
+  assert.doesNotMatch(app, /className = 'relationship-focus tree-action-button'/);
 });
 
 test('the profile hero keeps the tree action beside the identity instead of on its own row', () => {

@@ -37,7 +37,7 @@ test('both parents’ simple chronology contains Charlotte’s birth at the corr
     });
     const birth = rows.find(event => event.kind === 'child-birth' && event.relativeId === charlotteId);
     assert.ok(birth);
-    assert.equal(birth.label, 'Birth of Charlotte Augusta of Wales');
+    assert.equal(birth.label, 'Charlotte Augusta of Wales');
     assert.equal(birth.startYear, 1796);
     assert.equal(personEventAgeLabel(parent, birth), age);
   }

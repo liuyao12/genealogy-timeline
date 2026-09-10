@@ -11,7 +11,7 @@ import {
   personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
   personEventReferencesProfile, remapPersonEventVisibility,
   setPersonEventVisibility
-} from './person-events.js?v=2';
+} from './person-events.js?v=3';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -4126,7 +4126,7 @@ function childBranchVisibilityButton(person, event, shown) {
     && scope.allowedIds.has(person.id)
     && scope.linealIds.has(child.id)
   );
-  const childName = child ? visibleName(child) : event.label.replace(/^Birth of\s+/i, '');
+  const childName = child ? visibleName(child) : event.label;
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'person-event-branch-visibility';

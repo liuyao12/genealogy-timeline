@@ -220,7 +220,7 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
     events.push({
       key: formal ? marriageEventKey(partnerId) : relationshipEventKey(partnerId),
       kind: formal ? 'marriage' : 'relationship',
-      label: formal ? `Married ${partnerName}` : `Relationship with ${partnerName}`,
+      label: partnerName,
       startYear: relationshipYear,
       endYear: endState.endYear ?? relationshipYear,
       ongoing: endState.ongoing,
@@ -232,7 +232,8 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
     });
   });
 
-  // Keep every dated child as its own chronological birth row. Family
+  // Keep every dated child as its own chronological row. The bullet and
+  // circular branch control already identify this as the child’s birth year.
   // normalization makes this list reciprocal, so no whole-tree scan is needed.
   const childIds = unique(values(person.children));
   childIds.forEach(childId => {
@@ -242,7 +243,7 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
     events.push({
       key: childBirthEventKey(childId),
       kind: 'child-birth',
-      label: `Birth of ${relativeName(child, birthYear, nameAtYear)}`,
+      label: relativeName(child, birthYear, nameAtYear),
       startYear: birthYear,
       endYear: birthYear,
       relativeId: childId,

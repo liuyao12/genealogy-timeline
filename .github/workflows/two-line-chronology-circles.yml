@@ -1,0 +1,67 @@
+name: Verify two-line chronology circles
+on:
+  push:
+    branches: [ui/two-line-chronology-circles]
+    paths:
+      - .github/scripts/apply_two_line_chronology.py
+      - .github/scripts/check_two_line_chronology.mjs
+      - .github/workflows/two-line-chronology-circles.yml
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/two-line-chronology-circles
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply two-line chronology and circle controls
+        run: python3 .github/scripts/apply_two_line_chronology.py
+      - name: Run tests and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check person-events.js
+          node --check .github/scripts/check_two_line_chronology.mjs
+          python3 -m json.tool data/british-royal-line.json >/dev/null
+          git diff --check
+      - name: Start application and Chrome
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          for attempt in $(seq 1 80); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+          curl -fsS http://127.0.0.1:4173/ >/dev/null
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --no-first-run --no-default-browser-check \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/lineage-two-line-chronology about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          CHROME_PID=$!
+          for attempt in $(seq 1 300); do
+            if curl -fsS http://127.0.0.1:9222/json/list >/dev/null; then break; fi
+            if ! kill -0 "$CHROME_PID" 2>/dev/null; then cat /tmp/lineage-chrome.log; exit 1; fi
+            sleep .1
+          done
+          curl -fsS http://127.0.0.1:9222/json/list >/dev/null || { cat /tmp/lineage-chrome.log; exit 1; }
+      - name: Verify chronology in Chrome
+        run: node .github/scripts/check_two_line_chronology.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit verified implementation
+        run: |
+          rm -f \
+            .github/scripts/apply_two_line_chronology.py \
+            .github/scripts/check_two_line_chronology.mjs \
+            .github/workflows/two-line-chronology-circles.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Use circular controls and two-line chronology [skip ci]"
+          git push origin HEAD:ui/two-line-chronology-circles

@@ -9,9 +9,14 @@ from pathlib import Path
 NAMES = [
     'Ernest Augustus Duke of Brunswick 1887 1953',
     'Marie Josephine of Savoy 1753 1810',
+    'Maria Giuseppina Luisa di Savoia contessa di Provenza',
+    'Marie Joséphine Louise de Savoie comtesse de Provence',
     'Edward Duke of Guimaraes 1515 1540',
+    'Duarte Infante de Portugal 4 duque de Guimaraes',
     'Teodosio II Duke of Braganza 1568 1630',
+    'Teodósio II de Bragança 7 duque de Bragança',
     'John IV King of Portugal 1604 1656',
+    'João IV rei de Portugal 1604 1656',
 ]
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (compatible; Lineage genealogy audit/1.0; +https://github.com/liuyao12/genealogy-timeline)',

@@ -111,15 +111,24 @@ side_path = Path('tests/side-panel-life-events.test.mjs')
 side_lines = side_path.read_text(encoding='utf-8').splitlines()
 heading_hits = 0
 child_label_hits = 0
+cache_hits = 0
 for line_index, line in enumerate(side_lines):
     if 'assert.match(html, /<span class="eyebrow">Life events' in line:
         side_lines[line_index] = line.replace('Life events', 'Chronology')
         heading_hits += 1
+        line = side_lines[line_index]
     if 'assert.match(personEvents, /label: `Birth of' in line:
         side_lines[line_index] = "  assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);"
         child_label_hits += 1
-if heading_hits != 1 or child_label_hits != 1:
-    raise SystemExit(f'side-panel test replacements: heading={heading_hits}, child-label={child_label_hits}')
+        line = side_lines[line_index]
+    if 'person-events\\.js\\?v=2' in line:
+        side_lines[line_index] = line.replace('v=2', 'v=3')
+        cache_hits += 1
+if heading_hits != 1 or child_label_hits != 1 or cache_hits != 1:
+    raise SystemExit(
+        f'side-panel test replacements: heading={heading_hits}, '
+        f'child-label={child_label_hits}, cache={cache_hits}'
+    )
 side = '\n'.join(side_lines) + '\n'
 addition = """
 test('relationship and child rows use compact names without redundant verbs', () => {
@@ -135,7 +144,6 @@ marker = "test('child births do not paint marks across node boxes on the main ca
 if side.count(marker) != 1:
     raise SystemExit(f'compact-label insertion marker: expected one occurrence, found {side.count(marker)}')
 side = side.replace(marker, addition + marker, 1)
-side = side.replace("from './person-events.js\\?v=2'", "from './person-events.js\\?v=3'", 1)
 side = side.replace("\\.\\/app\\.js\\?v=150", "\\.\\/app\\.js\\?v=151", 1)
 side_path.write_text(side, encoding='utf-8')
 

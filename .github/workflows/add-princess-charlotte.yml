@@ -21,6 +21,21 @@ jobs:
           node-version: 22
       - name: Repair the bundled family
         run: python3 .github/scripts/add_princess_charlotte.py
+      - name: Update starter-version and profile-count expectations
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in Path('tests').glob('*.test.mjs'):
+              text = path.read_text(encoding='utf-8')
+              updated = (
+                  text
+                  .replace('version 29', 'version 30')
+                  .replace('starter.version, 29', 'starter.version, 30')
+                  .replace('Object.keys(people).length, 186', 'Object.keys(people).length, 187')
+              )
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+          PY
       - name: Run unit and structural checks
         run: |
           npm test

@@ -13,6 +13,7 @@ PAGES = [
     'Frederick, Hereditary Prince of Denmark',
     'Duchess Sophia Frederica of Mecklenburg-Schwerin',
     'Duchess Charlotte Frederica of Mecklenburg-Schwerin',
+    'Juliana Maria of Brunswick-Wolfenbüttel',
     'Marie Joséphine of Savoy',
     'Edward, Duke of Guimarães',
     'Teodósio II, Duke of Braganza',

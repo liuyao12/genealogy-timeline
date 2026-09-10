@@ -1,0 +1,249 @@
+# Subtest: Caroline keeps her conventional default name and complete historical styles
+# Subtest: keyword filtering retains marriages joining two visible lineal branches
+# Subtest: George IV and Caroline are first cousins through Frederick, Prince of Wales
+# Subtest: all intended cousin and double-descendant marriages survive in the starter
+# Subtest: keeps one lineal descendant tree plus one formal-spouse layer
+# Subtest: keeps a former formal spouse when only divorce metadata survives
+# Subtest: repairs sparse parent-child links in both directions for one connected layout
+# Subtest: the Henry VII starter scope includes Catherine Parr but excludes her other husbands
+# Subtest: adds complete paternal households but keeps siblings terminal
+# Subtest: refocusing on a spouse exchanges paternal ancestry but keeps the shared descendants
+# Subtest: hides incomplete, infant, placeholder, and non-marital births without deleting their records
+# Subtest: does not hide a person merely because their note mentions somebody else’s fragile birth
+# Subtest: keeps a suppressed profile visible when it is explicitly chosen as the focus
+# Subtest: the selected profile exposes a persistent monochrome tree action
+# Subtest: spouse rows offer a one-click monochrome tree action
+not ok 15 - spouse rows offer a one-click monochrome tree action
+  error: |-
+# Subtest: the profile hero keeps the tree action beside the identity instead of on its own row
+# Subtest: focus changes use named View Transitions and preserve the chosen node position
+# Subtest: the timeline starts at the oldest known paternal ancestor
+# Subtest: focus emphasis uses a thicker gender-coloured outline rather than black
+# Subtest: the renderer attaches spouses to paternal ancestors as well as descendants
+# Subtest: the expanded bundled example advances to version 30
+# Subtest: Louis XII reaches Francis II through the direct Valois descent
+# Subtest: the Valois gateway continues into the Bourbon family of Henrietta Maria
+# Subtest: Philip II and Maria Manuela are represented as double first cousins
+# Subtest: the older Danish gateway relates Anne of Denmark to Prince George of Denmark
+# Subtest: the Glücksburg gateway relates Alexandra of Denmark to Prince Philip
+# Subtest: the Palatinate and Orange gateways include their parent generations
+# Subtest: the Hesse gateway joins Louis IV and Louis Mountbatten in one family
+# Subtest: all expanded family links are reciprocal and point to stored profiles
+# Subtest: a refocused bundled example remains eligible for starter upgrades
+# Subtest: canonicalizes public Geni IDs and URLs without treating local IDs as Geni profiles
+# Subtest: does not treat another provider’s bare numeric source ID as a Geni identity
+# Subtest: indexes a locally named profile by its linked Geni source ID
+# Subtest: reuses an existing local profile and rewrites every imported relationship reference
+# Subtest: coalesces two incoming aliases of the same Geni profile before merging
+# Subtest: reports duplicate stored profiles linked to the same Geni identity
+# Subtest: matches a compact starter Geni alias to a later public-GUID API record
+# Subtest: normalizes public Geni profile IDs and URLs
+# Subtest: retains only life-event years from a Geni profile
+# Subtest: reconstructs spouse, child, and marriage-year links from a union
+# Subtest: leaves a status-less undated union unclassified rather than assuming non-marital
+# Subtest: marks children of an explicit Geni partner union as non-marital
+# Subtest: includes adopted and foster children even when Geni lists them separately
+# Subtest: parses family-graph edges and follows only unions formed by the focus person
+# Subtest: loads one descendant generation with one family-graph request
+# Subtest: creates a valid Lineage tree-tab snapshot
+# Subtest: pauses only after a complete generation and resumes from its graph checkpoint
+# Subtest: chunks a 51-profile generation into one 50-ID graph request and one singleton
+# Subtest: selected-profile immediate-family loading uses one graph endpoint
+# Subtest: selected-profile graph asks only for year-bearing event objects
+# Subtest: selected-profile merge strips event detail before normalizing
+# Subtest: immediate-family merge does not make a second optional event request
+# Subtest: JSONP transport classifies Geni rate-limit responses
+# Subtest: side-panel relationship inference reads Geni union.edges
+# Subtest: selected-profile graph preserves the focus node edges when merging focus details
+# Subtest: a previously saved profile set with no family links surfaces a repair action
+# Subtest: George III and Queen Charlotte share every bundled child reciprocally
+# Subtest: the bundled example has no remaining one-parent profile
+# Subtest: the repaired Hanoverian branches remain visible from Henry VII
+# Subtest: Caroline of Brunswick and George IV are represented as first cousins
+# Subtest: the Hesse-Kassel gateway makes three additional spouse pairs Henry VII descendants
+# Subtest: the Prussian gateway makes Louis IV and Princess Alice fellow Henry VII descendants
+# Subtest: the Margaret Douglas line keeps both parents of James VI and I in Henry VII descent
+# Subtest: the previously connected dynastic marriages remain represented
+# Subtest: every new descent path survives the fragile-birth display filter
+# Subtest: the expanded profiles all carry unique explicit Geni identities
+# Subtest: the starter retains reciprocal complete parentage throughout
+# Subtest: classifies British monarchs from their Geni title or display name
+# Subtest: classifies foreign and unidentified Geni reign profiles as other monarchs
+# Subtest: does not call a foreign monarch British merely because unrelated prose mentions England
+# Subtest: Geni reign extraction applies the profile-derived monarch group
+not ok 71 - Geni reign extraction applies the profile-derived monarch group
+  error: |-
+# Subtest: keeps one simple chronology and folds divorce into the marriage range
+# Subtest: uses the spouse death as the marriage endpoint and says why it ended
+# Subtest: ends a marriage at the selected person death without a redundant note
+# Subtest: uses stable keys for independently switchable timeline marks
+# Subtest: showing and hiding a mark does not alter the event or relationship data
+# Subtest: normalizes and remaps saved profile-backed event keys
+# Subtest: omits an undated marriage rather than creating a divorce-only row, but keeps every dated child
+# Subtest: the bundled example includes George IV and Caroline’s only child with her Geni identity
+# Subtest: both parents’ simple chronology contains Charlotte’s birth at the correct beginning age
+# Subtest: the stillborn child is not added as a visible descendant of Princess Charlotte
+# Subtest: the bundled royal example advances its migration version
+# Subtest: substantive titles are displayed as titles rather than territorial surnames
+# Subtest: dated title changes cover each corrected profile lifespan
+# Subtest: genuine conventional bynames remain unchanged
+# Subtest: the known malformed territorial-title forms have been removed
+# Subtest: the starter upgrade repairs every exact stale title label without replacing arbitrary local names
+# Subtest: normalizes sovereign and consort titles to compact geographical names
+# Subtest: does not rewrite United Kingdom as a princely byname
+# Subtest: the bundled example contains no United Kingdom sovereign-title phrases
+# Subtest: George V and Queen Mary change geographical style in 1927
+# Subtest: future imports and old saved trees pass through the same title normalizer
+not ok 92 - future imports and old saved trees pass through the same title normalizer
+  error: |-
+# Subtest: an active search queries every profile stored in the tree tab
+# Subtest: search results open profiles without exposing a tree action
+# Subtest: clicking a hidden result opens its side panel without changing the tree
+# Subtest: the side-panel tree action clears search and centers a hidden selected profile
+# Subtest: the former immediate-family list is reduced to parentage
+# Subtest: parent rows remain usable profile-navigation controls
+# Subtest: the side-panel copy describes parentage rather than a duplicated family list
+# Subtest: the side panel presents a vertical Age, Event, and Mark chronology
+# Subtest: ranged events use their beginning age and marriages carry duration and ending context
+# Subtest: divorce is folded into its marriage instead of becoming a separate row
+# Subtest: every dated child remains an individual birth row in the side panel
+# Subtest: child births do not paint marks across node boxes on the main canvas
+# Subtest: a child row uses a round branch control rather than a mark button
+# Subtest: marriages and authored events retain independent timeline-mark controls
+# Subtest: family event names remain profile navigation controls
+# Subtest: event visibility survives normalization, merging, and profile-id remapping
+# Subtest: the revised static assets use fresh cache keys
+# Subtest: every bundled profile is keyed and indexed by a Geni identity
+# Subtest: Claude is represented once by her Geni profile and retains the Francis I marriage
+# Subtest: all monarch events use one kind, two synchronized groups, and distinct colours
+# Subtest: the application exposes one personal-event toggle and two shared monarch palettes
+# Subtest: creates alternating bands on fixed calendar decades
+# Subtest: clips partial first and last decades without shifting their tones
+# Subtest: handles BCE decades and empty ranges
+# Subtest: places every colour transition exactly on the matching zero-year tick
+# Subtest: dims only future content with non-overlapping alpha-mask segments
+# Subtest: orders ready runs from the visually lowest source branch upward
+# Subtest: orders ready runs in the established top-to-bottom source order
+# Subtest: keeps a lower sibling branch compact and makes the upper branch absorb the gap
+# Subtest: source-first packing keeps the earlier branch compact and lets a later branch absorb a collision
+# Subtest: moves every member of a direct-family run together
+# Subtest: fits an upper branch into a frozen lower-branch gap without widening it
+# Subtest: creates strict sibling precedence in birth order
+# Subtest: the renderer constrains branch roots, not whole sibling subtrees
+# Subtest: the renderer gives established source order priority during compaction
+# Subtest: packs non-overlapping global event badges into one ruler lane
+# Subtest: anchors each label at the midpoint of its visible event band
+# Subtest: stacks colliding event badges without moving their band-midpoint anchors
+# Subtest: clamps a badge to the ruler while keeping its pointer on the band midpoint
+# Subtest: ignores events outside the visible timeline range
+# Subtest: shortens labels that exceed the badge width
+# Subtest: timeline profile nodes do not repeat their visible name in a native hover tooltip
+# Subtest: timeline profile nodes retain accessible labels and informative event tooltips
+# Subtest: global event labels render as pointed badges centered over event bands
+# Subtest: event-label lanes are bottom-aligned immediately above the year numerals
+# Subtest: the first timeline row sits directly below the dynamic ruler baseline
+# Subtest: image export crops the former blank timeline header below the ruler
+# Subtest: event badges use the same rounded box and pointer vocabulary as the As-of label
+# fail 3
+
+--- tail ---
+  ...
+# Subtest: the renderer constrains branch roots, not whole sibling subtrees
+ok 126 - the renderer constrains branch roots, not whole sibling subtrees
+  ---
+  duration_ms: 0.512534
+  type: 'test'
+  ...
+# Subtest: the renderer gives established source order priority during compaction
+ok 127 - the renderer gives established source order priority during compaction
+  ---
+  duration_ms: 0.624782
+  type: 'test'
+  ...
+# Subtest: packs non-overlapping global event badges into one ruler lane
+ok 128 - packs non-overlapping global event badges into one ruler lane
+  ---
+  duration_ms: 3.031181
+  type: 'test'
+  ...
+# Subtest: anchors each label at the midpoint of its visible event band
+ok 129 - anchors each label at the midpoint of its visible event band
+  ---
+  duration_ms: 0.398672
+  type: 'test'
+  ...
+# Subtest: stacks colliding event badges without moving their band-midpoint anchors
+ok 130 - stacks colliding event badges without moving their band-midpoint anchors
+  ---
+  duration_ms: 1.387602
+  type: 'test'
+  ...
+# Subtest: clamps a badge to the ruler while keeping its pointer on the band midpoint
+ok 131 - clamps a badge to the ruler while keeping its pointer on the band midpoint
+  ---
+  duration_ms: 0.490834
+  type: 'test'
+  ...
+# Subtest: ignores events outside the visible timeline range
+ok 132 - ignores events outside the visible timeline range
+  ---
+  duration_ms: 0.368065
+  type: 'test'
+  ...
+# Subtest: shortens labels that exceed the badge width
+ok 133 - shortens labels that exceed the badge width
+  ---
+  duration_ms: 0.270824
+  type: 'test'
+  ...
+# Subtest: timeline profile nodes do not repeat their visible name in a native hover tooltip
+ok 134 - timeline profile nodes do not repeat their visible name in a native hover tooltip
+  ---
+  duration_ms: 1.294479
+  type: 'test'
+  ...
+# Subtest: timeline profile nodes retain accessible labels and informative event tooltips
+ok 135 - timeline profile nodes retain accessible labels and informative event tooltips
+  ---
+  duration_ms: 0.914852
+  type: 'test'
+  ...
+# Subtest: global event labels render as pointed badges centered over event bands
+ok 136 - global event labels render as pointed badges centered over event bands
+  ---
+  duration_ms: 1.183393
+  type: 'test'
+  ...
+# Subtest: event-label lanes are bottom-aligned immediately above the year numerals
+ok 137 - event-label lanes are bottom-aligned immediately above the year numerals
+  ---
+  duration_ms: 0.364708
+  type: 'test'
+  ...
+# Subtest: the first timeline row sits directly below the dynamic ruler baseline
+ok 138 - the first timeline row sits directly below the dynamic ruler baseline
+  ---
+  duration_ms: 1.188442
+  type: 'test'
+  ...
+# Subtest: image export crops the former blank timeline header below the ruler
+ok 139 - image export crops the former blank timeline header below the ruler
+  ---
+  duration_ms: 0.216814
+  type: 'test'
+  ...
+# Subtest: event badges use the same rounded box and pointer vocabulary as the As-of label
+ok 140 - event badges use the same rounded box and pointer vocabulary as the As-of label
+  ---
+  duration_ms: 0.212926
+  type: 'test'
+  ...
+1..140
+# tests 140
+# suites 0
+# pass 137
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 807.465916

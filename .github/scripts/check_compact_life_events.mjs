@@ -89,8 +89,8 @@ const result = await evaluate(`(async () => {
   const marriage = rows.find(row => row.classList.contains('marriage') && text(row).includes('Caroline'));
   const reign = rows.find(row => row.classList.contains('personal') && /Reign/i.test(text(row)));
   const children = rows.filter(row => row.classList.contains('child-birth'));
-  if (!marriage) throw new Error(`George IV marriage row was not rendered. Rows: ${rows.map(text).join(' || ')}`);
-  if (!reign) throw new Error(`George IV reign row was not rendered. Rows: ${rows.map(text).join(' || ')}`);
+  if (!marriage) throw new Error('George IV marriage row was not rendered. Rows: ' + rows.map(text).join(' || '));
+  if (!reign) throw new Error('George IV reign row was not rendered. Rows: ' + rows.map(text).join(' || '));
 
   const marriageKey = marriage.dataset.eventKey;
   const timelineMarkCount = key => [...document.querySelectorAll('#timeline-canvas [data-event-key]')]

@@ -1,0 +1,499 @@
+STARTER version=30 profiles=187 root=Henry VII, King of England
+
+FREDERICK / PRUSSIA / SOPHIA DOROTHEA RECORDS
+profile-4104556 | Frederick II, King of Denmark and Norway | 1534-1588
+  parents : 
+  spouses : Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway
+  children: Anne of Denmark, Christian IV, King of Denmark and Norway
+  Henry VII path: (not lineal)
+profile-4104601 | Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway | 1557-1631
+  parents : 
+  spouses : Frederick II, King of Denmark and Norway
+  children: Anne of Denmark, Christian IV, King of Denmark and Norway
+  Henry VII path: (not lineal)
+profile-g6000000006727753675 | Frederick IV, Elector Palatine | 1574-1610
+  parents : 
+  spouses : Louise Juliana of Nassau, Electress Palatine
+  children: Frederick V, Elector Palatine and King of Bohemia
+  Henry VII path: (not lineal)
+profile-g6000000006727753685 | Louise Juliana of Nassau, Electress Palatine | 1576-1644
+  parents : 
+  spouses : Frederick IV, Elector Palatine
+  children: Frederick V, Elector Palatine and King of Bohemia
+  Henry VII path: (not lineal)
+profile-g4040216435970129981 | Frederick Henry, Prince of Orange | 1584-1647
+  parents : 
+  spouses : Amalia of Solms-Braunfels, Princess of Orange
+  children: William II, Prince of Orange
+  Henry VII path: (not lineal)
+profile-g304433105310001815 | Frederick V, Elector Palatine and King of Bohemia | 1596-1632
+  parents : Frederick IV, Elector Palatine, Louise Juliana of Nassau, Electress Palatine
+  spouses : Elizabeth Stuart, Queen of Bohemia
+  children: Sophia, Electress of Hanover
+  Henry VII path: (not lineal)
+profile-g4040221674860032328 | Amalia of Solms-Braunfels, Princess of Orange | 1602-1675
+  parents : 
+  spouses : Frederick Henry, Prince of Orange
+  children: William II, Prince of Orange
+  Henry VII path: (not lineal)
+profile-g6000000004377641319 | Frederick III, King of Denmark and Norway | 1609-1670
+  parents : Christian IV, King of Denmark and Norway, Anne Catherine of Brandenburg, Queen of Denmark and Norway
+  spouses : Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway
+  children: Prince George of Denmark, Duke of Cumberland
+  Henry VII path: (not lineal)
+profile-4104869 | Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway | 1628-1685
+  parents : 
+  spouses : Frederick III, King of Denmark and Norway
+  children: Prince George of Denmark, Duke of Cumberland
+  Henry VII path: (not lineal)
+profile-4555856 | Sophia Dorothea of Celle | 1666-1726
+  parents : 
+  spouses : George I, King of Great Britain and Ireland
+  children: George II, King of Great Britain and Ireland, Sophia Dorothea of Hanover, Queen in Prussia
+  Henry VII path: (not lineal)
+profile-g311769067160005759 | Sophia Dorothea of Hanover, Queen in Prussia | 1687-1757
+  parents : George I, King of Great Britain and Ireland, Sophia Dorothea of Celle
+  spouses : Frederick William I, King in Prussia
+  children: Prince Augustus William of Prussia
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> Sophia Dorothea of Hanover, Queen in Prussia
+profile-g311771392100007035 | Frederick William I, King in Prussia | 1688-1740
+  parents : 
+  spouses : Sophia Dorothea of Hanover, Queen in Prussia
+  children: Prince Augustus William of Prussia
+  Henry VII path: (not lineal)
+profile-g6000000003891739213 | Frederick, Prince of Wales | 1707-1751
+  parents : George II, King of Great Britain and Ireland, Caroline of Ansbach
+  spouses : Augusta of Saxe-Gotha, Princess of Wales
+  children: Augusta, Duchess of Brunswick-Wolfenbüttel, George III, King of Great Britain and Ireland
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Frederick, Prince of Wales
+profile-g6000000003891753089 | Augusta of Saxe-Gotha, Princess of Wales | 1719-1772
+  parents : 
+  spouses : Frederick, Prince of Wales
+  children: Augusta, Duchess of Brunswick-Wolfenbüttel, George III, King of Great Britain and Ireland
+  Henry VII path: (not lineal)
+profile-g6000000001847933002 | Frederick II, Landgrave of Hesse-Kassel | 1720-1785
+  parents : 
+  spouses : Mary, Landgravine of Hesse-Kassel
+  children: Prince Frederick of Hesse-Kassel
+  Henry VII path: (not lineal)
+profile-g6000000002459929920 | Duchess Luise of Brunswick-Wolfenbüttel | 1722-1780
+  parents : 
+  spouses : Prince Augustus William of Prussia
+  children: Frederick William II, King of Prussia
+  Henry VII path: (not lineal)
+profile-g6000000003219727296 | Prince Augustus William of Prussia | 1722-1758
+  parents : Frederick William I, King in Prussia, Sophia Dorothea of Hanover, Queen in Prussia
+  spouses : Duchess Luise of Brunswick-Wolfenbüttel
+  children: Frederick William II, King of Prussia
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> Sophia Dorothea of Hanover, Queen in Prussia -> Prince Augustus William of Prussia
+profile-g312092994390004595 | Augusta, Duchess of Brunswick-Wolfenbüttel | 1737-1813
+  parents : Frederick, Prince of Wales, Augusta of Saxe-Gotha, Princess of Wales
+  spouses : Charles William Ferdinand, Duke of Brunswick-Wolfenbüttel
+  children: Caroline of Brunswick
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Frederick, Prince of Wales -> Augusta, Duchess of Brunswick-Wolfenbüttel
+profile-g6000000004178657304 | Frederick William II, King of Prussia | 1744-1797
+  parents : Prince Augustus William of Prussia, Duchess Luise of Brunswick-Wolfenbüttel
+  spouses : Frederica Louisa of Hesse-Darmstadt, Queen of Prussia
+  children: Prince William of Prussia
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> Sophia Dorothea of Hanover, Queen in Prussia -> Prince Augustus William of Prussia -> Frederick William II, King of Prussia
+profile-g6000000002447248679 | Prince Frederick of Hesse-Kassel | 1747-1837
+  parents : Frederick II, Landgrave of Hesse-Kassel, Mary, Landgravine of Hesse-Kassel
+  spouses : Princess Caroline of Nassau-Usingen
+  children: Prince William of Hesse-Kassel, Augusta, Duchess of Cambridge
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Mary, Landgravine of Hesse-Kassel -> Prince Frederick of Hesse-Kassel
+profile-g6000000000307247176 | Frederica Louisa of Hesse-Darmstadt, Queen of Prussia | 1751-1805
+  parents : 
+  spouses : Frederick William II, King of Prussia
+  children: Prince William of Prussia
+  Henry VII path: (not lineal)
+profile-g6000000007329600601 | Princess Caroline of Nassau-Usingen | 1762-1823
+  parents : 
+  spouses : Prince Frederick of Hesse-Kassel
+  children: Prince William of Hesse-Kassel, Augusta, Duchess of Cambridge
+  Henry VII path: (not lineal)
+profile-g6000000003232583515 | Prince William of Prussia | 1783-1851
+  parents : Frederick William II, King of Prussia, Frederica Louisa of Hesse-Darmstadt, Queen of Prussia
+  spouses : Princess Maria Anna of Hesse-Homburg
+  children: Princess Elisabeth of Prussia
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> Sophia Dorothea of Hanover, Queen in Prussia -> Prince Augustus William of Prussia -> Frederick William II, King of Prussia -> Prince William of Prussia
+profile-g6000000007329615678 | Princess Maria Anna of Hesse-Homburg | 1785-1846
+  parents : 
+  spouses : Prince William of Prussia
+  children: Princess Elisabeth of Prussia
+  Henry VII path: (not lineal)
+profile-4532996 | Prince William of Hesse-Kassel | 1787-1867
+  parents : Prince Frederick of Hesse-Kassel, Princess Caroline of Nassau-Usingen
+  spouses : Princess Charlotte of Denmark
+  children: Louise of Hesse-Kassel, Queen of Denmark
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Mary, Landgravine of Hesse-Kassel -> Prince Frederick of Hesse-Kassel -> Prince William of Hesse-Kassel
+profile-g6000000007329601083 | Princess Elisabeth of Prussia | 1815-1885
+  parents : Prince William of Prussia, Princess Maria Anna of Hesse-Homburg
+  spouses : Prince Charles of Hesse and by Rhine
+  children: Louis IV, Grand Duke of Hesse and by Rhine
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> Sophia Dorothea of Hanover, Queen in Prussia -> Prince Augustus William of Prussia -> Frederick William II, King of Prussia -> Prince William of Prussia -> Princess Elisabeth of Prussia
+
+QUEEN / EMPRESS CONSORT GATEWAYS
+profile-g5111879481690102566 | Elizabeth of York, Queen consort of England | title=Queen consort of England | parents=0 children=4
+  parents : 
+  spouses : Henry VII, King of England
+  children: Arthur, Prince of Wales, Margaret Tudor, Queen of Scots, Henry VIII, King of England, Mary Tudor, Queen consort of France
+  Henry VII path: (not lineal)
+profile-g6000000018001664573 | Joanna I, Queen of Castile and Aragon | title=Queen of Castile and Aragon | parents=0 children=2
+  parents : 
+  spouses : Philip I, King of Castile
+  children: Charles V, Holy Roman Emperor and King of Spain, Catherine of Austria, Queen of Portugal
+  Henry VII path: (not lineal)
+profile-g6000000000830244922 | Maria of Aragon, Queen of Portugal | title=Queen of Portugal | parents=0 children=2
+  parents : 
+  spouses : Manuel I, King of Portugal
+  children: John III, King of Portugal, Isabella of Portugal, Holy Roman Empress and Queen of Spain
+  Henry VII path: (not lineal)
+profile-4475169 | Catherine of Aragon | title= | parents=0 children=1
+  parents : 
+  spouses : Arthur, Prince of Wales, Henry VIII, King of England
+  children: Mary I, Queen of England and Ireland
+  Henry VII path: (not lineal)
+profile-g6000000003858820967 | Margaret Tudor, Queen of Scots | title=Queen of Scots | parents=2 children=2
+  parents : Henry VII, King of England, Elizabeth of York, Queen consort of England
+  spouses : James IV, King of Scots, Archibald Douglas, Earl of Angus, Henry Stewart, Lord Methven
+  children: James V, King of Scots, Margaret Douglas, Countess of Lennox
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots
+profile-g6000000000307250674 | Mary Tudor, Queen consort of France | title=Queen consort of France | parents=2 children=1
+  parents : Henry VII, King of England, Elizabeth of York, Queen consort of England
+  spouses : Louis XII, King of France, Charles Brandon, Duke of Suffolk
+  children: Frances Brandon, Duchess of Suffolk
+  Henry VII path: Henry VII, King of England -> Mary Tudor, Queen consort of France
+profile-g6000000003219788110 | Claude, Queen of France and Duchess of Brittany | title=Queen of France and Duchess of Brittany | parents=2 children=2
+  parents : Louis XII, King of France, Anne of Brittany
+  spouses : Francis I, King of France
+  children: Henry II, King of France, Madeleine of Valois
+  Henry VII path: (not lineal)
+profile-g6000000003702650070 | Anne Boleyn | title= | parents=0 children=1
+  parents : 
+  spouses : Henry VIII, King of England
+  children: Elizabeth I, Queen of England and Ireland
+  Henry VII path: (not lineal)
+profile-g5405903272180113463 | Isabella of Portugal, Holy Roman Empress and Queen of Spain | title=Holy Roman Empress and Queen of Spain | parents=2 children=1
+  parents : Manuel I, King of Portugal, Maria of Aragon, Queen of Portugal
+  spouses : Charles V, Holy Roman Emperor and King of Spain
+  children: Philip II, King of Spain
+  Henry VII path: (not lineal)
+profile-g6000000005597849712 | Catherine of Austria, Queen of Portugal | title=Queen of Portugal | parents=2 children=1
+  parents : Philip I, King of Castile, Joanna I, Queen of Castile and Aragon
+  spouses : John III, King of Portugal
+  children: Maria Manuela, Princess of Portugal
+  Henry VII path: (not lineal)
+profile-g6000000001465721422 | Jane Seymour | title= | parents=0 children=1
+  parents : 
+  spouses : Henry VIII, King of England
+  children: Edward VI, King of England and Ireland
+  Henry VII path: (not lineal)
+profile-g6000000001465762273 | Catherine Parr | title= | parents=0 children=0
+  parents : 
+  spouses : Edward Burgh, John Neville, Baron Latimer, Henry VIII, King of England, Thomas Seymour, Baron Sudeley
+  children: 
+  Henry VII path: (not lineal)
+profile-4475232 | Anne of Cleves | title= | parents=0 children=0
+  parents : 
+  spouses : Henry VIII, King of England
+  children: 
+  Henry VII path: (not lineal)
+profile-g6000000001323878378 | Mary of Guise | title= | parents=0 children=1
+  parents : 
+  spouses : Louis II, Duke of Longueville, James V, King of Scots
+  children: Mary, Queen of Scots
+  Henry VII path: (not lineal)
+profile-g5027356653020040914 | Mary I, Queen of England and Ireland | title=Queen of England and Ireland | parents=2 children=0
+  parents : Henry VIII, King of England, Catherine of Aragon
+  spouses : Philip II, King of Spain
+  children: 
+  Henry VII path: Henry VII, King of England -> Henry VIII, King of England -> Mary I, Queen of England and Ireland
+profile-g6000000001063166988 | Catherine de' Medici, Queen of France | title=Queen of France | parents=0 children=5
+  parents : 
+  spouses : Henry II, King of France
+  children: Francis II, King of France, Elisabeth of Valois, Charles IX, King of France, Henry III, King of France, Margaret of Valois, Queen of France and Navarre
+  Henry VII path: (not lineal)
+profile-g6000000002322323932 | Madeleine of Valois | title= | parents=2 children=0
+  parents : Francis I, King of France, Claude, Queen of France and Duchess of Brittany
+  spouses : James V, King of Scots
+  children: 
+  Henry VII path: (not lineal)
+profile-g6000000001465827019 | Catherine Howard | title= | parents=0 children=0
+  parents : 
+  spouses : Henry VIII, King of England
+  children: 
+  Henry VII path: (not lineal)
+profile-4476035 | Elizabeth I, Queen of England and Ireland | title=Queen of England and Ireland | parents=2 children=0
+  parents : Henry VIII, King of England, Anne Boleyn
+  spouses : 
+  children: 
+  Henry VII path: Henry VII, King of England -> Henry VIII, King of England -> Elizabeth I, Queen of England and Ireland
+profile-g6000000001723257706 | James Hepburn, Earl of Bothwell | title= | parents=0 children=0
+  parents : 
+  spouses : Jean Gordon, Mary, Queen of Scots
+  children: 
+  Henry VII path: (not lineal)
+profile-g368988617700011508 | Jane Grey, Queen of England in 1553 | title=Queen of England in 1553 | parents=2 children=0
+  parents : Frances Brandon, Duchess of Suffolk, Henry Grey, Duke of Suffolk
+  spouses : Guildford Dudley
+  children: 
+  Henry VII path: Henry VII, King of England -> Mary Tudor, Queen consort of France -> Frances Brandon, Duchess of Suffolk -> Jane Grey, Queen of England in 1553
+profile-g6000000003234018546 | Mary, Queen of Scots | title=Queen of Scots | parents=2 children=1
+  parents : James V, King of Scots, Mary of Guise
+  spouses : Francis II, King of France, Henry Stuart, Lord Darnley, King consort of Scots, James Hepburn, Earl of Bothwell
+  children: James VI & I, King of Scots and later England and Ireland
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots
+profile-g6000000003232545902 | Francis II, King of France | title=King of France | parents=2 children=0
+  parents : Henry II, King of France, Catherine de' Medici, Queen of France
+  spouses : Mary, Queen of Scots
+  children: 
+  Henry VII path: (not lineal)
+profile-g6000000001142154909 | Anna of Austria, Queen of Spain | title= | parents=0 children=1
+  parents : 
+  spouses : Philip II, King of Spain
+  children: Philip III, King of Spain and Portugal
+  Henry VII path: (not lineal)
+profile-g6000000001479578007 | Margaret of Valois, Queen of France and Navarre | title=Queen of France and Navarre | parents=2 children=0
+  parents : Henry II, King of France, Catherine de' Medici, Queen of France
+  spouses : Henry IV, King of France and Navarre
+  children: 
+  Henry VII path: (not lineal)
+profile-4104601 | Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway | title=Queen of Denmark and Norway | parents=0 children=2
+  parents : 
+  spouses : Frederick II, King of Denmark and Norway
+  children: Anne of Denmark, Christian IV, King of Denmark and Norway
+  Henry VII path: (not lineal)
+profile-4104662 | Anne of Denmark | title= | parents=2 children=2
+  parents : Frederick II, King of Denmark and Norway, Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway
+  spouses : James VI & I, King of Scots and later England and Ireland
+  children: Elizabeth Stuart, Queen of Bohemia, Charles I, King of England
+  Henry VII path: (not lineal)
+profile-4104768 | Anne Catherine of Brandenburg, Queen of Denmark and Norway | title=Queen of Denmark and Norway | parents=0 children=1
+  parents : 
+  spouses : Christian IV, King of Denmark and Norway
+  children: Frederick III, King of Denmark and Norway
+  Henry VII path: (not lineal)
+profile-g6000000000851442057 | Marie de' Medici, Queen of France | title=Queen of France | parents=0 children=2
+  parents : 
+  spouses : Henry IV, King of France and Navarre
+  children: Louis XIII, King of France and Navarre, Henrietta Maria of France
+  Henry VII path: (not lineal)
+profile-g304430340510004215 | Elizabeth Stuart, Queen of Bohemia | title=Queen of Bohemia | parents=2 children=1
+  parents : James VI & I, King of Scots and later England and Ireland, Anne of Denmark
+  spouses : Frederick V, Elector Palatine and King of Bohemia
+  children: Sophia, Electress of Hanover
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia
+profile-g6000000000851678345 | Henrietta Maria of France | title= | parents=2 children=3
+  parents : Henry IV, King of France and Navarre, Marie de' Medici, Queen of France
+  spouses : Charles I, King of England
+  children: Charles II, King of England, Mary, Princess Royal and Princess of Orange, James II & VII, King of England
+  Henry VII path: (not lineal)
+profile-4104869 | Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway | title=Queen of Denmark and Norway | parents=0 children=1
+  parents : 
+  spouses : Frederick III, King of Denmark and Norway
+  children: Prince George of Denmark, Duke of Cumberland
+  Henry VII path: (not lineal)
+profile-g6000000001566391625 | Catherine of Braganza | title= | parents=0 children=0
+  parents : 
+  spouses : Charles II, King of England
+  children: 
+  Henry VII path: (not lineal)
+profile-g4033341615700026163 | Prince George of Denmark, Duke of Cumberland | title=Duke of Cumberland | parents=2 children=0
+  parents : Frederick III, King of Denmark and Norway, Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway
+  spouses : Anne Stuart, Queen of Great Britain and Ireland
+  children: 
+  Henry VII path: (not lineal)
+profile-g6000000001573653856 | Mary of Modena | title= | parents=0 children=0
+  parents : 
+  spouses : James II & VII, King of England
+  children: 
+  Henry VII path: (not lineal)
+profile-g6000000003285472970 | Mary II, Queen of England, Scotland and Ireland | title=Queen of England, Scotland and Ireland | parents=2 children=0
+  parents : James II & VII, King of England, Anne Hyde, Duchess of York
+  spouses : William III & II, King of England, Scotland and Ireland
+  children: 
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Charles I, King of England -> James II & VII, King of England -> Mary II, Queen of England, Scotland and Ireland
+profile-g6000000003285572645 | Anne Stuart, Queen of Great Britain and Ireland | title=Queen of Great Britain and Ireland | parents=2 children=0
+  parents : James II & VII, King of England, Anne Hyde, Duchess of York
+  spouses : Prince George of Denmark, Duke of Cumberland
+  children: 
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Charles I, King of England -> James II & VII, King of England -> Anne Stuart, Queen of Great Britain and Ireland
+profile-4555944 | Caroline of Ansbach | title= | parents=0 children=2
+  parents : 
+  spouses : George II, King of Great Britain and Ireland
+  children: Frederick, Prince of Wales, Mary, Landgravine of Hesse-Kassel
+  Henry VII path: (not lineal)
+profile-g311769067160005759 | Sophia Dorothea of Hanover, Queen in Prussia | title=Queen in Prussia | parents=2 children=1
+  parents : George I, King of Great Britain and Ireland, Sophia Dorothea of Celle
+  spouses : Frederick William I, King in Prussia
+  children: Prince Augustus William of Prussia
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> Sophia Dorothea of Hanover, Queen in Prussia
+profile-g6000000003891728922 | Charlotte of Mecklenburg-Strelitz | title= | parents=0 children=4
+  parents : 
+  spouses : George III, King of Great Britain and Ireland
+  children: George IV, King of Great Britain and Ireland, William IV, King of Great Britain and Ireland, Edward, Duke of Kent, Adolphus, Duke of Cambridge
+  Henry VII path: (not lineal)
+profile-g6000000000307247176 | Frederica Louisa of Hesse-Darmstadt, Queen of Prussia | title=Queen of Prussia | parents=0 children=1
+  parents : 
+  spouses : Frederick William II, King of Prussia
+  children: Prince William of Prussia
+  Henry VII path: (not lineal)
+profile-g4138652783200125692 | Caroline of Brunswick | title=Queen consort of Great Britain and Ireland and Hanover | parents=2 children=1
+  parents : Charles William Ferdinand, Duke of Brunswick-Wolfenbüttel, Augusta, Duchess of Brunswick-Wolfenbüttel
+  spouses : George IV, King of Great Britain and Ireland
+  children: Charlotte Augusta of Wales
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Frederick, Prince of Wales -> Augusta, Duchess of Brunswick-Wolfenbüttel -> Caroline of Brunswick
+profile-g6000000002737707932 | Princess Charlotte of Denmark | title=Princess of Denmark | parents=0 children=1
+  parents : 
+  spouses : Prince William of Hesse-Kassel
+  children: Louise of Hesse-Kassel, Queen of Denmark
+  Henry VII path: (not lineal)
+profile-g4138662614410074729 | Adelaide of Saxe-Meiningen | title= | parents=0 children=0
+  parents : 
+  spouses : William IV, King of Great Britain and Ireland
+  children: 
+  Henry VII path: (not lineal)
+profile-g4134741994550032164 | Louise of Hesse-Kassel, Queen of Denmark | title=Queen of Denmark | parents=2 children=2
+  parents : Prince William of Hesse-Kassel, Princess Charlotte of Denmark
+  spouses : Christian IX, King of Denmark
+  children: Alexandra of Denmark, George I, King of the Hellenes
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Mary, Landgravine of Hesse-Kassel -> Prince Frederick of Hesse-Kassel -> Prince William of Hesse-Kassel -> Louise of Hesse-Kassel, Queen of Denmark
+profile-g6000000000697518124 | Albert, Prince Consort | title= | parents=0 children=2
+  parents : 
+  spouses : Victoria, Queen of Great Britain and Ireland, Empress of India
+  children: Edward VII, King of Great Britain and Ireland, Alice, Grand Duchess of Hesse and by Rhine
+  Henry VII path: (not lineal)
+profile-g6000000008852088113 | Victoria, Queen of Great Britain and Ireland, Empress of India | title=Queen of Great Britain and Ireland | parents=2 children=2
+  parents : Edward, Duke of Kent, Victoria, Duchess of Kent and Strathearn
+  spouses : Albert, Prince Consort
+  children: Edward VII, King of Great Britain and Ireland, Alice, Grand Duchess of Hesse and by Rhine
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Frederick, Prince of Wales -> George III, King of Great Britain and Ireland -> Edward, Duke of Kent -> Victoria, Queen of Great Britain and Ireland, Empress of India
+profile-g6000000003070981015 | Alexandra of Denmark | title= | parents=2 children=1
+  parents : Christian IX, King of Denmark, Louise of Hesse-Kassel, Queen of Denmark
+  spouses : Edward VII, King of Great Britain and Ireland
+  children: George V, King of Great Britain and Northern Ireland
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Mary, Landgravine of Hesse-Kassel -> Prince Frederick of Hesse-Kassel -> Prince William of Hesse-Kassel -> Louise of Hesse-Kassel, Queen of Denmark -> Alexandra of Denmark
+profile-g6000000001552709924 | Olga Constantinovna of Russia, Queen of the Hellenes | title=Queen of the Hellenes | parents=0 children=1
+  parents : 
+  spouses : George I, King of the Hellenes
+  children: Prince Andrew of Greece and Denmark
+  Henry VII path: (not lineal)
+profile-g6000000001324056123 | Mary of Teck, Queen consort of Great Britain and Northern Ireland | title=Queen consort of Great Britain and Northern Ireland | parents=2 children=2
+  parents : Mary Adelaide, Duchess of Teck, Francis, Duke of Teck
+  spouses : George V, King of Great Britain and Northern Ireland
+  children: Edward VIII, King of Great Britain and Northern Ireland in 1936, George VI, King of Great Britain and Northern Ireland
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Frederick, Prince of Wales -> George III, King of Great Britain and Ireland -> Adolphus, Duke of Cambridge -> Mary Adelaide, Duchess of Teck -> Mary of Teck, Queen consort of Great Britain and Northern Ireland
+profile-g3940609086280075061 | Elizabeth, the Queen Mother | title= | parents=0 children=1
+  parents : 
+  spouses : George VI, King of Great Britain and Northern Ireland
+  children: Elizabeth II, Queen of Great Britain and Northern Ireland
+  Henry VII path: (not lineal)
+profile-g6000000003075071669 | Elizabeth II, Queen of Great Britain and Northern Ireland | title=Queen of Great Britain and Northern Ireland | parents=2 children=1
+  parents : George VI, King of Great Britain and Northern Ireland, Elizabeth, the Queen Mother
+  spouses : Philip, Duke of Edinburgh
+  children: Charles III, King of Great Britain and Northern Ireland
+  Henry VII path: Henry VII, King of England -> Margaret Tudor, Queen of Scots -> James V, King of Scots -> Mary, Queen of Scots -> James VI & I, King of Scots and later England and Ireland -> Elizabeth Stuart, Queen of Bohemia -> Sophia, Electress of Hanover -> George I, King of Great Britain and Ireland -> George II, King of Great Britain and Ireland -> Frederick, Prince of Wales -> George III, King of Great Britain and Ireland -> Adolphus, Duke of Cambridge -> Mary Adelaide, Duchess of Teck -> Mary of Teck, Queen consort of Great Britain and Northern Ireland -> George VI, King of Great Britain and Northern Ireland -> Elizabeth II, Queen of Great Britain and Northern Ireland
+profile-g5032563093790088828 | Andrew Parker Bowles | title= | parents=0 children=0
+  parents : 
+  spouses : Camilla, Queen of Great Britain and Northern Ireland
+  children: 
+  Henry VII path: (not lineal)
+profile-g6000000003081589893 | Camilla, Queen of Great Britain and Northern Ireland | title= | parents=0 children=0
+  parents : 
+  spouses : Andrew Parker Bowles, Charles III, King of Great Britain and Northern Ireland
+  children: 
+  Henry VII path: (not lineal)
+
+ROYAL PROFILES WITH NO CHILDREN OR INCOMPLETE PARENTAGE
+profile-g6000000003760873898 | Henry VII, King of England | parents=0 children=4 spouses=Elizabeth of York, Queen consort of England
+profile-g6000000000440363134 | Louis XII, King of France | parents=0 children=1 spouses=Jeanne of France, Anne of Brittany, Mary Tudor, Queen consort of France
+profile-g5111879481690102566 | Elizabeth of York, Queen consort of England | parents=0 children=4 spouses=Henry VII, King of England
+profile-g6000000001976884495 | Manuel I, King of Portugal | parents=0 children=2 spouses=Maria of Aragon, Queen of Portugal
+profile-g4229916861440069622 | James IV, King of Scots | parents=0 children=1 spouses=Margaret Tudor, Queen of Scots
+profile-g376298089210013354 | Philip I, King of Castile | parents=0 children=2 spouses=Joanna I, Queen of Castile and Aragon
+profile-g6000000018001664573 | Joanna I, Queen of Castile and Aragon | parents=0 children=2 spouses=Philip I, King of Castile
+profile-g6000000000830244922 | Maria of Aragon, Queen of Portugal | parents=0 children=2 spouses=Manuel I, King of Portugal
+profile-4475169 | Catherine of Aragon | parents=0 children=1 spouses=Arthur, Prince of Wales, Henry VIII, King of England
+profile-4695498 | Francis I, King of France | parents=0 children=2 spouses=Claude, Queen of France and Duchess of Brittany
+profile-g6000000003702650070 | Anne Boleyn | parents=0 children=1 spouses=Henry VIII, King of England
+profile-g6000000001465721422 | Jane Seymour | parents=0 children=1 spouses=Henry VIII, King of England
+profile-g6000000001465762273 | Catherine Parr | parents=0 children=0 spouses=Edward Burgh, John Neville, Baron Latimer, Henry VIII, King of England, Thomas Seymour, Baron Sudeley
+profile-4475232 | Anne of Cleves | parents=0 children=0 spouses=Henry VIII, King of England
+profile-g6000000001323878378 | Mary of Guise | parents=0 children=1 spouses=Louis II, Duke of Longueville, James V, King of Scots
+profile-g5027356653020040914 | Mary I, Queen of England and Ireland | parents=2 children=0 spouses=Philip II, King of Spain
+profile-g6000000001063166988 | Catherine de' Medici, Queen of France | parents=0 children=5 spouses=Henry II, King of France
+profile-g6000000002322323932 | Madeleine of Valois | parents=2 children=0 spouses=James V, King of Scots
+profile-g6000000001465827019 | Catherine Howard | parents=0 children=0 spouses=Henry VIII, King of England
+profile-4476035 | Elizabeth I, Queen of England and Ireland | parents=2 children=0 spouses=
+profile-4104556 | Frederick II, King of Denmark and Norway | parents=0 children=2 spouses=Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway
+profile-g6000000001723257706 | James Hepburn, Earl of Bothwell | parents=0 children=0 spouses=Jean Gordon, Mary, Queen of Scots
+profile-g6000000008813849008 | Edward VI, King of England and Ireland | parents=2 children=0 spouses=
+profile-g368988617700011508 | Jane Grey, Queen of England in 1553 | parents=2 children=0 spouses=Guildford Dudley
+profile-g6000000003232545902 | Francis II, King of France | parents=2 children=0 spouses=Mary, Queen of Scots
+profile-g6000000001142154909 | Anna of Austria, Queen of Spain | parents=0 children=1 spouses=Philip II, King of Spain
+profile-g6000000000307280059 | Charles IX, King of France | parents=2 children=0 spouses=
+profile-g6000000000307280073 | Henry III, King of France | parents=2 children=0 spouses=
+profile-g6000000001479508039 | Henry IV, King of France and Navarre | parents=0 children=2 spouses=Margaret of Valois, Queen of France and Navarre, Marie de' Medici, Queen of France
+profile-g6000000001479578007 | Margaret of Valois, Queen of France and Navarre | parents=2 children=0 spouses=Henry IV, King of France and Navarre
+profile-4104601 | Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway | parents=0 children=2 spouses=Frederick II, King of Denmark and Norway
+profile-g6000000006727753675 | Frederick IV, Elector Palatine | parents=0 children=1 spouses=Louise Juliana of Nassau, Electress Palatine
+profile-4104768 | Anne Catherine of Brandenburg, Queen of Denmark and Norway | parents=0 children=1 spouses=Christian IV, King of Denmark and Norway
+profile-g6000000000851442057 | Marie de' Medici, Queen of France | parents=0 children=2 spouses=Henry IV, King of France and Navarre
+profile-g6000000006727753685 | Louise Juliana of Nassau, Electress Palatine | parents=0 children=1 spouses=Frederick IV, Elector Palatine
+profile-g6000000000837486609 | Philip III, King of Spain and Portugal | parents=2 children=0 spouses=
+profile-g4040216435970129981 | Frederick Henry, Prince of Orange | parents=0 children=1 spouses=Amalia of Solms-Braunfels, Princess of Orange
+profile-g6000000000842892424 | Louis XIII, King of France and Navarre | parents=2 children=0 spouses=
+profile-4104869 | Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway | parents=0 children=1 spouses=Frederick III, King of Denmark and Norway
+profile-g6000000003890906681 | Ernest Augustus, Elector of Hanover | parents=0 children=1 spouses=Sophia, Electress of Hanover
+profile-g6000000002529545042 | Charles II, King of England | parents=2 children=0 spouses=Catherine of Braganza
+profile-g6000000001566391625 | Catherine of Braganza | parents=0 children=0 spouses=Charles II, King of England
+profile-g6000000003285553237 | William III & II, King of England, Scotland and Ireland | parents=2 children=0 spouses=Mary II, Queen of England, Scotland and Ireland
+profile-g4033341615700026163 | Prince George of Denmark, Duke of Cumberland | parents=2 children=0 spouses=Anne Stuart, Queen of Great Britain and Ireland
+profile-g6000000001573653856 | Mary of Modena | parents=0 children=0 spouses=James II & VII, King of England
+profile-g6000000003285472970 | Mary II, Queen of England, Scotland and Ireland | parents=2 children=0 spouses=William III & II, King of England, Scotland and Ireland
+profile-g6000000003285572645 | Anne Stuart, Queen of Great Britain and Ireland | parents=2 children=0 spouses=Prince George of Denmark, Duke of Cumberland
+profile-4555944 | Caroline of Ansbach | parents=0 children=2 spouses=George II, King of Great Britain and Ireland
+profile-g311771392100007035 | Frederick William I, King in Prussia | parents=0 children=1 spouses=Sophia Dorothea of Hanover, Queen in Prussia
+profile-g6000000003891728922 | Charlotte of Mecklenburg-Strelitz | parents=0 children=4 spouses=George III, King of Great Britain and Ireland
+profile-g6000000000307247176 | Frederica Louisa of Hesse-Darmstadt, Queen of Prussia | parents=0 children=1 spouses=Frederick William II, King of Prussia
+profile-g4137989648200126749 | William IV, King of Great Britain and Ireland | parents=2 children=0 spouses=Adelaide of Saxe-Meiningen
+profile-g6000000040699313241 | Louis II, Grand Duke of Hesse and by Rhine | parents=0 children=2 spouses=Wilhelmine of Baden, Grand Duchess of Hesse and by Rhine
+profile-g6000000000697437319 | Victoria, Duchess of Kent and Strathearn | parents=0 children=1 spouses=Emich Carl, Prince of Leiningen, Edward, Duke of Kent
+profile-g6000000003446622340 | Wilhelmine of Baden, Grand Duchess of Hesse and by Rhine | parents=0 children=2 spouses=Louis II, Grand Duke of Hesse and by Rhine
+profile-g6000000002737707932 | Princess Charlotte of Denmark | parents=0 children=1 spouses=Prince William of Hesse-Kassel
+profile-g4138662614410074729 | Adelaide of Saxe-Meiningen | parents=0 children=0 spouses=William IV, King of Great Britain and Ireland
+profile-g6000000003065659343 | Christian IX, King of Denmark | parents=0 children=2 spouses=Louise of Hesse-Kassel, Queen of Denmark
+profile-g6000000000697518124 | Albert, Prince Consort | parents=0 children=2 spouses=Victoria, Queen of Great Britain and Ireland, Empress of India
+profile-g6000000001552709924 | Olga Constantinovna of Russia, Queen of the Hellenes | parents=0 children=1 spouses=George I, King of the Hellenes
+profile-g6000000002343276289 | Alexandrine von Hutten-Czapska | parents=0 children=0 spouses=Louis IV, Grand Duke of Hesse and by Rhine
+profile-g5031922362950130285 | Edward VIII, King of Great Britain and Northern Ireland in 1936 | parents=2 children=0 spouses=Wallis, Duchess of Windsor
+profile-g3940609086280075061 | Elizabeth, the Queen Mother | parents=0 children=1 spouses=George VI, King of Great Britain and Northern Ireland
+profile-g6000000003221652435 | Louis Mountbatten, 1st Earl Mountbatten of Burma | parents=2 children=0 spouses=
+profile-g5032563093790088828 | Andrew Parker Bowles | parents=0 children=0 spouses=Camilla, Queen of Great Britain and Northern Ireland
+profile-g6000000003081589893 | Camilla, Queen of Great Britain and Northern Ireland | parents=0 children=0 spouses=Andrew Parker Bowles, Charles III, King of Great Britain and Northern Ireland
+
+ALL NON-BRITISH REIGN EVENTS
+Louis XII, King of France | 1498-1515
+Manuel I, King of Portugal | 1495-1521
+Philip I, King of Castile | 1506-1506
+Francis I, King of France | 1515-1547
+Charles V, Holy Roman Emperor and King of Spain | 1516-1556
+Charles V, Holy Roman Emperor and King of Spain | 1519-1556
+John III, King of Portugal | 1521-1557
+Henry II, King of France | 1547-1559
+Frederick II, King of Denmark and Norway | 1559-1588
+Francis II, King of France | 1559-1560
+Charles IX, King of France | 1560-1574
+Henry III, King of France | 1574-1589
+Henry IV, King of France and Navarre | 1589-1610
+Frederick IV, Elector Palatine | 1583-1610
+Christian IV, King of Denmark and Norway | 1588-1648
+Philip III, King of Spain and Portugal | 1598-1621
+Frederick Henry, Prince of Orange | 1625-1647
+Louis XIII, King of France and Navarre | 1610-1643
+Frederick III, King of Denmark and Norway | 1648-1670
+Frederick William I, King in Prussia | 1713-1740
+Frederick William II, King of Prussia | 1786-1797
+Louis II, Grand Duke of Hesse and by Rhine | 1830-1848
+Christian IX, King of Denmark | 1863-1906
+George I, King of the Hellenes | 1863-1913

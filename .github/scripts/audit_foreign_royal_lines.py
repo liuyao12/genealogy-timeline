@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections import defaultdict, deque
+from collections import deque
 from pathlib import Path
 
 DATA_PATH = Path('data/british-royal-line.json')
@@ -68,55 +68,18 @@ def descendants(start):
     return out
 
 
-def ancestors(start):
-    out = {start}
-    queue = deque([start])
-    while queue:
-        current = queue.popleft()
-        for parent in existing(people[current].get('parents')):
-            if parent in out:
-                continue
-            out.add(parent)
-            queue.append(parent)
-    return out
-
-
-def shortest_path(start, target):
-    queue = deque([start])
-    previous = {start: None}
-    while queue:
-        current = queue.popleft()
-        if current == target:
-            break
-        for other in neighbours(current):
-            if other not in previous:
-                previous[other] = current
-                queue.append(other)
-    if target not in previous:
-        return []
-    path = []
-    current = target
-    while current is not None:
-        path.append(current)
-        current = previous[current]
-    return path[::-1]
-
 henry_descendants = descendants(root_id)
-
 royals = []
-foreign_consor ts = []
+foreign_consorts = []
 foreign_sovereigns = []
 for person_id, person in people.items():
     text = name_text(person)
     if ROYAL_TERMS.search(text):
         royals.append(person_id)
     if CONSORT_TERMS.search(text) and not BRITISH_TERMS.search(text):
-        foreign_consor ts.append(person_id)
+        foreign_consorts.append(person_id)
     if SOVEREIGN_TERMS.search(text) and not BRITISH_TERMS.search(text):
         foreign_sovereigns.append(person_id)
-
-# Fix accidental space in variable names through explicit aliases generated at runtime.
-foreign_consorts = locals().pop('foreign_consor ts')
 
 rows = []
 for person_id in sorted(foreign_consorts, key=lambda item: (int(people[item].get('birthYear') or 99999), people[item].get('displayName', ''))):
@@ -150,8 +113,6 @@ for person_id, person in people.items():
             'spouses': names(person.get('spouses')),
         })
 
-# Connected components restricted to foreign sovereign/consort profiles plus immediate family,
-# useful for seeing which dynasties are represented only by isolated gateway nodes.
 royal_neighbourhood = set(foreign_sovereigns) | set(foreign_consorts)
 for person_id in list(royal_neighbourhood):
     royal_neighbourhood.update(neighbours(person_id))

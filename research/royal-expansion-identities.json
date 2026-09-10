@@ -1,0 +1,3635 @@
+{
+  "records": [
+    {
+      "target": "Isabella I of Castile",
+      "page_title": "Isabella I of Castile",
+      "qid": "Q45859",
+      "label": "Isabella I of Castile",
+      "description": "queen of the Crown of Castile, from 1474 to 1504; first queen of a dynastically-united Spain, from 1479 to 1504 (1451–1504)",
+      "geni_ids": [
+        "6000000001599858347"
+      ],
+      "birth_times": [
+        "+1451-04-22T00:00:00Z"
+      ],
+      "death_times": [
+        "+1504-11-26T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q297278",
+          "label": "John II of Castile"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q470403",
+          "label": "Isabella of Portugal"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q12860",
+          "label": "Ferdinand II of Aragon"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q466305",
+          "label": "Isabel of Aragon"
+        },
+        {
+          "qid": "Q381871",
+          "label": "John, Prince of Asturias"
+        },
+        {
+          "qid": "Q171136",
+          "label": "Juana I of Castile"
+        },
+        {
+          "qid": "Q229816",
+          "label": "Maria of Aragon"
+        },
+        {
+          "qid": "Q162819",
+          "label": "Catherine of Aragon"
+        }
+      ]
+    },
+    {
+      "target": "Ferdinand II of Aragon",
+      "page_title": "Ferdinand II of Aragon",
+      "qid": "Q12860",
+      "label": "Ferdinand II of Aragon",
+      "description": "King of Aragon, Sicily, Naples, and Valencia (1452-1516)",
+      "geni_ids": [
+        "6000000001599855039"
+      ],
+      "birth_times": [
+        "+1452-03-10T00:00:00Z"
+      ],
+      "death_times": [
+        "+1516-01-23T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q312328",
+          "label": "John II of Aragon"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q236921",
+          "label": "Juana Enríquez de Mendoza y Fernández de Córdoba"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q45859",
+          "label": "Isabella I of Castile"
+        },
+        {
+          "qid": "Q236902",
+          "label": "Germaine of Foix"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q466305",
+          "label": "Isabel of Aragon"
+        },
+        {
+          "qid": "Q381871",
+          "label": "John, Prince of Asturias"
+        },
+        {
+          "qid": "Q171136",
+          "label": "Juana I of Castile"
+        },
+        {
+          "qid": "Q229816",
+          "label": "Maria of Aragon"
+        },
+        {
+          "qid": "Q162819",
+          "label": "Catherine of Aragon"
+        },
+        {
+          "qid": "Q2712060",
+          "label": "Alonso de Aragón"
+        },
+        {
+          "qid": "Q774855",
+          "label": "John of Aragon, Prince of Girona"
+        },
+        {
+          "qid": "Q531056",
+          "label": "Alonso de Estrada"
+        },
+        {
+          "qid": "Q99392080",
+          "label": "Miguel Fernandez Of Grenade"
+        },
+        {
+          "qid": "Q131036818",
+          "label": "Juana de Aragón"
+        },
+        {
+          "qid": "Q117639966",
+          "label": "María Esperanza de Aragón"
+        }
+      ]
+    },
+    {
+      "target": "Maximilian I, Holy Roman Emperor",
+      "page_title": "Maximilian I, Holy Roman Emperor",
+      "qid": "Q150726",
+      "label": "Maximilian I",
+      "description": "Holy Roman Emperor (1459-1519)",
+      "geni_ids": [
+        "6000000001896512676"
+      ],
+      "birth_times": [
+        "+1459-03-22T00:00:00Z"
+      ],
+      "death_times": [
+        "+1519-01-12T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q150966",
+          "label": "Frederick III, Holy Roman Emperor"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q161149",
+          "label": "Eleanor of Portugal, Holy Roman Empress"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q157073",
+          "label": "Mary of Burgundy"
+        },
+        {
+          "qid": "Q201143",
+          "label": "Anne of Brittany"
+        },
+        {
+          "qid": "Q161136",
+          "label": "Bianca Maria Sforza"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q157098",
+          "label": "Philip I of Castile"
+        },
+        {
+          "qid": "Q157100",
+          "label": "Margaret of Austria, Duchess of Savoy"
+        },
+        {
+          "qid": "Q552986",
+          "label": "George of Austria"
+        },
+        {
+          "qid": "Q922141",
+          "label": "Leopoldo de Austria"
+        },
+        {
+          "qid": "Q2376894",
+          "label": "Barbara Disquis"
+        },
+        {
+          "qid": "Q13407861",
+          "label": "Cornelius of Austria"
+        },
+        {
+          "qid": "Q67507195",
+          "label": "Barbara von Rottal"
+        },
+        {
+          "qid": "Q75286761",
+          "label": "Francis of Habsburg"
+        },
+        {
+          "qid": "Q28777523",
+          "label": "Margaret of Edelsheim"
+        },
+        {
+          "qid": "Q110588406",
+          "label": "Dorothea von Österreich, Frau zu Falkenburg, Durbuy und Dalem"
+        }
+      ]
+    },
+    {
+      "target": "Mary of Burgundy",
+      "page_title": "Mary of Burgundy",
+      "qid": "Q157073",
+      "label": "Mary of Burgundy",
+      "description": "duchess of Burgundy and wife of emperor Maximilian I (1457-1482)",
+      "geni_ids": [
+        "6000000001896459321"
+      ],
+      "birth_times": [
+        "+1457-02-13T00:00:00Z"
+      ],
+      "death_times": [
+        "+1482-03-27T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q151120",
+          "label": "Charles the Bold"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q466300",
+          "label": "Isabella of Bourbon"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q150726",
+          "label": "Maximilian I"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q157098",
+          "label": "Philip I of Castile"
+        },
+        {
+          "qid": "Q157100",
+          "label": "Margaret of Austria, Duchess of Savoy"
+        },
+        {
+          "qid": "Q75286761",
+          "label": "Francis of Habsburg"
+        }
+      ]
+    },
+    {
+      "target": "Lorenzo II de' Medici, Duke of Urbino",
+      "page_title": "Lorenzo de' Medici, Duke of Urbino",
+      "qid": "Q312612",
+      "label": "Lorenzo de' Medici, Duke of Urbino",
+      "description": "Italian noble (1492-1519)",
+      "geni_ids": [
+        "6000000001063172991"
+      ],
+      "birth_times": [
+        "+1492-09-12T00:00:00Z"
+      ],
+      "death_times": [
+        "+1519-05-04T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q262212",
+          "label": "Piero the Unfortunate"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q450857",
+          "label": "Alfonsina Orsini"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q272509",
+          "label": "Madeleine de La Tour d'Auvergne"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q131552",
+          "label": "Catherine de' Medici"
+        },
+        {
+          "qid": "Q378232",
+          "label": "Alessandro de' Medici"
+        }
+      ]
+    },
+    {
+      "target": "Madeleine de La Tour d'Auvergne",
+      "page_title": "Madeleine de La Tour d'Auvergne",
+      "qid": "Q272509",
+      "label": "Madeleine de La Tour d'Auvergne",
+      "description": "Duchess consort of Urbino and Duchess suo jure of Lauragais",
+      "geni_ids": [],
+      "birth_times": [
+        "+1498-01-01T00:00:00Z",
+        "+1495-01-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1519-04-28T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q1389408",
+          "label": "Jean III, Comte D'Auvergne"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q59860",
+          "label": "Jeanne de Bourbon, Duchess of Bourbon"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q312612",
+          "label": "Lorenzo de' Medici, Duke of Urbino"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q131552",
+          "label": "Catherine de' Medici"
+        }
+      ]
+    },
+    {
+      "target": "Ferdinand I, Holy Roman Emperor",
+      "page_title": "Ferdinand I, Holy Roman Emperor",
+      "qid": "Q150611",
+      "label": "Ferdinand I, Holy Roman Emperor",
+      "description": "emperador del SIR de 1556 a 1564",
+      "geni_ids": [
+        "376299759140013431"
+      ],
+      "birth_times": [
+        "+1503-03-10T00:00:00Z"
+      ],
+      "death_times": [
+        "+1564-07-25T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q157098",
+          "label": "Philip I of Castile"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q171136",
+          "label": "Juana I of Castile"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q233335",
+          "label": "Anne of Bohemia and Hungary"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q237490",
+          "label": "Elizabeth of Austria"
+        },
+        {
+          "qid": "Q150862",
+          "label": "Maximilian II, Holy Roman Emperor"
+        },
+        {
+          "qid": "Q163551",
+          "label": "Archduchess Anna of Austria"
+        },
+        {
+          "qid": "Q313426",
+          "label": "Ferdinand II, Archduke of Austria"
+        },
+        {
+          "qid": "Q261905",
+          "label": "Archduchess Maria of Austria"
+        },
+        {
+          "qid": "Q113752",
+          "label": "Archduchess Magdalena of Austria"
+        },
+        {
+          "qid": "Q237737",
+          "label": "Catherine of Austria"
+        },
+        {
+          "qid": "Q269302",
+          "label": "Archduchess Eleanor of Austria"
+        },
+        {
+          "qid": "Q84864",
+          "label": "Margaret of Austria"
+        },
+        {
+          "qid": "Q3768410",
+          "label": "John of Habsburg"
+        },
+        {
+          "qid": "Q261419",
+          "label": "Archduchess Barbara of Austria"
+        },
+        {
+          "qid": "Q156400",
+          "label": "Charles II, Archduke of Austria"
+        },
+        {
+          "qid": "Q75286456",
+          "label": "Ursula von Habsburg"
+        },
+        {
+          "qid": "Q85626",
+          "label": "Archduchess Helena of Austria"
+        },
+        {
+          "qid": "Q84459",
+          "label": "Joanna of Austria, Grand Duchess of Tuscany"
+        }
+      ]
+    },
+    {
+      "target": "Anna of Bohemia and Hungary",
+      "page_title": "Anna of Bohemia and Hungary",
+      "qid": "Q233335",
+      "label": "Anne of Bohemia and Hungary",
+      "description": "Queen Consort and Princess of Hungary and Bohemia, Queen Consort of Germany and Archduchess of Austria",
+      "geni_ids": [
+        "6000000001378225463"
+      ],
+      "birth_times": [
+        "+1503-07-23T00:00:00Z"
+      ],
+      "death_times": [
+        "+1547-01-27T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q155599",
+          "label": "Vladislaus II of Bohemia and Hungary"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q231126",
+          "label": "Anne of Foix-Candale"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q150611",
+          "label": "Ferdinand I, Holy Roman Emperor"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q237490",
+          "label": "Elizabeth of Austria"
+        },
+        {
+          "qid": "Q150862",
+          "label": "Maximilian II, Holy Roman Emperor"
+        },
+        {
+          "qid": "Q163551",
+          "label": "Archduchess Anna of Austria"
+        },
+        {
+          "qid": "Q313426",
+          "label": "Ferdinand II, Archduke of Austria"
+        },
+        {
+          "qid": "Q261905",
+          "label": "Archduchess Maria of Austria"
+        },
+        {
+          "qid": "Q113752",
+          "label": "Archduchess Magdalena of Austria"
+        },
+        {
+          "qid": "Q237737",
+          "label": "Catherine of Austria"
+        },
+        {
+          "qid": "Q269302",
+          "label": "Archduchess Eleanor of Austria"
+        },
+        {
+          "qid": "Q84864",
+          "label": "Margaret of Austria"
+        },
+        {
+          "qid": "Q3768410",
+          "label": "John of Habsburg"
+        },
+        {
+          "qid": "Q261419",
+          "label": "Archduchess Barbara of Austria"
+        },
+        {
+          "qid": "Q156400",
+          "label": "Charles II, Archduke of Austria"
+        },
+        {
+          "qid": "Q75286456",
+          "label": "Ursula von Habsburg"
+        },
+        {
+          "qid": "Q85626",
+          "label": "Archduchess Helena of Austria"
+        },
+        {
+          "qid": "Q84459",
+          "label": "Joanna of Austria, Grand Duchess of Tuscany"
+        }
+      ]
+    },
+    {
+      "target": "Maximilian II, Holy Roman Emperor",
+      "page_title": "Maximilian II, Holy Roman Emperor",
+      "qid": "Q150862",
+      "label": "Maximilian II, Holy Roman Emperor",
+      "description": "King of the Romans, King of Hungary, Croatia and Bohemia (1527-1576)",
+      "geni_ids": [
+        "6000000001379265308"
+      ],
+      "birth_times": [
+        "+1527-07-31T00:00:00Z"
+      ],
+      "death_times": [
+        "+1576-10-12T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q150611",
+          "label": "Ferdinand I, Holy Roman Emperor"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q233335",
+          "label": "Anne of Bohemia and Hungary"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q159660",
+          "label": "Maria of Austria, Holy Roman Empress"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q156657",
+          "label": "Anna of Austria, Queen of Spain"
+        },
+        {
+          "qid": "Q150586",
+          "label": "Emperor Rudolf II"
+        },
+        {
+          "qid": "Q327156",
+          "label": "Archduke Ernest of Austria"
+        },
+        {
+          "qid": "Q164512",
+          "label": "Elisabeth of Austria"
+        },
+        {
+          "qid": "Q152157",
+          "label": "Matthias, Holy Roman Emperor"
+        },
+        {
+          "qid": "Q283909",
+          "label": "Maximilian III, Archduke of Austria"
+        },
+        {
+          "qid": "Q311452",
+          "label": "Albert VII, Archduke of Austria"
+        },
+        {
+          "qid": "Q113754",
+          "label": "Archduke Wenceslaus of Austria"
+        },
+        {
+          "qid": "Q79158",
+          "label": "Archduchess Margaretha of Austria"
+        },
+        {
+          "qid": "Q75286659",
+          "label": "Ferdinand von Habsburg"
+        },
+        {
+          "qid": "Q75286679",
+          "label": "Marie von Habsburg"
+        },
+        {
+          "qid": "Q75286675",
+          "label": "Friedrich von Habsburg"
+        },
+        {
+          "qid": "Q75286681",
+          "label": "Marie von Habsburg"
+        },
+        {
+          "qid": "Q75286677",
+          "label": "Karl von Habsburg"
+        },
+        {
+          "qid": "Q75286682",
+          "label": "Eleonore Erzherzogin von Österreich"
+        },
+        {
+          "qid": "Q124709952",
+          "label": "Helena Scharseg"
+        }
+      ]
+    },
+    {
+      "target": "Maria of Spain",
+      "page_title": "Maria of Austria, Holy Roman Empress",
+      "qid": "Q159660",
+      "label": "Maria of Austria, Holy Roman Empress",
+      "description": "Holy Roman empress (1528-1603)",
+      "geni_ids": [
+        "6000000002756561323"
+      ],
+      "birth_times": [
+        "+1528-06-21T00:00:00Z"
+      ],
+      "death_times": [
+        "+1603-02-26T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q32500",
+          "label": "Charles V"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q331575",
+          "label": "Isabella of Portugal"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q150862",
+          "label": "Maximilian II, Holy Roman Emperor"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q156657",
+          "label": "Anna of Austria, Queen of Spain"
+        },
+        {
+          "qid": "Q150586",
+          "label": "Emperor Rudolf II"
+        },
+        {
+          "qid": "Q327156",
+          "label": "Archduke Ernest of Austria"
+        },
+        {
+          "qid": "Q164512",
+          "label": "Elisabeth of Austria"
+        },
+        {
+          "qid": "Q152157",
+          "label": "Matthias, Holy Roman Emperor"
+        },
+        {
+          "qid": "Q283909",
+          "label": "Maximilian III, Archduke of Austria"
+        },
+        {
+          "qid": "Q311452",
+          "label": "Albert VII, Archduke of Austria"
+        },
+        {
+          "qid": "Q113754",
+          "label": "Archduke Wenceslaus of Austria"
+        },
+        {
+          "qid": "Q79158",
+          "label": "Archduchess Margaretha of Austria"
+        },
+        {
+          "qid": "Q75286659",
+          "label": "Ferdinand von Habsburg"
+        },
+        {
+          "qid": "Q75286675",
+          "label": "Friedrich von Habsburg"
+        },
+        {
+          "qid": "Q75286679",
+          "label": "Marie von Habsburg"
+        },
+        {
+          "qid": "Q75286677",
+          "label": "Karl von Habsburg"
+        },
+        {
+          "qid": "Q75286682",
+          "label": "Eleonore Erzherzogin von Österreich"
+        },
+        {
+          "qid": "Q75286681",
+          "label": "Marie von Habsburg"
+        }
+      ]
+    },
+    {
+      "target": "Francesco I de' Medici, Grand Duke of Tuscany",
+      "page_title": "Francesco I de' Medici",
+      "qid": "Q299675",
+      "label": "Francesco I de' Medici",
+      "description": "Grand Duke of Tuscany (1541-1587)",
+      "geni_ids": [
+        "6000000004173966093"
+      ],
+      "birth_times": [
+        "+1541-03-25T00:00:00Z"
+      ],
+      "death_times": [
+        "+1587-10-17T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q48547",
+          "label": "Cosimo I de' Medici, Grand Duke of Tuscany"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q237717",
+          "label": "Eleanor of Toledo"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q84459",
+          "label": "Joanna of Austria, Grand Duchess of Tuscany"
+        },
+        {
+          "qid": "Q258111",
+          "label": "Bianca Cappello"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q1991420",
+          "label": "Eleanor de' Medici"
+        },
+        {
+          "qid": "Q2737243",
+          "label": "Anna de' Medici"
+        },
+        {
+          "qid": "Q182021",
+          "label": "Marie de' Medici"
+        },
+        {
+          "qid": "Q5131952",
+          "label": "Philip de' Medici"
+        },
+        {
+          "qid": "Q577162",
+          "label": "Antonio de' Medici"
+        }
+      ]
+    },
+    {
+      "target": "Joanna of Austria, Grand Duchess of Tuscany",
+      "page_title": "Joanna of Austria, Grand Duchess of Tuscany",
+      "qid": "Q84459",
+      "label": "Joanna of Austria, Grand Duchess of Tuscany",
+      "description": "Austrian Archduchess, mother of Maria de' Medici (1547-1578)",
+      "geni_ids": [
+        "376324806820003014"
+      ],
+      "birth_times": [
+        "+1547-01-24T00:00:00Z"
+      ],
+      "death_times": [
+        "+1578-04-11T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q150611",
+          "label": "Ferdinand I, Holy Roman Emperor"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q233335",
+          "label": "Anne of Bohemia and Hungary"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q299675",
+          "label": "Francesco I de' Medici"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q1991420",
+          "label": "Eleanor de' Medici"
+        },
+        {
+          "qid": "Q2737243",
+          "label": "Anna de' Medici"
+        },
+        {
+          "qid": "Q182021",
+          "label": "Marie de' Medici"
+        },
+        {
+          "qid": "Q5131952",
+          "label": "Philip de' Medici"
+        }
+      ]
+    },
+    {
+      "target": "William the Silent",
+      "page_title": "William the Silent",
+      "qid": "Q78454",
+      "label": "William the Silent",
+      "description": "Dutch statesman and revolt leader (1533-1584)",
+      "geni_ids": [
+        "6000000001851827666"
+      ],
+      "birth_times": [
+        "+1533-04-24T00:00:00Z"
+      ],
+      "death_times": [
+        "+1584-07-10T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q688471",
+          "label": "William I, Count of Nassau-Siegen"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q202566",
+          "label": "Juliana of Stolberg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q266926",
+          "label": "Anna van Egmont"
+        },
+        {
+          "qid": "Q76488",
+          "label": "Anna of Saxony"
+        },
+        {
+          "qid": "Q271581",
+          "label": "Charlotte of Bourbon"
+        },
+        {
+          "qid": "Q238227",
+          "label": "Louise de Coligny"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q264258",
+          "label": "Philip William, Prince of Orange"
+        },
+        {
+          "qid": "Q459440",
+          "label": "Countess Maria of Nassau"
+        },
+        {
+          "qid": "Q467592",
+          "label": "Countess Anna of Nassau"
+        },
+        {
+          "qid": "Q164062",
+          "label": "Maurice of Nassau"
+        },
+        {
+          "qid": "Q445880",
+          "label": "Countess Emilia of Nassau"
+        },
+        {
+          "qid": "Q265243",
+          "label": "Countess Louise Juliana of Nassau"
+        },
+        {
+          "qid": "Q443476",
+          "label": "Countess Elisabeth of Nassau"
+        },
+        {
+          "qid": "Q447766",
+          "label": "Countess Catharina Belgica of Nassau"
+        },
+        {
+          "qid": "Q452527",
+          "label": "Countess Charlotte Flandrina of Nassau"
+        },
+        {
+          "qid": "Q459423",
+          "label": "Countess Charlotte Brabantina of Nassau"
+        },
+        {
+          "qid": "Q443511",
+          "label": "Countess Emilia Antwerpiana of Nassau"
+        },
+        {
+          "qid": "Q167236",
+          "label": "Frederick Henry of Orange-Nassau"
+        },
+        {
+          "qid": "Q551885",
+          "label": "Justinus van Nassau"
+        },
+        {
+          "qid": "Q17428891",
+          "label": "Maria van Nassau"
+        }
+      ]
+    },
+    {
+      "target": "Charlotte of Bourbon",
+      "page_title": "Charlotte of Bourbon",
+      "qid": "Q271581",
+      "label": "Charlotte of Bourbon",
+      "description": "French noblewoman (1546-1582); third wife of William the Silent (1546-1582)",
+      "geni_ids": [],
+      "birth_times": [
+        "+1546-01-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1582-05-05T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q927365",
+          "label": "Louis, Duke of Montpensier"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q2733658",
+          "label": "Jacqueline de Longwy"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q78454",
+          "label": "William the Silent"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q265243",
+          "label": "Countess Louise Juliana of Nassau"
+        },
+        {
+          "qid": "Q443476",
+          "label": "Countess Elisabeth of Nassau"
+        },
+        {
+          "qid": "Q447766",
+          "label": "Countess Catharina Belgica of Nassau"
+        },
+        {
+          "qid": "Q452527",
+          "label": "Countess Charlotte Flandrina of Nassau"
+        },
+        {
+          "qid": "Q459423",
+          "label": "Countess Charlotte Brabantina of Nassau"
+        },
+        {
+          "qid": "Q443511",
+          "label": "Countess Emilia Antwerpiana of Nassau"
+        }
+      ]
+    },
+    {
+      "target": "Louise de Coligny",
+      "page_title": "Louise de Coligny",
+      "qid": "Q238227",
+      "label": "Louise de Coligny",
+      "description": "fourth wife of William the Silent (1555-1620)",
+      "geni_ids": [],
+      "birth_times": [
+        "+1555-09-23T00:00:00Z"
+      ],
+      "death_times": [
+        "+1620-11-13T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q204975",
+          "label": "Gaspard II de Coligny"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q2961031",
+          "label": "Charlotte de Laval"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q78454",
+          "label": "William the Silent"
+        },
+        {
+          "qid": "Q1868249",
+          "label": "Charles de Téligny"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q167236",
+          "label": "Frederick Henry of Orange-Nassau"
+        }
+      ]
+    },
+    {
+      "target": "Ulrich, Duke of Mecklenburg",
+      "page_title": "Ulrich, Duke of Mecklenburg",
+      "qid": "Q687028",
+      "label": "Ulrich, Duke of Mecklenburg",
+      "description": "Duke of Mecklenburg-Güstrow",
+      "geni_ids": [
+        "6000000001009256086"
+      ],
+      "birth_times": [
+        "+1527-03-05T00:00:00Z"
+      ],
+      "death_times": [
+        "+1603-03-14T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q684224",
+          "label": "Albrecht VII, Duke of Mecklenburg"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q326738",
+          "label": "Anna of Brandenburg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q2334373",
+          "label": "Elizabeth of Denmark, Duchess of Mecklenburg"
+        },
+        {
+          "qid": "Q6315290",
+          "label": "Anna of Pomerania"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57654",
+          "label": "Sophie of Mecklenburg-Güstrow"
+        }
+      ]
+    },
+    {
+      "target": "Elizabeth of Denmark, Duchess of Mecklenburg",
+      "page_title": "Elizabeth of Denmark, Duchess of Mecklenburg",
+      "qid": "Q2334373",
+      "label": "Elizabeth of Denmark, Duchess of Mecklenburg",
+      "description": "duchess consort of Mecklenburg (1524-1586)",
+      "geni_ids": [
+        "6000000000019192037"
+      ],
+      "birth_times": [
+        "+1524-10-14T00:00:00Z"
+      ],
+      "death_times": [
+        "+1586-10-15T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q157789",
+          "label": "Frederick I of Denmark"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q233790",
+          "label": "Sophie of Pomerania"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q687028",
+          "label": "Ulrich, Duke of Mecklenburg"
+        },
+        {
+          "qid": "Q328693",
+          "label": "Magnus III, Duke of Mecklenburg"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57654",
+          "label": "Sophie of Mecklenburg-Güstrow"
+        }
+      ]
+    },
+    {
+      "target": "Frederick I of Denmark",
+      "page_title": "Frederick I of Denmark",
+      "qid": "Q157789",
+      "label": "Frederick I of Denmark",
+      "description": "King of Denmark and Norway",
+      "geni_ids": [
+        "4104333"
+      ],
+      "birth_times": [
+        "+1471-10-07T00:00:00Z"
+      ],
+      "death_times": [
+        "+1533-04-10T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q153940",
+          "label": "Christian I of Denmark"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q61873",
+          "label": "Dorothea of Brandenburg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q260926",
+          "label": "Anna of Brandenburg"
+        },
+        {
+          "qid": "Q233790",
+          "label": "Sophie of Pomerania"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q154998",
+          "label": "Christian III of Denmark"
+        },
+        {
+          "qid": "Q440412",
+          "label": "Dorothea of Denmark"
+        },
+        {
+          "qid": "Q568967",
+          "label": "John II, Duke of Schleswig-Holstein-Haderslev"
+        },
+        {
+          "qid": "Q2334373",
+          "label": "Elizabeth of Denmark, Duchess of Mecklenburg"
+        },
+        {
+          "qid": "Q60211",
+          "label": "Adolf I, Duke of Schleswig-Holstein-Gottorp"
+        },
+        {
+          "qid": "Q3374718",
+          "label": "Dorothea of Denmark, Duchess of Mecklenburg"
+        },
+        {
+          "qid": "Q876198",
+          "label": "Frederick of Denmark"
+        },
+        {
+          "qid": "Q75385328",
+          "label": "Anna of Denmark"
+        },
+        {
+          "qid": "Q111424702",
+          "label": "Geseke Frederiksdatter"
+        },
+        {
+          "qid": "Q116232167",
+          "label": "Catharina Frederiksdatter"
+        }
+      ]
+    },
+    {
+      "target": "Sophie of Pomerania",
+      "page_title": "Sophie of Pomerania",
+      "qid": "Q233790",
+      "label": "Sophie of Pomerania",
+      "description": "Queen consort of Denmark and Norway",
+      "geni_ids": [
+        "6000000003552702091"
+      ],
+      "birth_times": [
+        "+1498-01-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1568-05-13T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q696734",
+          "label": "Bogislaw X, Duke of Pomerania"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q4066553",
+          "label": "Anna Jagiellon"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q157789",
+          "label": "Frederick I of Denmark"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q568967",
+          "label": "John II, Duke of Schleswig-Holstein-Haderslev"
+        },
+        {
+          "qid": "Q2334373",
+          "label": "Elizabeth of Denmark, Duchess of Mecklenburg"
+        },
+        {
+          "qid": "Q60211",
+          "label": "Adolf I, Duke of Schleswig-Holstein-Gottorp"
+        },
+        {
+          "qid": "Q3374718",
+          "label": "Dorothea of Denmark, Duchess of Mecklenburg"
+        },
+        {
+          "qid": "Q876198",
+          "label": "Frederick of Denmark"
+        },
+        {
+          "qid": "Q75385328",
+          "label": "Anna of Denmark"
+        }
+      ]
+    },
+    {
+      "target": "Joachim Frederick, Elector of Brandenburg",
+      "page_title": "Joachim Frederick, Elector of Brandenburg",
+      "qid": "Q57920",
+      "label": "Joachim Frederick, Elector of Brandenburg",
+      "description": "Elector of Brandenburg",
+      "geni_ids": [
+        "6000000001480249149"
+      ],
+      "birth_times": [
+        "+1546-01-27T00:00:00Z"
+      ],
+      "death_times": [
+        "+1608-07-28T00:00:00Z",
+        "+1608-07-18T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q505918",
+          "label": "John George, Elector of Brandenburg"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q274025",
+          "label": "Sophie of Legnica"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q267483",
+          "label": "Catherine of Brandenburg-Küstrin"
+        },
+        {
+          "qid": "Q257587",
+          "label": "Eleanor of Prussia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q40746",
+          "label": "John Sigismund, Elector of Brandenburg"
+        },
+        {
+          "qid": "Q170394",
+          "label": "Anne Catherine of Brandenburg"
+        },
+        {
+          "qid": "Q65871",
+          "label": "Barbara Sophie of Brandenburg"
+        },
+        {
+          "qid": "Q92198",
+          "label": "Christian William of Brandenburg"
+        },
+        {
+          "qid": "Q72586",
+          "label": "John George of Brandenburg"
+        },
+        {
+          "qid": "Q1118994",
+          "label": "August of Brandenburg"
+        },
+        {
+          "qid": "Q1432567",
+          "label": "Albrecht Frederik van Brandenburg"
+        },
+        {
+          "qid": "Q1690628",
+          "label": "Joachim of Brandenburg"
+        },
+        {
+          "qid": "Q1357255",
+          "label": "Ernst"
+        },
+        {
+          "qid": "Q458208",
+          "label": "Marie Eleonore von Brandenburg"
+        }
+      ]
+    },
+    {
+      "target": "Catherine of Brandenburg-Küstrin",
+      "page_title": "Catherine of Brandenburg-Küstrin",
+      "qid": "Q267483",
+      "label": "Catherine of Brandenburg-Küstrin",
+      "description": "daughter of Margrave John of Küstrin",
+      "geni_ids": [
+        "6000000003232579985"
+      ],
+      "birth_times": [
+        "+1549-08-10T00:00:00Z"
+      ],
+      "death_times": [
+        "+1602-09-30T00:00:00Z",
+        "+1602-10-10T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q648201",
+          "label": "John, Margrave of Brandenburg-Küstrin"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q86766",
+          "label": "Catherine of Brunswick-Wolfenbüttel, Margravine of Brandenburg-Küstrin"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q57920",
+          "label": "Joachim Frederick, Elector of Brandenburg"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q40746",
+          "label": "John Sigismund, Elector of Brandenburg"
+        },
+        {
+          "qid": "Q170394",
+          "label": "Anne Catherine of Brandenburg"
+        },
+        {
+          "qid": "Q65871",
+          "label": "Barbara Sophie of Brandenburg"
+        },
+        {
+          "qid": "Q92198",
+          "label": "Christian William of Brandenburg"
+        },
+        {
+          "qid": "Q72586",
+          "label": "John George of Brandenburg"
+        },
+        {
+          "qid": "Q1118994",
+          "label": "August of Brandenburg"
+        },
+        {
+          "qid": "Q1357255",
+          "label": "Ernst"
+        },
+        {
+          "qid": "Q1432567",
+          "label": "Albrecht Frederik van Brandenburg"
+        },
+        {
+          "qid": "Q1690628",
+          "label": "Joachim of Brandenburg"
+        }
+      ]
+    },
+    {
+      "target": "George, Duke of Brunswick-Lüneburg",
+      "page_title": "George, Duke of Brunswick",
+      "qid": "Q61829",
+      "label": "George, Duke of Brunswick-Lüneburg",
+      "description": "founder of the House of Hanover",
+      "geni_ids": [],
+      "birth_times": [
+        "+1582-02-17T00:00:00Z",
+        "+1582-00-00T00:00:00Z",
+        "+1583-00-00T00:00:00Z"
+      ],
+      "death_times": [
+        "+1641-04-02T00:00:00Z",
+        "+1641-00-00T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q62481",
+          "label": "William the Younger, Duke of Brunswick-Lüneburg"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q2086776",
+          "label": "Dorothea of Denmark, Duchess of Brunswick-Lüneburg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q270110",
+          "label": "Anne Eleonore of Hesse-Darmstadt"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q61574",
+          "label": "George William of Brunswick-Lüneburg-Celle"
+        },
+        {
+          "qid": "Q69987",
+          "label": "Christian Louis, Duke of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q62800",
+          "label": "John Frederick, Duke of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q231764",
+          "label": "Sophie Amalie of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q372190",
+          "label": "Ernest Augustus, Elector of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q75245945",
+          "label": "Madeleine of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q55886831",
+          "label": "Dorothea Magdalen of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q75239886",
+          "label": "Anne Marie Eleanor von Braunschweig-Lüneburg"
+        }
+      ]
+    },
+    {
+      "target": "Anne Eleonore of Hesse-Darmstadt",
+      "page_title": "Anna Eleonore of Hesse-Darmstadt",
+      "qid": "Q270110",
+      "label": "Anne Eleonore of Hesse-Darmstadt",
+      "description": "Duchess of Brunswick-Lüneburg by marriage (1601-1659)",
+      "geni_ids": [
+        "4543843"
+      ],
+      "birth_times": [
+        "+1601-07-30T00:00:00Z",
+        "+1601-01-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1659-05-06T00:00:00Z",
+        "+1659-01-01T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q267331",
+          "label": "Louis V, Landgrave of Hesse-Darmstadt"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q290616",
+          "label": "Magdalene of Brandenburg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q61829",
+          "label": "George, Duke of Brunswick-Lüneburg"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q61574",
+          "label": "George William of Brunswick-Lüneburg-Celle"
+        },
+        {
+          "qid": "Q69987",
+          "label": "Christian Louis, Duke of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q62800",
+          "label": "John Frederick, Duke of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q231764",
+          "label": "Sophie Amalie of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q372190",
+          "label": "Ernest Augustus, Elector of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q75239886",
+          "label": "Anne Marie Eleanor von Braunschweig-Lüneburg"
+        },
+        {
+          "qid": "Q55886831",
+          "label": "Dorothea Magdalen of Brunswick-Lüneburg"
+        },
+        {
+          "qid": "Q75245945",
+          "label": "Madeleine of Brunswick-Lüneburg"
+        }
+      ]
+    },
+    {
+      "target": "Frederick I of Prussia",
+      "page_title": "Frederick I of Prussia",
+      "qid": "Q151826",
+      "label": "Frederick I of Prussia",
+      "description": "1657 – 1713, Elector of Brandenburg and Duke of Prussia in personal union (Brandenburg-Prussia)",
+      "geni_ids": [
+        "6000000001552874983"
+      ],
+      "birth_times": [
+        "+1657-07-11T00:00:00Z"
+      ],
+      "death_times": [
+        "+1713-02-25T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q152727",
+          "label": "Frederick William of Brandenburg"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q196301",
+          "label": "Countess Louise Henriette of Nassau"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q67695",
+          "label": "Elisabeth Henriette of Hesse-Kassel"
+        },
+        {
+          "qid": "Q57674",
+          "label": "Sophia Charlotte of Hanover"
+        },
+        {
+          "qid": "Q64996",
+          "label": "Sophia Louise of Mecklenburg-Schwerin"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q269405",
+          "label": "Princess Luise Dorothea of Prussia"
+        },
+        {
+          "qid": "Q105013",
+          "label": "Friedrich Wilhelm I of Prussia"
+        },
+        {
+          "qid": "Q75382011",
+          "label": "Friedrich August Prinz von Brandenburg"
+        },
+        {
+          "qid": "Q75382014",
+          "label": "unnamed son von Hohenzollern"
+        }
+      ]
+    },
+    {
+      "target": "Sophia Charlotte of Hanover",
+      "page_title": "Sophia Charlotte of Hanover",
+      "qid": "Q57674",
+      "label": "Sophia Charlotte of Hanover",
+      "description": "Prussian royal consort",
+      "geni_ids": [
+        "6000000001553887647"
+      ],
+      "birth_times": [
+        "+1668-10-30T00:00:00Z"
+      ],
+      "death_times": [
+        "+1705-02-01T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q372190",
+          "label": "Ernest Augustus, Elector of Brunswick-Lüneburg"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q57224",
+          "label": "Sophia of Hanover"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q151826",
+          "label": "Frederick I of Prussia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q105013",
+          "label": "Friedrich Wilhelm I of Prussia"
+        },
+        {
+          "qid": "Q75382011",
+          "label": "Friedrich August Prinz von Brandenburg"
+        },
+        {
+          "qid": "Q75382014",
+          "label": "unnamed son von Hohenzollern"
+        }
+      ]
+    },
+    {
+      "target": "Frederick the Great",
+      "page_title": "Frederick the Great",
+      "qid": "Q33550",
+      "label": "Frederick II of Prussia",
+      "description": "King of Prussia from 1740 to 1786 (1712-1786)",
+      "geni_ids": [
+        "311779792230007083"
+      ],
+      "birth_times": [
+        "+1712-01-24T00:00:00Z"
+      ],
+      "death_times": [
+        "+1786-08-17T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q105013",
+          "label": "Friedrich Wilhelm I of Prussia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q161131",
+          "label": "Sophia Dorothea of Hanover"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q60262",
+          "label": "Elisabeth Christine of Brunswick-Wolfenbüttel-Bevern"
+        }
+      ],
+      "children": []
+    },
+    {
+      "target": "Elisabeth Christine of Brunswick-Wolfenbüttel-Bevern",
+      "page_title": "Elisabeth Christine of Brunswick-Wolfenbüttel-Bevern",
+      "qid": "Q60262",
+      "label": "Elisabeth Christine of Brunswick-Wolfenbüttel-Bevern",
+      "description": "Queen of Prussia and Electress of Brandenburg (1715–1797)",
+      "geni_ids": [
+        "311781946620004636"
+      ],
+      "birth_times": [
+        "+1715-11-08T00:00:00Z"
+      ],
+      "death_times": [
+        "+1797-01-13T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q551123",
+          "label": "Ferdinand Albert II, Duke of Brunswick-Wolfenbüttel"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q259725",
+          "label": "Princess Antoinette of Brunswick-Wolfenbüttel"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q33550",
+          "label": "Frederick II of Prussia"
+        }
+      ],
+      "children": []
+    },
+    {
+      "target": "Wilhelmine of Prussia, Margravine of Brandenburg-Bayreuth",
+      "page_title": "Wilhelmine, Margravine of Brandenburg-Bayreuth",
+      "qid": "Q237740",
+      "label": "Wilhelmine of Prussia, Margravine of Brandenburg-Bayreuth",
+      "description": "Margravine of Brandenburg-Bayreuth (1709-1758)",
+      "geni_ids": [
+        "311773109700003958"
+      ],
+      "birth_times": [
+        "+1709-07-03T00:00:00Z"
+      ],
+      "death_times": [
+        "+1758-10-14T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q105013",
+          "label": "Friedrich Wilhelm I of Prussia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q161131",
+          "label": "Sophia Dorothea of Hanover"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q213797",
+          "label": "Friedrich III, Margrave of Brandenburg-Bayreuth"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q449194",
+          "label": "Margravine Elisabeth Fredericka Sophie of Brandenburg-Bayreuth"
+        }
+      ]
+    },
+    {
+      "target": "Louisa Ulrika of Prussia",
+      "page_title": "Louisa Ulrika of Prussia",
+      "qid": "Q234251",
+      "label": "Louisa Ulrika of Prussia",
+      "description": "Swedish queen (1720-1782)",
+      "geni_ids": [
+        "4369413"
+      ],
+      "birth_times": [
+        "+1720-07-24T00:00:00Z"
+      ],
+      "death_times": [
+        "+1782-07-16T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q105013",
+          "label": "Friedrich Wilhelm I of Prussia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q161131",
+          "label": "Sophia Dorothea of Hanover"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q52931",
+          "label": "Adolf Fredrik of Sweden"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q52928",
+          "label": "Charles XIII of Sweden"
+        },
+        {
+          "qid": "Q52930",
+          "label": "Gustav III of Sweden"
+        },
+        {
+          "qid": "Q1872255",
+          "label": "Fredrik Adolf of Sweden, Duke of Östergötland"
+        },
+        {
+          "qid": "Q261929",
+          "label": "Sophia Albertina of Sweden"
+        },
+        {
+          "qid": "Q75389289",
+          "label": "son of von Holstein-Gottorp"
+        }
+      ]
+    },
+    {
+      "target": "Adolf Frederick, King of Sweden",
+      "page_title": "Adolf Frederick of Sweden",
+      "qid": "Q52931",
+      "label": "Adolf Fredrik of Sweden",
+      "description": "King of Sweden (1710–1771)",
+      "geni_ids": [
+        "4369404"
+      ],
+      "birth_times": [
+        "+1710-05-14T00:00:00Z"
+      ],
+      "death_times": [
+        "+1771-02-12T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q62259",
+          "label": "Christian August of Holstein-Gottorp, Prince of Eutin"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q2670667",
+          "label": "Margravine Albertine Friederike of Baden-Durlach"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q234251",
+          "label": "Louisa Ulrika of Prussia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q52928",
+          "label": "Charles XIII of Sweden"
+        },
+        {
+          "qid": "Q52930",
+          "label": "Gustav III of Sweden"
+        },
+        {
+          "qid": "Q1872255",
+          "label": "Fredrik Adolf of Sweden, Duke of Östergötland"
+        },
+        {
+          "qid": "Q261929",
+          "label": "Sophia Albertina of Sweden"
+        },
+        {
+          "qid": "Q75389289",
+          "label": "son of von Holstein-Gottorp"
+        },
+        {
+          "qid": "Q88505543",
+          "label": "Adolf Fredriksson"
+        },
+        {
+          "qid": "Q4948577",
+          "label": "Lolotte Forssberg"
+        }
+      ]
+    },
+    {
+      "target": "Gustav III of Sweden",
+      "page_title": "Gustav III",
+      "qid": "Q52930",
+      "label": "Gustav III of Sweden",
+      "description": "King of Sweden from 1771 to 1792 (1746–1792)",
+      "geni_ids": [
+        "4107259"
+      ],
+      "birth_times": [
+        "+1746-01-24T00:00:00Z"
+      ],
+      "death_times": [
+        "+1792-03-29T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q52931",
+          "label": "Adolf Fredrik of Sweden"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q234251",
+          "label": "Louisa Ulrika of Prussia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q234311",
+          "label": "Sophia Magdalena of Denmark"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q52929",
+          "label": "Gustav IV Adolf of Sweden"
+        },
+        {
+          "qid": "Q26720405",
+          "label": "Prince Carl Gustav, Duke of Småland"
+        }
+      ]
+    },
+    {
+      "target": "Charles XIII",
+      "page_title": "Charles XIII",
+      "qid": "Q52928",
+      "label": "Charles XIII of Sweden",
+      "description": "King of Sweden (1809-1818) and King of Norway (1814-1818)",
+      "geni_ids": [
+        "310876642120006420"
+      ],
+      "birth_times": [
+        "+1748-10-07T00:00:00Z"
+      ],
+      "death_times": [
+        "+1818-02-05T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q52931",
+          "label": "Adolf Fredrik of Sweden"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q234251",
+          "label": "Louisa Ulrika of Prussia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q236208",
+          "label": "Hedvig Elisabeth Charlotte of Holstein-Gottorp"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q1069154",
+          "label": "Carl Löwenhielm"
+        },
+        {
+          "qid": "Q15631725",
+          "label": "Karl Adolf"
+        },
+        {
+          "qid": "Q75390913",
+          "label": "Lovisa Hedvig of Sweden"
+        },
+        {
+          "qid": "Q675107",
+          "label": "Carl August, Crown Prince of Sweden"
+        },
+        {
+          "qid": "Q52927",
+          "label": "Charles XIV John of Sweden"
+        }
+      ]
+    },
+    {
+      "target": "Sophia Magdalena of Denmark",
+      "page_title": "Sophia Magdalena of Denmark",
+      "qid": "Q234311",
+      "label": "Sophia Magdalena of Denmark",
+      "description": "Queen consort of Sweden (1746-1813)",
+      "geni_ids": [
+        "4105362"
+      ],
+      "birth_times": [
+        "+1746-07-03T00:00:00Z"
+      ],
+      "death_times": [
+        "+1813-08-21T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q156187",
+          "label": "Frederick V of Denmark"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q168667",
+          "label": "Louise of Great Britain"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q52930",
+          "label": "Gustav III of Sweden"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q52929",
+          "label": "Gustav IV Adolf of Sweden"
+        },
+        {
+          "qid": "Q26720405",
+          "label": "Prince Carl Gustav, Duke of Småland"
+        }
+      ]
+    },
+    {
+      "target": "Gustav IV Adolf",
+      "page_title": "Gustav IV Adolf",
+      "qid": "Q52929",
+      "label": "Gustav IV Adolf of Sweden",
+      "description": "King of Sweden between 1792-1809 (1778–1837)",
+      "geni_ids": [
+        "4107368"
+      ],
+      "birth_times": [
+        "+1778-11-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1837-02-07T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q52930",
+          "label": "Gustav III of Sweden"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q234311",
+          "label": "Sophia Magdalena of Denmark"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q234241",
+          "label": "Frederica of Baden"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q472635",
+          "label": "Gustav, Prince of Vasa"
+        },
+        {
+          "qid": "Q241254",
+          "label": "Princess Sophie of Sweden"
+        },
+        {
+          "qid": "Q268382",
+          "label": "Princess Cecilia of Sweden"
+        },
+        {
+          "qid": "Q641581",
+          "label": "Princess Amalia of Sweden"
+        },
+        {
+          "qid": "Q24018143",
+          "label": "Charles-Gustave de Suède"
+        }
+      ]
+    },
+    {
+      "target": "Frederica of Baden",
+      "page_title": "Frederica of Baden",
+      "qid": "Q234241",
+      "label": "Frederica of Baden",
+      "description": "Swedish Queen (1781-1826)",
+      "geni_ids": [
+        "4107500"
+      ],
+      "birth_times": [
+        "+1781-03-12T00:00:00Z"
+      ],
+      "death_times": [
+        "+1826-09-25T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q60522",
+          "label": "Prince Karl Ludwig, Hereditary Prince of Baden"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q237730",
+          "label": "Landgravine Amalie of Hesse-Darmstadt"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q52929",
+          "label": "Gustav IV Adolf of Sweden"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q472635",
+          "label": "Gustav, Prince of Vasa"
+        },
+        {
+          "qid": "Q241254",
+          "label": "Princess Sophie of Sweden"
+        },
+        {
+          "qid": "Q268382",
+          "label": "Princess Cecilia of Sweden"
+        },
+        {
+          "qid": "Q641581",
+          "label": "Princess Amalia of Sweden"
+        },
+        {
+          "qid": "Q24018143",
+          "label": "Charles-Gustave de Suède"
+        }
+      ]
+    },
+    {
+      "target": "Louis IX, Landgrave of Hesse-Darmstadt",
+      "page_title": "Louis IX of Hesse-Darmstadt",
+      "qid": "Q213610",
+      "label": "Louis IX, Landgrave of Hesse-Darmstadt",
+      "description": "Landgrave of Hesse-Darmstadt (1719–1790)",
+      "geni_ids": [
+        "6000000004025620094"
+      ],
+      "birth_times": [
+        "+1719-12-15T00:00:00Z"
+      ],
+      "death_times": [
+        "+1790-04-06T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q213677",
+          "label": "Louis VIII, Landgrave of Hesse-Darmstadt"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q64194",
+          "label": "Charlotte of Hanau-Lichtenberg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q62063",
+          "label": "Countess Palatine Caroline of Zweibrücken"
+        },
+        {
+          "qid": "Q76102587",
+          "label": "Marie Adelaide of Cheirouze, Countess of Lemberg"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q458358",
+          "label": "Landgravine Caroline of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q235663",
+          "label": "Frederika Louisa of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q213527",
+          "label": "Louis I, Grand Duke of Hesse"
+        },
+        {
+          "qid": "Q237730",
+          "label": "Landgravine Amalie of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q57671",
+          "label": "Natalia Alexeievna of Russia"
+        },
+        {
+          "qid": "Q260513",
+          "label": "Landgravine Louise of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q214304",
+          "label": "Prince Christian of Hesse and by Rhine"
+        },
+        {
+          "qid": "Q29648868",
+          "label": "Friedrich von Hessen-Darmstadt"
+        }
+      ]
+    },
+    {
+      "target": "Caroline of Zweibrücken",
+      "page_title": "Countess Palatine Caroline of Zweibrücken",
+      "qid": "Q62063",
+      "label": "Countess Palatine Caroline of Zweibrücken",
+      "description": "German noble (1721-1774)",
+      "geni_ids": [
+        "6000000004025305942"
+      ],
+      "birth_times": [
+        "+1721-03-09T00:00:00Z"
+      ],
+      "death_times": [
+        "+1774-03-30T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q61966",
+          "label": "Christian III, Count Palatine of Zweibrücken"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q469041",
+          "label": "Caroline of Nassau-Saarbrücken"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q213610",
+          "label": "Louis IX, Landgrave of Hesse-Darmstadt"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q458358",
+          "label": "Landgravine Caroline of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q235663",
+          "label": "Frederika Louisa of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q213527",
+          "label": "Louis I, Grand Duke of Hesse"
+        },
+        {
+          "qid": "Q237730",
+          "label": "Landgravine Amalie of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q57671",
+          "label": "Natalia Alexeievna of Russia"
+        },
+        {
+          "qid": "Q260513",
+          "label": "Landgravine Louise of Hesse-Darmstadt"
+        },
+        {
+          "qid": "Q214304",
+          "label": "Prince Christian of Hesse and by Rhine"
+        },
+        {
+          "qid": "Q29648868",
+          "label": "Friedrich von Hessen-Darmstadt"
+        }
+      ]
+    },
+    {
+      "target": "Charles Louis, Hereditary Prince of Baden",
+      "page_title": "Charles Louis, Hereditary Prince of Baden",
+      "qid": "Q60522",
+      "label": "Prince Karl Ludwig, Hereditary Prince of Baden",
+      "description": "Heir apparent in the Margraviate of Baden (1755-1801)",
+      "geni_ids": [
+        "6000000002122357427"
+      ],
+      "birth_times": [
+        "+1755-02-14T00:00:00Z"
+      ],
+      "death_times": [
+        "+1801-12-16T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q213671",
+          "label": "Karl Friedrich I, Grand Duke of Baden"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q288703",
+          "label": "Karoline Luise of Hesse-Darmstadt"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q237730",
+          "label": "Landgravine Amalie of Hesse-Darmstadt"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57799",
+          "label": "Charles, Grand Duke of Baden"
+        },
+        {
+          "qid": "Q168664",
+          "label": "Elizabeth Alexeievna"
+        },
+        {
+          "qid": "Q170195",
+          "label": "Caroline of Baden"
+        },
+        {
+          "qid": "Q234241",
+          "label": "Frederica of Baden"
+        },
+        {
+          "qid": "Q57533",
+          "label": "Princess Wilhelmine of Baden"
+        },
+        {
+          "qid": "Q272010",
+          "label": "Princess Marie of Baden"
+        },
+        {
+          "qid": "Q450800",
+          "label": "Princess Amalie Christiane of Baden"
+        },
+        {
+          "qid": "Q75385581",
+          "label": "Karl Friedrich Prinz von Padua"
+        }
+      ]
+    },
+    {
+      "target": "Amalie of Hesse-Darmstadt",
+      "page_title": "Princess Amalie of Hesse-Darmstadt",
+      "qid": "Q237730",
+      "label": "Landgravine Amalie of Hesse-Darmstadt",
+      "description": "Hereditary Princess of Baden",
+      "geni_ids": [
+        "6000000002122428080"
+      ],
+      "birth_times": [
+        "+1754-06-20T00:00:00Z"
+      ],
+      "death_times": [
+        "+1832-06-21T00:00:00Z",
+        "+1832-07-21T00:00:00Z",
+        "+1832-07-28T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q213610",
+          "label": "Louis IX, Landgrave of Hesse-Darmstadt"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q62063",
+          "label": "Countess Palatine Caroline of Zweibrücken"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q60522",
+          "label": "Prince Karl Ludwig, Hereditary Prince of Baden"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57799",
+          "label": "Charles, Grand Duke of Baden"
+        },
+        {
+          "qid": "Q170195",
+          "label": "Caroline of Baden"
+        },
+        {
+          "qid": "Q234241",
+          "label": "Frederica of Baden"
+        },
+        {
+          "qid": "Q57533",
+          "label": "Princess Wilhelmine of Baden"
+        },
+        {
+          "qid": "Q168664",
+          "label": "Elizabeth Alexeievna"
+        },
+        {
+          "qid": "Q272010",
+          "label": "Princess Marie of Baden"
+        },
+        {
+          "qid": "Q450800",
+          "label": "Princess Amalie Christiane of Baden"
+        },
+        {
+          "qid": "Q75385581",
+          "label": "Karl Friedrich Prinz von Padua"
+        }
+      ]
+    },
+    {
+      "target": "Elizabeth Alexeievna (Louise of Baden)",
+      "page_title": "Elizabeth Alexeievna (Louise of Baden)",
+      "qid": "Q168664",
+      "label": "Elizabeth Alexeievna",
+      "description": "empress consort of Russia; wife of Alexander I of Russia (1779–1826)",
+      "geni_ids": [],
+      "birth_times": [
+        "+1779-01-24T00:00:00Z"
+      ],
+      "death_times": [
+        "+1826-05-16T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q60522",
+          "label": "Prince Karl Ludwig, Hereditary Prince of Baden"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q237730",
+          "label": "Landgravine Amalie of Hesse-Darmstadt"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q15193",
+          "label": "Alexander I of Russia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q5594502",
+          "label": "Grand Duchess Elizabeth Alexandrovna of Russia"
+        },
+        {
+          "qid": "Q11768687",
+          "label": "Grand Duchess Maria Alexandrovna of Russia"
+        }
+      ]
+    },
+    {
+      "target": "Alexander I of Russia",
+      "page_title": "Alexander I of Russia",
+      "qid": "Q15193",
+      "label": "Alexander I of Russia",
+      "description": "The tenth Emperor of Russia (1777–1825)",
+      "geni_ids": [
+        "6000000001449427127"
+      ],
+      "birth_times": [
+        "+1777-12-12T00:00:00Z",
+        "+1777-12-23T00:00:00Z"
+      ],
+      "death_times": [
+        "+1825-11-19T00:00:00Z",
+        "+1825-12-01T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q15189",
+          "label": "Paul I of Russia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q57632",
+          "label": "Sophie Dorothee of Württemberg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q168664",
+          "label": "Elizabeth Alexeievna"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q11768687",
+          "label": "Grand Duchess Maria Alexandrovna of Russia"
+        },
+        {
+          "qid": "Q4268733",
+          "label": "Nikolai Lukash"
+        },
+        {
+          "qid": "Q5594502",
+          "label": "Grand Duchess Elizabeth Alexandrovna of Russia"
+        },
+        {
+          "qid": "Q75318383",
+          "label": "Zenaida Narishkin"
+        },
+        {
+          "qid": "Q28499977",
+          "label": "Sofya Naryshkina"
+        },
+        {
+          "qid": "Q4313566",
+          "label": "Emmanuil Naryshkin"
+        },
+        {
+          "qid": "Q75318390",
+          "label": "Mariya Parizhskaya"
+        },
+        {
+          "qid": "Q75318449",
+          "label": "Wilhelmine Alexandrine Pauline Alexandrov"
+        },
+        {
+          "qid": "Q4532413",
+          "label": "Gustaw Ehrenberg"
+        },
+        {
+          "qid": "Q75318479",
+          "label": "Maria (?)"
+        },
+        {
+          "qid": "Q4203645",
+          "label": "Nikolay Isakov"
+        }
+      ]
+    },
+    {
+      "target": "Frederick William III of Prussia",
+      "page_title": "Frederick William III",
+      "qid": "Q37134",
+      "label": "Frederick William III of Prussia",
+      "description": "King of Prussia from 1797 to 1840",
+      "geni_ids": [
+        "6000000032905659822",
+        "6000000001552980413"
+      ],
+      "birth_times": [
+        "+1770-08-03T00:00:00Z"
+      ],
+      "death_times": [
+        "+1840-06-07T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q152229",
+          "label": "Friedrich Wilhelm II of Prussia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q235663",
+          "label": "Frederika Louisa of Hesse-Darmstadt"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q156723",
+          "label": "Louise of Mecklenburg-Strelitz"
+        },
+        {
+          "qid": "Q66525",
+          "label": "Auguste von Harrach"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57180",
+          "label": "Frederick William IV of Prussia"
+        },
+        {
+          "qid": "Q150652",
+          "label": "Wilhelm I"
+        },
+        {
+          "qid": "Q57207",
+          "label": "Alexandra Feodorovna"
+        },
+        {
+          "qid": "Q442587",
+          "label": "Prince Charles of Prussia"
+        },
+        {
+          "qid": "Q186549",
+          "label": "Princess Alexandrine of Prussia"
+        },
+        {
+          "qid": "Q60607",
+          "label": "Princess Louise of Prussia"
+        },
+        {
+          "qid": "Q51028",
+          "label": "Prince Albert of Prussia"
+        },
+        {
+          "qid": "Q75381580",
+          "label": "stillborn daughter von Hohenzollern"
+        },
+        {
+          "qid": "Q75381534",
+          "label": "Princess Frederica of Prussia"
+        },
+        {
+          "qid": "Q75381537",
+          "label": "Prince Ferdinand of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Louise of Mecklenburg-Strelitz",
+      "page_title": "Louise of Mecklenburg-Strelitz",
+      "qid": "Q156723",
+      "label": "Louise of Mecklenburg-Strelitz",
+      "description": "Queen consort of Prussia (1776–1810)",
+      "geni_ids": [
+        "6000000001554295019"
+      ],
+      "birth_times": [
+        "+1776-03-10T00:00:00Z"
+      ],
+      "death_times": [
+        "+1810-07-19T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q213601",
+          "label": "Karl II, Grand Duke of Mecklenburg-Strelitz"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q257483",
+          "label": "Landgravine Friederike of Hesse-Darmstadt"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q37134",
+          "label": "Frederick William III of Prussia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57180",
+          "label": "Frederick William IV of Prussia"
+        },
+        {
+          "qid": "Q150652",
+          "label": "Wilhelm I"
+        },
+        {
+          "qid": "Q57207",
+          "label": "Alexandra Feodorovna"
+        },
+        {
+          "qid": "Q442587",
+          "label": "Prince Charles of Prussia"
+        },
+        {
+          "qid": "Q186549",
+          "label": "Princess Alexandrine of Prussia"
+        },
+        {
+          "qid": "Q60607",
+          "label": "Princess Louise of Prussia"
+        },
+        {
+          "qid": "Q51028",
+          "label": "Prince Albert of Prussia"
+        },
+        {
+          "qid": "Q75381580",
+          "label": "stillborn daughter von Hohenzollern"
+        },
+        {
+          "qid": "Q75381534",
+          "label": "Princess Frederica of Prussia"
+        },
+        {
+          "qid": "Q75381537",
+          "label": "Prince Ferdinand of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Nicholas I of Russia",
+      "page_title": "Nicholas I of Russia",
+      "qid": "Q130734",
+      "label": "Nicholas I of Russia",
+      "description": "The 11th Emperor of Russia, 1825–1855 (lived 1796-1855)",
+      "geni_ids": [
+        "4215182257130053771"
+      ],
+      "birth_times": [
+        "+1796-06-25T00:00:00Z",
+        "+1796-07-06T00:00:00Z"
+      ],
+      "death_times": [
+        "+1855-02-18T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q15189",
+          "label": "Paul I of Russia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q57632",
+          "label": "Sophie Dorothee of Württemberg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q57207",
+          "label": "Alexandra Feodorovna"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q83171",
+          "label": "Alexander II of Russia"
+        },
+        {
+          "qid": "Q234052",
+          "label": "Grand Duchess Maria Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q234926",
+          "label": "Olga Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q238478",
+          "label": "Grand Duchess Alexandra Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q446724",
+          "label": "Grand Duke Konstantin Nikolayevich of Russia"
+        },
+        {
+          "qid": "Q163863",
+          "label": "Grand Duke Nicholas Nikolaevich of Russia"
+        },
+        {
+          "qid": "Q161199",
+          "label": "Grand Duke Michael Nikolaevich of Russia"
+        },
+        {
+          "qid": "Q5594505",
+          "label": "Grand Duchess Elizabeth Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q3186654",
+          "label": "Joséphine Koberwein"
+        },
+        {
+          "qid": "Q75391592",
+          "label": "unnamed daughter Romanov"
+        },
+        {
+          "qid": "Q75391593",
+          "label": "second unnamed daughter Romanov"
+        },
+        {
+          "qid": "Q75391596",
+          "label": "third unnamed daughter Romanov"
+        },
+        {
+          "qid": "Q75318515",
+          "label": "Olga Karoline Albrecht"
+        },
+        {
+          "qid": "Q4346762",
+          "label": "Aleksey Paskhin"
+        }
+      ]
+    },
+    {
+      "target": "Alexandra Feodorovna (Charlotte of Prussia)",
+      "page_title": "Alexandra Feodorovna (Charlotte of Prussia)",
+      "qid": "Q57207",
+      "label": "Alexandra Feodorovna",
+      "description": "empress consort of Russia from 1825 to 1855 (1798–1860)",
+      "geni_ids": [
+        "6000000000307239489"
+      ],
+      "birth_times": [
+        "+1798-07-13T00:00:00Z"
+      ],
+      "death_times": [
+        "+1860-11-01T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q37134",
+          "label": "Frederick William III of Prussia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q156723",
+          "label": "Louise of Mecklenburg-Strelitz"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q130734",
+          "label": "Nicholas I of Russia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q83171",
+          "label": "Alexander II of Russia"
+        },
+        {
+          "qid": "Q234052",
+          "label": "Grand Duchess Maria Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q234926",
+          "label": "Olga Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q238478",
+          "label": "Grand Duchess Alexandra Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q446724",
+          "label": "Grand Duke Konstantin Nikolayevich of Russia"
+        },
+        {
+          "qid": "Q163863",
+          "label": "Grand Duke Nicholas Nikolaevich of Russia"
+        },
+        {
+          "qid": "Q161199",
+          "label": "Grand Duke Michael Nikolaevich of Russia"
+        },
+        {
+          "qid": "Q5594505",
+          "label": "Grand Duchess Elizabeth Nikolaevna of Russia"
+        },
+        {
+          "qid": "Q75391592",
+          "label": "unnamed daughter Romanov"
+        },
+        {
+          "qid": "Q75391593",
+          "label": "second unnamed daughter Romanov"
+        },
+        {
+          "qid": "Q75391596",
+          "label": "third unnamed daughter Romanov"
+        }
+      ]
+    },
+    {
+      "target": "Grand Duke Constantine Nikolayevich of Russia",
+      "page_title": "Grand Duke Konstantin Nikolayevich of Russia",
+      "qid": "Q446724",
+      "label": "Grand Duke Konstantin Nikolayevich of Russia",
+      "description": "Russian grand duke (1827-1892)",
+      "geni_ids": [
+        "6000000000668699652"
+      ],
+      "birth_times": [
+        "+1827-09-21T00:00:00Z",
+        "+1827-09-09T00:00:00Z"
+      ],
+      "death_times": [
+        "+1892-01-25T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q130734",
+          "label": "Nicholas I of Russia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q57207",
+          "label": "Alexandra Feodorovna"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q57950",
+          "label": "Princess Alexandra of Saxe-Altenburg"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q155178",
+          "label": "Olga Constantinovna of Russia"
+        },
+        {
+          "qid": "Q706075",
+          "label": "Grand Duke Nicholas Constantinovich of Russia"
+        },
+        {
+          "qid": "Q240282",
+          "label": "Grand Duchess Vera Konstantinovna of Russia"
+        },
+        {
+          "qid": "Q313832",
+          "label": "Grand Duke Konstantin Konstantinovich of Russia"
+        },
+        {
+          "qid": "Q1188421",
+          "label": "Grand Duke Vyacheslav Constantinovich of Russia"
+        },
+        {
+          "qid": "Q27606",
+          "label": "Grand Duke Dimitri Constantinovich of Russia"
+        }
+      ]
+    },
+    {
+      "target": "Princess Alexandra of Saxe-Altenburg",
+      "page_title": "Princess Alexandra of Saxe-Altenburg",
+      "qid": "Q57950",
+      "label": "Princess Alexandra of Saxe-Altenburg",
+      "description": "wife of Grand Duke Constantine Nikolaevich of Russia (1830-1911)",
+      "geni_ids": [
+        "4215174429090031533"
+      ],
+      "birth_times": [
+        "+1830-07-08T00:00:00Z"
+      ],
+      "death_times": [
+        "+1911-07-06T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q213716",
+          "label": "Joseph, Duke of Saxe-Altenburg"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q271080",
+          "label": "Duchess Amelia of Württemberg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q446724",
+          "label": "Grand Duke Konstantin Nikolayevich of Russia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q155178",
+          "label": "Olga Constantinovna of Russia"
+        },
+        {
+          "qid": "Q706075",
+          "label": "Grand Duke Nicholas Constantinovich of Russia"
+        },
+        {
+          "qid": "Q240282",
+          "label": "Grand Duchess Vera Konstantinovna of Russia"
+        },
+        {
+          "qid": "Q313832",
+          "label": "Grand Duke Konstantin Konstantinovich of Russia"
+        },
+        {
+          "qid": "Q1188421",
+          "label": "Grand Duke Vyacheslav Constantinovich of Russia"
+        },
+        {
+          "qid": "Q27606",
+          "label": "Grand Duke Dimitri Constantinovich of Russia"
+        }
+      ]
+    },
+    {
+      "target": "William I, German Emperor",
+      "page_title": "Wilhelm I",
+      "qid": "Q150652",
+      "label": "Wilhelm I",
+      "description": "19th-century German Emperor and King of Prussia (1797–1888)",
+      "geni_ids": [
+        "4127866832950049628"
+      ],
+      "birth_times": [
+        "+1797-03-22T00:00:00Z"
+      ],
+      "death_times": [
+        "+1888-03-09T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q37134",
+          "label": "Frederick William III of Prussia"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q156723",
+          "label": "Louise of Mecklenburg-Strelitz"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q57541",
+          "label": "Augusta of Saxe-Weimar-Eisenach"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q58600",
+          "label": "Frederick III, German Emperor"
+        },
+        {
+          "qid": "Q233203",
+          "label": "Princess Louise of Prussia"
+        },
+        {
+          "qid": "Q76366789",
+          "label": "Agnes Dettman"
+        }
+      ]
+    },
+    {
+      "target": "Augusta of Saxe-Weimar-Eisenach",
+      "page_title": "Augusta of Saxe-Weimar-Eisenach",
+      "qid": "Q57541",
+      "label": "Augusta of Saxe-Weimar-Eisenach",
+      "description": "German empress (1811-1890)",
+      "geni_ids": [
+        "6000000001554247194"
+      ],
+      "birth_times": [
+        "+1811-09-30T00:00:00Z"
+      ],
+      "death_times": [
+        "+1890-01-07T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q60631",
+          "label": "Carl Friedrich I, Grand Duke of Saxe-Weimar-Eisenach"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q166198",
+          "label": "Grand Duchess Maria Pavlovna of Russia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q150652",
+          "label": "Wilhelm I"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q58600",
+          "label": "Frederick III, German Emperor"
+        },
+        {
+          "qid": "Q233203",
+          "label": "Princess Louise of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Frederick III, German Emperor",
+      "page_title": "Frederick III, German Emperor",
+      "qid": "Q58600",
+      "label": "Frederick III, German Emperor",
+      "description": "as King of Prussia German Emperor (1831–1888)",
+      "geni_ids": [
+        "4127923987560073429"
+      ],
+      "birth_times": [
+        "+1831-10-18T00:00:00Z"
+      ],
+      "death_times": [
+        "+1888-06-15T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q150652",
+          "label": "Wilhelm I"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q57541",
+          "label": "Augusta of Saxe-Weimar-Eisenach"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q116728",
+          "label": "Victoria, Princess Royal"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q2677",
+          "label": "Wilhelm II"
+        },
+        {
+          "qid": "Q58670",
+          "label": "Princess Charlotte of Prussia"
+        },
+        {
+          "qid": "Q57569",
+          "label": "Prince Henry of Prussia"
+        },
+        {
+          "qid": "Q2800847",
+          "label": "Prince Sigismund of Prussia"
+        },
+        {
+          "qid": "Q60382",
+          "label": "Princess Viktoria of Prussia"
+        },
+        {
+          "qid": "Q3026877",
+          "label": "Prince Waldemar of Prussia"
+        },
+        {
+          "qid": "Q155822",
+          "label": "Sophia of Prussia"
+        },
+        {
+          "qid": "Q61338",
+          "label": "Princess Margaret of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Victoria, Princess Royal",
+      "page_title": "Victoria, Princess Royal",
+      "qid": "Q116728",
+      "label": "Victoria, Princess Royal",
+      "description": "British princess (1840-1901), Empress of Germany and Queen consort of Prussia from March to June 1888",
+      "geni_ids": [
+        "6000000000711736184"
+      ],
+      "birth_times": [
+        "+1840-11-21T00:00:00Z"
+      ],
+      "death_times": [
+        "+1901-08-05T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q152245",
+          "label": "Prince Albert of Saxe-Coburg and Gotha"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q9439",
+          "label": "Victoria"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q58600",
+          "label": "Frederick III, German Emperor"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q2677",
+          "label": "Wilhelm II"
+        },
+        {
+          "qid": "Q58670",
+          "label": "Princess Charlotte of Prussia"
+        },
+        {
+          "qid": "Q57569",
+          "label": "Prince Henry of Prussia"
+        },
+        {
+          "qid": "Q2800847",
+          "label": "Prince Sigismund of Prussia"
+        },
+        {
+          "qid": "Q60382",
+          "label": "Princess Viktoria of Prussia"
+        },
+        {
+          "qid": "Q3026877",
+          "label": "Prince Waldemar of Prussia"
+        },
+        {
+          "qid": "Q155822",
+          "label": "Sophia of Prussia"
+        },
+        {
+          "qid": "Q61338",
+          "label": "Princess Margaret of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Wilhelm II, German Emperor",
+      "page_title": "Wilhelm II",
+      "qid": "Q2677",
+      "label": "Wilhelm II",
+      "description": "as King of Prussia last German Emperor from 1888 to 1918 (1859–1941)",
+      "geni_ids": [
+        "6000000000712079092"
+      ],
+      "birth_times": [
+        "+1859-01-27T00:00:00Z"
+      ],
+      "death_times": [
+        "+1941-06-04T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q58600",
+          "label": "Frederick III, German Emperor"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q116728",
+          "label": "Victoria, Princess Royal"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q161247",
+          "label": "Augusta Victoria of Schleswig-Holstein"
+        },
+        {
+          "qid": "Q61448",
+          "label": "Princess Hermine Reuss of Greiz"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57621",
+          "label": "Wilhelm, German Crown Prince"
+        },
+        {
+          "qid": "Q62056",
+          "label": "Prince Eitel Friedrich of Prussia"
+        },
+        {
+          "qid": "Q50998",
+          "label": "Prince Adalbert of Prussia"
+        },
+        {
+          "qid": "Q58777",
+          "label": "Prince August Wilhelm of Prussia"
+        },
+        {
+          "qid": "Q61242",
+          "label": "Prince Oskar of Prussia"
+        },
+        {
+          "qid": "Q60371",
+          "label": "Prince Joachim of Prussia"
+        },
+        {
+          "qid": "Q57529",
+          "label": "Princess Viktoria Luise of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Augusta Victoria of Schleswig-Holstein",
+      "page_title": "Augusta Victoria of Schleswig-Holstein",
+      "qid": "Q161247",
+      "label": "Augusta Victoria of Schleswig-Holstein",
+      "description": "German Empress and Queen of Prussia (1858–1921)",
+      "geni_ids": [
+        "4307969389890042778"
+      ],
+      "birth_times": [
+        "+1858-10-22T00:00:00Z"
+      ],
+      "death_times": [
+        "+1921-04-11T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q700644",
+          "label": "Frederick VIII, Duke of Schleswig-Holstein"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q242487",
+          "label": "Princess Adelheid of Hohenlohe-Langenburg"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q2677",
+          "label": "Wilhelm II"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q57621",
+          "label": "Wilhelm, German Crown Prince"
+        },
+        {
+          "qid": "Q50998",
+          "label": "Prince Adalbert of Prussia"
+        },
+        {
+          "qid": "Q58777",
+          "label": "Prince August Wilhelm of Prussia"
+        },
+        {
+          "qid": "Q61242",
+          "label": "Prince Oskar of Prussia"
+        },
+        {
+          "qid": "Q60371",
+          "label": "Prince Joachim of Prussia"
+        },
+        {
+          "qid": "Q57529",
+          "label": "Princess Viktoria Luise of Prussia"
+        },
+        {
+          "qid": "Q62056",
+          "label": "Prince Eitel Friedrich of Prussia"
+        }
+      ]
+    },
+    {
+      "target": "Constantine I of Greece",
+      "page_title": "Constantine I of Greece",
+      "qid": "Q152099",
+      "label": "Constantine I of Greece",
+      "description": "King of Greece (r. 1913–17; 1920–22)",
+      "geni_ids": [
+        "6000000001846817008"
+      ],
+      "birth_times": [
+        "+1868-08-02T00:00:00Z"
+      ],
+      "death_times": [
+        "+1923-01-11T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q17142",
+          "label": "George I of Greece"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q155178",
+          "label": "Olga Constantinovna of Russia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q155822",
+          "label": "Sophia of Prussia"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q152935",
+          "label": "George II of Greece"
+        },
+        {
+          "qid": "Q151742",
+          "label": "Alexander of Greece"
+        },
+        {
+          "qid": "Q162177",
+          "label": "Helen of Greece and Denmark"
+        },
+        {
+          "qid": "Q155394",
+          "label": "Paul of Greece"
+        },
+        {
+          "qid": "Q236770",
+          "label": "Princess Irene, Duchess of Aosta"
+        },
+        {
+          "qid": "Q242338",
+          "label": "Princess Katherine of Greece and Denmark"
+        }
+      ]
+    },
+    {
+      "target": "Sophia of Prussia",
+      "page_title": "Sophia of Prussia",
+      "qid": "Q155822",
+      "label": "Sophia of Prussia",
+      "description": "Queen consort of Greece (1870–1932)",
+      "geni_ids": [
+        "6000000001552688161"
+      ],
+      "birth_times": [
+        "+1870-06-14T00:00:00Z"
+      ],
+      "death_times": [
+        "+1932-01-13T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q58600",
+          "label": "Frederick III, German Emperor"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q116728",
+          "label": "Victoria, Princess Royal"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q152099",
+          "label": "Constantine I of Greece"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q152935",
+          "label": "George II of Greece"
+        },
+        {
+          "qid": "Q151742",
+          "label": "Alexander of Greece"
+        },
+        {
+          "qid": "Q162177",
+          "label": "Helen of Greece and Denmark"
+        },
+        {
+          "qid": "Q155394",
+          "label": "Paul of Greece"
+        },
+        {
+          "qid": "Q236770",
+          "label": "Princess Irene, Duchess of Aosta"
+        },
+        {
+          "qid": "Q242338",
+          "label": "Princess Katherine of Greece and Denmark"
+        }
+      ]
+    },
+    {
+      "target": "George II of Greece",
+      "page_title": "George II of Greece",
+      "qid": "Q152935",
+      "label": "George II of Greece",
+      "description": "King of Greece (r. 1922-1924, 1935-1947)",
+      "geni_ids": [
+        "6000000003193226761"
+      ],
+      "birth_times": [
+        "+1890-07-19T00:00:00Z",
+        "+1890-08-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1947-04-01T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q152099",
+          "label": "Constantine I of Greece"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q155822",
+          "label": "Sophia of Prussia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q232735",
+          "label": "Princess Elisabeth of Romania"
+        }
+      ],
+      "children": []
+    },
+    {
+      "target": "Alexander of Greece",
+      "page_title": "Alexander of Greece",
+      "qid": "Q151742",
+      "label": "Alexander of Greece",
+      "description": "King of Greece (1917–1920)",
+      "geni_ids": [
+        "6000000003193382997"
+      ],
+      "birth_times": [
+        "+1893-08-01T00:00:00Z"
+      ],
+      "death_times": [
+        "+1920-10-25T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q152099",
+          "label": "Constantine I of Greece"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q155822",
+          "label": "Sophia of Prussia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q240442",
+          "label": "Aspasia Manos"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q167423",
+          "label": "Alexandra of Yugoslavia"
+        }
+      ]
+    },
+    {
+      "target": "Paul of Greece",
+      "page_title": "Paul of Greece",
+      "qid": "Q155394",
+      "label": "Paul of Greece",
+      "description": "King of Greece from 1947 to 1964",
+      "geni_ids": [
+        "6000000000715155460"
+      ],
+      "birth_times": [
+        "+1901-12-14T00:00:00Z"
+      ],
+      "death_times": [
+        "+1964-03-06T00:00:00Z"
+      ],
+      "father": [
+        {
+          "qid": "Q152099",
+          "label": "Constantine I of Greece"
+        }
+      ],
+      "mother": [
+        {
+          "qid": "Q155822",
+          "label": "Sophia of Prussia"
+        }
+      ],
+      "spouses": [
+        {
+          "qid": "Q61351",
+          "label": "Frederica of Hanover"
+        }
+      ],
+      "children": [
+        {
+          "qid": "Q156548",
+          "label": "Queen Sofía of Spain"
+        },
+        {
+          "qid": "Q151773",
+          "label": "Constantine II of Greece"
+        },
+        {
+          "qid": "Q242298",
+          "label": "Princess Irene of Greece and Denmark"
+        }
+      ]
+    }
+  ]
+}

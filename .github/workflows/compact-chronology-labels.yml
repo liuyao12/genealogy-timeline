@@ -4,6 +4,7 @@ on:
     branches: [ui/compact-chronology-labels]
     paths:
       - .github/scripts/compact_chronology_labels.py
+      - .github/scripts/fix_compact_chronology_cache_tests.py
       - .github/scripts/check_compact_chronology_labels.mjs
       - .github/workflows/compact-chronology-labels.yml
 permissions:
@@ -20,7 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply compact chronology labels
-        run: python3 .github/scripts/compact_chronology_labels.py
+        run: |
+          python3 .github/scripts/compact_chronology_labels.py
+          python3 .github/scripts/fix_compact_chronology_cache_tests.py
       - name: Run focused chronology checks
         run: |
           set +e
@@ -85,6 +88,7 @@ jobs:
         run: |
           rm -f \
             .github/scripts/compact_chronology_labels.py \
+            .github/scripts/fix_compact_chronology_cache_tests.py \
             .github/scripts/check_compact_chronology_labels.mjs \
             .github/workflows/compact-chronology-labels.yml \
             .github/compact-chronology-diagnostic.txt

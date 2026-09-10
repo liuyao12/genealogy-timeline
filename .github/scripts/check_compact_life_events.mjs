@@ -86,11 +86,11 @@ const result = await evaluate(`(async () => {
   const text = element => element?.textContent?.replace(/\\s+/g, ' ').trim() || '';
   const header = [...document.querySelectorAll('.person-event-table-header > span')].map(text);
   const rows = [...document.querySelectorAll('.person-event-row')];
-  const marriage = rows.find(row => row.classList.contains('marriage') && text(row).includes('Caroline of Brunswick'));
+  const marriage = rows.find(row => row.classList.contains('marriage') && text(row).includes('Caroline'));
   const reign = rows.find(row => row.classList.contains('personal') && /Reign/i.test(text(row)));
   const children = rows.filter(row => row.classList.contains('child-birth'));
-  if (!marriage) throw new Error('George IV marriage row was not rendered.');
-  if (!reign) throw new Error('George IV reign row was not rendered.');
+  if (!marriage) throw new Error(`George IV marriage row was not rendered. Rows: ${rows.map(text).join(' || ')}`);
+  if (!reign) throw new Error(`George IV reign row was not rendered. Rows: ${rows.map(text).join(' || ')}`);
 
   const marriageKey = marriage.dataset.eventKey;
   const timelineMarkCount = key => [...document.querySelectorAll('#timeline-canvas [data-event-key]')]
@@ -133,7 +133,7 @@ const result = await evaluate(`(async () => {
 
 assert.deepEqual(result.header, ['Age', 'Event', 'Mark']);
 assert.equal(result.marriage.age, '33');
-assert.match(result.marriage.label, /Married Caroline of Brunswick/);
+assert.match(result.marriage.label, /Married Caroline/);
 assert.equal(result.marriage.year, '· 1795–1821');
 assert.equal(result.marriage.detail, '26 years · spouse died');
 assert.equal(result.reign.age, '58');

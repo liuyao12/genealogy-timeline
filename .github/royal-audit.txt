@@ -1,0 +1,672 @@
+VERSION 30 PROFILES 187
+
+QUEEN / EMPRESS / ELECTRESS GATEWAYS
+
+profile-g5111879481690102566 | Elizabeth of York, Queen consort of England | 1466-1503 | title=Queen consort of England
+  parents(0): []
+  spouses(1): ['Henry VII, King of England']
+  children(4): ['Arthur, Prince of Wales', 'Margaret Tudor, Queen of Scots', 'Henry VIII, King of England', 'Mary Tudor, Queen consort of France']
+
+profile-g6000000018001664573 | Joanna I, Queen of Castile and Aragon | 1479-1555 | title=Queen of Castile and Aragon
+  parents(0): []
+  spouses(1): ['Philip I, King of Castile']
+  children(2): ['Charles V, Holy Roman Emperor and King of Spain', 'Catherine of Austria, Queen of Portugal']
+
+profile-g6000000000830244922 | Maria of Aragon, Queen of Portugal | 1482-1517 | title=Queen of Portugal
+  parents(0): []
+  spouses(1): ['Manuel I, King of Portugal']
+  children(2): ['John III, King of Portugal', 'Isabella of Portugal, Holy Roman Empress and Queen of Spain']
+
+profile-4475169 | Catherine of Aragon | 1485-1536 | title=
+  parents(0): []
+  spouses(2): ['Arthur, Prince of Wales', 'Henry VIII, King of England']
+  children(1): ['Mary I, Queen of England and Ireland']
+
+profile-g6000000003858820967 | Margaret Tudor, Queen of Scots | 1489-1541 | title=Queen of Scots
+  parents(2): ['Henry VII, King of England', 'Elizabeth of York, Queen consort of England']
+  spouses(3): ['James IV, King of Scots', 'Archibald Douglas, Earl of Angus', 'Henry Stewart, Lord Methven']
+  children(2): ['James V, King of Scots', 'Margaret Douglas, Countess of Lennox']
+
+profile-g6000000000307250674 | Mary Tudor, Queen consort of France | 1496-1533 | title=Queen consort of France
+  parents(2): ['Henry VII, King of England', 'Elizabeth of York, Queen consort of England']
+  spouses(2): ['Louis XII, King of France', 'Charles Brandon, Duke of Suffolk']
+  children(1): ['Frances Brandon, Duchess of Suffolk']
+
+profile-g6000000003219788110 | Claude, Queen of France and Duchess of Brittany | 1499-1524 | title=Queen of France and Duchess of Brittany
+  parents(2): ['Louis XII, King of France', 'Anne of Brittany']
+  spouses(1): ['Francis I, King of France']
+  children(2): ['Henry II, King of France', 'Madeleine of Valois']
+
+profile-g6000000003702650070 | Anne Boleyn | 1501-1536 | title=
+  parents(0): []
+  spouses(1): ['Henry VIII, King of England']
+  children(1): ['Elizabeth I, Queen of England and Ireland']
+
+profile-g5405903272180113463 | Isabella of Portugal, Holy Roman Empress and Queen of Spain | 1503-1539 | title=Holy Roman Empress and Queen of Spain
+  parents(2): ['Manuel I, King of Portugal', 'Maria of Aragon, Queen of Portugal']
+  spouses(1): ['Charles V, Holy Roman Emperor and King of Spain']
+  children(1): ['Philip II, King of Spain']
+
+profile-g6000000005597849712 | Catherine of Austria, Queen of Portugal | 1507-1578 | title=Queen of Portugal
+  parents(2): ['Philip I, King of Castile', 'Joanna I, Queen of Castile and Aragon']
+  spouses(1): ['John III, King of Portugal']
+  children(1): ['Maria Manuela, Princess of Portugal']
+
+profile-g6000000001465721422 | Jane Seymour | 1508-1537 | title=
+  parents(0): []
+  spouses(1): ['Henry VIII, King of England']
+  children(1): ['Edward VI, King of England and Ireland']
+
+profile-g6000000001465762273 | Catherine Parr | 1512-1548 | title=
+  parents(0): []
+  spouses(4): ['Edward Burgh', 'John Neville, Baron Latimer', 'Henry VIII, King of England', 'Thomas Seymour, Baron Sudeley']
+  children(0): []
+
+profile-4475232 | Anne of Cleves | 1515-1557 | title=
+  parents(0): []
+  spouses(1): ['Henry VIII, King of England']
+  children(0): []
+
+profile-g6000000001323878378 | Mary of Guise | 1515-1560 | title=
+  parents(0): []
+  spouses(2): ['Louis II, Duke of Longueville', 'James V, King of Scots']
+  children(1): ['Mary, Queen of Scots']
+
+profile-g5027356653020040914 | Mary I, Queen of England and Ireland | 1516-1558 | title=Queen of England and Ireland
+  parents(2): ['Henry VIII, King of England', 'Catherine of Aragon']
+  spouses(1): ['Philip II, King of Spain']
+  children(0): []
+
+profile-g6000000001063166988 | Catherine de' Medici, Queen of France | 1519-1589 | title=Queen of France
+  parents(0): []
+  spouses(1): ['Henry II, King of France']
+  children(5): ['Francis II, King of France', 'Elisabeth of Valois', 'Charles IX, King of France', 'Henry III, King of France', 'Margaret of Valois, Queen of France and Navarre']
+
+profile-g6000000002322323932 | Madeleine of Valois | 1520-1537 | title=
+  parents(2): ['Francis I, King of France', 'Claude, Queen of France and Duchess of Brittany']
+  spouses(1): ['James V, King of Scots']
+  children(0): []
+
+profile-g6000000001465827019 | Catherine Howard | 1523-1542 | title=
+  parents(0): []
+  spouses(1): ['Henry VIII, King of England']
+  children(0): []
+
+profile-4476035 | Elizabeth I, Queen of England and Ireland | 1533-1603 | title=Queen of England and Ireland
+  parents(2): ['Henry VIII, King of England', 'Anne Boleyn']
+  spouses(0): []
+  children(0): []
+
+profile-g6000000001723257706 | James Hepburn, Earl of Bothwell | 1534-1578 | title=
+  parents(0): []
+  spouses(2): ['Jean Gordon', 'Mary, Queen of Scots']
+  children(0): []
+
+profile-g368988617700011508 | Jane Grey, Queen of England in 1553 | 1537-1554 | title=Queen of England in 1553
+  parents(2): ['Frances Brandon, Duchess of Suffolk', 'Henry Grey, Duke of Suffolk']
+  spouses(1): ['Guildford Dudley']
+  children(0): []
+
+profile-g6000000003234018546 | Mary, Queen of Scots | 1542-1587 | title=Queen of Scots
+  parents(2): ['James V, King of Scots', 'Mary of Guise']
+  spouses(3): ['Francis II, King of France', 'Henry Stuart, Lord Darnley, King consort of Scots', 'James Hepburn, Earl of Bothwell']
+  children(1): ['James VI & I, King of Scots and later England and Ireland']
+
+profile-g6000000003232545902 | Francis II, King of France | 1544-1560 | title=King of France
+  parents(2): ['Henry II, King of France', "Catherine de' Medici, Queen of France"]
+  spouses(1): ['Mary, Queen of Scots']
+  children(0): []
+
+profile-g6000000001142154909 | Anna of Austria, Queen of Spain | 1549-1580 | title=
+  parents(0): []
+  spouses(1): ['Philip II, King of Spain']
+  children(1): ['Philip III, King of Spain and Portugal']
+
+profile-g6000000001479578007 | Margaret of Valois, Queen of France and Navarre | 1553-1615 | title=Queen of France and Navarre
+  parents(2): ['Henry II, King of France', "Catherine de' Medici, Queen of France"]
+  spouses(1): ['Henry IV, King of France and Navarre']
+  children(0): []
+
+profile-4104601 | Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway | 1557-1631 | title=Queen of Denmark and Norway
+  parents(0): []
+  spouses(1): ['Frederick II, King of Denmark and Norway']
+  children(2): ['Anne of Denmark', 'Christian IV, King of Denmark and Norway']
+
+profile-4104662 | Anne of Denmark | 1574-1619 | title=
+  parents(2): ['Frederick II, King of Denmark and Norway', 'Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway']
+  spouses(1): ['James VI & I, King of Scots and later England and Ireland']
+  children(2): ['Elizabeth Stuart, Queen of Bohemia', 'Charles I, King of England']
+
+profile-4104768 | Anne Catherine of Brandenburg, Queen of Denmark and Norway | 1575-1612 | title=Queen of Denmark and Norway
+  parents(0): []
+  spouses(1): ['Christian IV, King of Denmark and Norway']
+  children(1): ['Frederick III, King of Denmark and Norway']
+
+profile-g6000000000851442057 | Marie de' Medici, Queen of France | 1575-1642 | title=Queen of France
+  parents(0): []
+  spouses(1): ['Henry IV, King of France and Navarre']
+  children(2): ['Louis XIII, King of France and Navarre', 'Henrietta Maria of France']
+
+profile-g6000000006727753685 | Louise Juliana of Nassau, Electress Palatine | 1576-1644 | title=Electress Palatine
+  parents(0): []
+  spouses(1): ['Frederick IV, Elector Palatine']
+  children(1): ['Frederick V, Elector Palatine and King of Bohemia']
+
+profile-g304430340510004215 | Elizabeth Stuart, Queen of Bohemia | 1596-1662 | title=Queen of Bohemia
+  parents(2): ['James VI & I, King of Scots and later England and Ireland', 'Anne of Denmark']
+  spouses(1): ['Frederick V, Elector Palatine and King of Bohemia']
+  children(1): ['Sophia, Electress of Hanover']
+
+profile-g6000000000851678345 | Henrietta Maria of France | 1609-1669 | title=
+  parents(2): ['Henry IV, King of France and Navarre', "Marie de' Medici, Queen of France"]
+  spouses(1): ['Charles I, King of England']
+  children(3): ['Charles II, King of England', 'Mary, Princess Royal and Princess of Orange', 'James II & VII, King of England']
+
+profile-4104869 | Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway | 1628-1685 | title=Queen of Denmark and Norway
+  parents(0): []
+  spouses(1): ['Frederick III, King of Denmark and Norway']
+  children(1): ['Prince George of Denmark, Duke of Cumberland']
+
+profile-g6000000003879438150 | Sophia, Electress of Hanover | 1630-1714 | title=Electress of Hanover
+  parents(2): ['Frederick V, Elector Palatine and King of Bohemia', 'Elizabeth Stuart, Queen of Bohemia']
+  spouses(1): ['Ernest Augustus, Elector of Hanover']
+  children(1): ['George I, King of Great Britain and Ireland']
+
+profile-g6000000001566391625 | Catherine of Braganza | 1638-1705 | title=
+  parents(0): []
+  spouses(1): ['Charles II, King of England']
+  children(0): []
+
+profile-g4033341615700026163 | Prince George of Denmark, Duke of Cumberland | 1653-1708 | title=Duke of Cumberland
+  parents(2): ['Frederick III, King of Denmark and Norway', 'Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway']
+  spouses(1): ['Anne Stuart, Queen of Great Britain and Ireland']
+  children(0): []
+
+profile-g6000000001573653856 | Mary of Modena | 1658-1718 | title=
+  parents(0): []
+  spouses(1): ['James II & VII, King of England']
+  children(0): []
+
+profile-g6000000003285472970 | Mary II, Queen of England, Scotland and Ireland | 1662-1694 | title=Queen of England, Scotland and Ireland
+  parents(2): ['James II & VII, King of England', 'Anne Hyde, Duchess of York']
+  spouses(1): ['William III & II, King of England, Scotland and Ireland']
+  children(0): []
+
+profile-g6000000003285572645 | Anne Stuart, Queen of Great Britain and Ireland | 1665-1714 | title=Queen of Great Britain and Ireland
+  parents(2): ['James II & VII, King of England', 'Anne Hyde, Duchess of York']
+  spouses(1): ['Prince George of Denmark, Duke of Cumberland']
+  children(0): []
+
+profile-4555944 | Caroline of Ansbach | 1683-1737 | title=
+  parents(0): []
+  spouses(1): ['George II, King of Great Britain and Ireland']
+  children(2): ['Frederick, Prince of Wales', 'Mary, Landgravine of Hesse-Kassel']
+
+profile-g311769067160005759 | Sophia Dorothea of Hanover, Queen in Prussia | 1687-1757 | title=Queen in Prussia
+  parents(2): ['George I, King of Great Britain and Ireland', 'Sophia Dorothea of Celle']
+  spouses(1): ['Frederick William I, King in Prussia']
+  children(1): ['Prince Augustus William of Prussia']
+
+profile-g6000000003891753089 | Augusta of Saxe-Gotha, Princess of Wales | 1719-1772 | title=Princess of Wales
+  parents(0): []
+  spouses(1): ['Frederick, Prince of Wales']
+  children(2): ['Augusta, Duchess of Brunswick-Wolfenbüttel', 'George III, King of Great Britain and Ireland']
+
+profile-g6000000003891728922 | Charlotte of Mecklenburg-Strelitz | 1744-1818 | title=
+  parents(0): []
+  spouses(1): ['George III, King of Great Britain and Ireland']
+  children(4): ['George IV, King of Great Britain and Ireland', 'William IV, King of Great Britain and Ireland', 'Edward, Duke of Kent', 'Adolphus, Duke of Cambridge']
+
+profile-g6000000000307247176 | Frederica Louisa of Hesse-Darmstadt, Queen of Prussia | 1751-1805 | title=Queen of Prussia
+  parents(0): []
+  spouses(1): ['Frederick William II, King of Prussia']
+  children(1): ['Prince William of Prussia']
+
+profile-g4138652783200125692 | Caroline of Brunswick | 1768-1821 | title=Queen consort of Great Britain and Ireland and Hanover
+  parents(2): ['Charles William Ferdinand, Duke of Brunswick-Wolfenbüttel', 'Augusta, Duchess of Brunswick-Wolfenbüttel']
+  spouses(1): ['George IV, King of Great Britain and Ireland']
+  children(1): ['Charlotte Augusta of Wales']
+
+profile-g6000000000697437319 | Victoria, Duchess of Kent and Strathearn | 1786-1861 | title=Duchess of Kent and Strathearn
+  parents(0): []
+  spouses(2): ['Emich Carl, Prince of Leiningen', 'Edward, Duke of Kent']
+  children(1): ['Victoria, Queen of Great Britain and Ireland, Empress of India']
+
+profile-4532996 | Prince William of Hesse-Kassel | 1787-1867 | title=Prince of Hesse-Kassel
+  parents(2): ['Prince Frederick of Hesse-Kassel', 'Princess Caroline of Nassau-Usingen']
+  spouses(1): ['Princess Charlotte of Denmark']
+  children(1): ['Louise of Hesse-Kassel, Queen of Denmark']
+
+profile-g6000000002737707932 | Princess Charlotte of Denmark | 1789-1864 | title=Princess of Denmark
+  parents(0): []
+  spouses(1): ['Prince William of Hesse-Kassel']
+  children(1): ['Louise of Hesse-Kassel, Queen of Denmark']
+
+profile-g4138662614410074729 | Adelaide of Saxe-Meiningen | 1792-1849 | title=
+  parents(0): []
+  spouses(1): ['William IV, King of Great Britain and Ireland']
+  children(0): []
+
+profile-g4134741994550032164 | Louise of Hesse-Kassel, Queen of Denmark | 1817-1898 | title=Queen of Denmark
+  parents(2): ['Prince William of Hesse-Kassel', 'Princess Charlotte of Denmark']
+  spouses(1): ['Christian IX, King of Denmark']
+  children(2): ['Alexandra of Denmark', 'George I, King of the Hellenes']
+
+profile-g6000000000697518124 | Albert, Prince Consort | 1819-1861 | title=
+  parents(0): []
+  spouses(1): ['Victoria, Queen of Great Britain and Ireland, Empress of India']
+  children(2): ['Edward VII, King of Great Britain and Ireland', 'Alice, Grand Duchess of Hesse and by Rhine']
+
+profile-g6000000008852088113 | Victoria, Queen of Great Britain and Ireland, Empress of India | 1819-1901 | title=Queen of Great Britain and Ireland
+  parents(2): ['Edward, Duke of Kent', 'Victoria, Duchess of Kent and Strathearn']
+  spouses(1): ['Albert, Prince Consort']
+  children(2): ['Edward VII, King of Great Britain and Ireland', 'Alice, Grand Duchess of Hesse and by Rhine']
+
+profile-g6000000003070981015 | Alexandra of Denmark | 1844-1925 | title=
+  parents(2): ['Christian IX, King of Denmark', 'Louise of Hesse-Kassel, Queen of Denmark']
+  spouses(1): ['Edward VII, King of Great Britain and Ireland']
+  children(1): ['George V, King of Great Britain and Northern Ireland']
+
+profile-g6000000001552709924 | Olga Constantinovna of Russia, Queen of the Hellenes | 1851-1926 | title=Queen of the Hellenes
+  parents(0): []
+  spouses(1): ['George I, King of the Hellenes']
+  children(1): ['Prince Andrew of Greece and Denmark']
+
+profile-g6000000001324056123 | Mary of Teck, Queen consort of Great Britain and Northern Ireland | 1867-1953 | title=Queen consort of Great Britain and Northern Ireland
+  parents(2): ['Mary Adelaide, Duchess of Teck', 'Francis, Duke of Teck']
+  spouses(1): ['George V, King of Great Britain and Northern Ireland']
+  children(2): ['Edward VIII, King of Great Britain and Northern Ireland in 1936', 'George VI, King of Great Britain and Northern Ireland']
+
+profile-g3940609086280075061 | Elizabeth, the Queen Mother | 1900-2002 | title=
+  parents(0): []
+  spouses(1): ['George VI, King of Great Britain and Northern Ireland']
+  children(1): ['Elizabeth II, Queen of Great Britain and Northern Ireland']
+
+profile-g6000000003221652435 | Louis Mountbatten, 1st Earl Mountbatten of Burma | 1900-1979 | title=1st Earl Mountbatten of Burma
+  parents(2): ['Victoria Mountbatten, Marchioness of Milford Haven', 'Louis Mountbatten, 1st Marquess of Milford Haven']
+  spouses(0): []
+  children(0): []
+
+profile-g6000000003075071669 | Elizabeth II, Queen of Great Britain and Northern Ireland | 1926-2022 | title=Queen of Great Britain and Northern Ireland
+  parents(2): ['George VI, King of Great Britain and Northern Ireland', 'Elizabeth, the Queen Mother']
+  spouses(1): ['Philip, Duke of Edinburgh']
+  children(1): ['Charles III, King of Great Britain and Northern Ireland']
+
+profile-g5032563093790088828 | Andrew Parker Bowles | 1939- | title=
+  parents(0): []
+  spouses(1): ['Camilla, Queen of Great Britain and Northern Ireland']
+  children(0): []
+
+profile-g6000000003081589893 | Camilla, Queen of Great Britain and Northern Ireland | 1947- | title=
+  parents(0): []
+  spouses(2): ['Andrew Parker Bowles', 'Charles III, King of Great Britain and Northern Ireland']
+  children(0): []
+
+profile-g6000000013313514628 | Diana, Princess of Wales | 1961-1997 | title=
+  parents(0): []
+  spouses(1): ['Charles III, King of Great Britain and Northern Ireland']
+  children(2): ['William, Prince of Wales', 'Harry, Duke of Sussex']
+
+profile-g6000000013407238004 | Catherine, Princess of Wales | 1982- | title=
+  parents(0): []
+  spouses(1): ['William, Prince of Wales']
+  children(3): ['Prince George of Wales', 'Princess Charlotte of Wales', 'Prince Louis of Wales']
+
+
+MONARCHS WITH INCOMPLETE IMMEDIATE FAMILY
+profile-g6000000003760873898 | Henry VII, King of England | parents=0
+profile-g6000000000440363134 | Louis XII, King of France | parents=0
+profile-g5111879481690102566 | Elizabeth of York, Queen consort of England | parents=0
+profile-g6000000001976884495 | Manuel I, King of Portugal | parents=0
+profile-g4229916861440069622 | James IV, King of Scots | parents=0
+profile-g376298089210013354 | Philip I, King of Castile | parents=0
+profile-g6000000018001664573 | Joanna I, Queen of Castile and Aragon | parents=0
+profile-g6000000000830244922 | Maria of Aragon, Queen of Portugal | parents=0
+profile-4475169 | Catherine of Aragon | parents=0
+profile-4695498 | Francis I, King of France | parents=0
+profile-g6000000003702650070 | Anne Boleyn | parents=0
+profile-g6000000001465721422 | Jane Seymour | parents=0
+profile-g6000000001465762273 | Catherine Parr | parents=0, no children
+profile-4475232 | Anne of Cleves | parents=0, no children
+profile-g6000000001323878378 | Mary of Guise | parents=0
+profile-g5027356653020040914 | Mary I, Queen of England and Ireland | no children
+profile-g6000000001063166988 | Catherine de' Medici, Queen of France | parents=0
+profile-g6000000002322323932 | Madeleine of Valois | no children
+profile-g6000000001465827019 | Catherine Howard | parents=0, no children
+profile-4476035 | Elizabeth I, Queen of England and Ireland | no spouse, no children
+profile-4104556 | Frederick II, King of Denmark and Norway | parents=0
+profile-g6000000001723257706 | James Hepburn, Earl of Bothwell | parents=0, no children
+profile-g6000000008813849008 | Edward VI, King of England and Ireland | no spouse, no children
+profile-g368988617700011508 | Jane Grey, Queen of England in 1553 | no children
+profile-g6000000003232545902 | Francis II, King of France | no children
+profile-g6000000001142154909 | Anna of Austria, Queen of Spain | parents=0
+profile-g6000000000307280059 | Charles IX, King of France | no spouse, no children
+profile-g6000000000307280073 | Henry III, King of France | no spouse, no children
+profile-g6000000001479508039 | Henry IV, King of France and Navarre | parents=0
+profile-g6000000001479578007 | Margaret of Valois, Queen of France and Navarre | no children
+profile-4104601 | Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway | parents=0
+profile-g6000000006727753675 | Frederick IV, Elector Palatine | parents=0
+profile-4104768 | Anne Catherine of Brandenburg, Queen of Denmark and Norway | parents=0
+profile-g6000000000851442057 | Marie de' Medici, Queen of France | parents=0
+profile-g6000000000837486609 | Philip III, King of Spain and Portugal | no spouse, no children
+profile-g6000000000842892424 | Louis XIII, King of France and Navarre | no spouse, no children
+profile-4104869 | Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway | parents=0
+profile-g6000000003890906681 | Ernest Augustus, Elector of Hanover | parents=0
+profile-g6000000002529545042 | Charles II, King of England | no children
+profile-g6000000001566391625 | Catherine of Braganza | parents=0, no children
+profile-g6000000003285553237 | William III & II, King of England, Scotland and Ireland | no children
+profile-g4033341615700026163 | Prince George of Denmark, Duke of Cumberland | no children
+profile-g6000000001573653856 | Mary of Modena | parents=0, no children
+profile-g6000000003285472970 | Mary II, Queen of England, Scotland and Ireland | no children
+profile-g6000000003285572645 | Anne Stuart, Queen of Great Britain and Ireland | no children
+profile-4555944 | Caroline of Ansbach | parents=0
+profile-g311771392100007035 | Frederick William I, King in Prussia | parents=0
+profile-g6000000003891728922 | Charlotte of Mecklenburg-Strelitz | parents=0
+profile-g6000000000307247176 | Frederica Louisa of Hesse-Darmstadt, Queen of Prussia | parents=0
+profile-g4137989648200126749 | William IV, King of Great Britain and Ireland | no children
+profile-g6000000000697437319 | Victoria, Duchess of Kent and Strathearn | parents=0
+profile-g6000000002737707932 | Princess Charlotte of Denmark | parents=0
+profile-g4138662614410074729 | Adelaide of Saxe-Meiningen | parents=0, no children
+profile-g6000000003065659343 | Christian IX, King of Denmark | parents=0
+profile-g6000000000697518124 | Albert, Prince Consort | parents=0
+profile-g6000000001552709924 | Olga Constantinovna of Russia, Queen of the Hellenes | parents=0
+profile-g5031922362950130285 | Edward VIII, King of Great Britain and Northern Ireland in 1936 | no children
+profile-g3940609086280075061 | Elizabeth, the Queen Mother | parents=0
+profile-g6000000003221652435 | Louis Mountbatten, 1st Earl Mountbatten of Burma | no spouse, no children
+profile-g5032563093790088828 | Andrew Parker Bowles | parents=0, no children
+profile-g6000000003081589893 | Camilla, Queen of Great Britain and Northern Ireland | parents=0, no children
+
+
+PRUSSIA / BRANDENBURG / FREDERICK RECORDS
+
+profile-4104556 | Frederick II, King of Denmark and Norway | 1534-1588
+  parents: []
+  spouses: ['Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway']
+  children: ['Anne of Denmark', 'Christian IV, King of Denmark and Norway']
+
+profile-4104601 | Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway | 1557-1631
+  parents: []
+  spouses: ['Frederick II, King of Denmark and Norway']
+  children: ['Anne of Denmark', 'Christian IV, King of Denmark and Norway']
+
+profile-g6000000006727753675 | Frederick IV, Elector Palatine | 1574-1610
+  parents: []
+  spouses: ['Louise Juliana of Nassau, Electress Palatine']
+  children: ['Frederick V, Elector Palatine and King of Bohemia']
+
+profile-4104768 | Anne Catherine of Brandenburg, Queen of Denmark and Norway | 1575-1612
+  parents: []
+  spouses: ['Christian IV, King of Denmark and Norway']
+  children: ['Frederick III, King of Denmark and Norway']
+
+profile-g6000000006727753685 | Louise Juliana of Nassau, Electress Palatine | 1576-1644
+  parents: []
+  spouses: ['Frederick IV, Elector Palatine']
+  children: ['Frederick V, Elector Palatine and King of Bohemia']
+
+profile-g4040216435970129981 | Frederick Henry, Prince of Orange | 1584-1647
+  parents: []
+  spouses: ['Amalia of Solms-Braunfels, Princess of Orange']
+  children: ['William II, Prince of Orange']
+
+profile-g304433105310001815 | Frederick V, Elector Palatine and King of Bohemia | 1596-1632
+  parents: ['Frederick IV, Elector Palatine', 'Louise Juliana of Nassau, Electress Palatine']
+  spouses: ['Elizabeth Stuart, Queen of Bohemia']
+  children: ['Sophia, Electress of Hanover']
+
+profile-g4040221674860032328 | Amalia of Solms-Braunfels, Princess of Orange | 1602-1675
+  parents: []
+  spouses: ['Frederick Henry, Prince of Orange']
+  children: ['William II, Prince of Orange']
+
+profile-g6000000004377641319 | Frederick III, King of Denmark and Norway | 1609-1670
+  parents: ['Christian IV, King of Denmark and Norway', 'Anne Catherine of Brandenburg, Queen of Denmark and Norway']
+  spouses: ['Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway']
+  children: ['Prince George of Denmark, Duke of Cumberland']
+
+profile-4104869 | Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway | 1628-1685
+  parents: []
+  spouses: ['Frederick III, King of Denmark and Norway']
+  children: ['Prince George of Denmark, Duke of Cumberland']
+
+profile-g311769067160005759 | Sophia Dorothea of Hanover, Queen in Prussia | 1687-1757
+  parents: ['George I, King of Great Britain and Ireland', 'Sophia Dorothea of Celle']
+  spouses: ['Frederick William I, King in Prussia']
+  children: ['Prince Augustus William of Prussia']
+
+profile-g311771392100007035 | Frederick William I, King in Prussia | 1688-1740
+  parents: []
+  spouses: ['Sophia Dorothea of Hanover, Queen in Prussia']
+  children: ['Prince Augustus William of Prussia']
+
+profile-g6000000003891739213 | Frederick, Prince of Wales | 1707-1751
+  parents: ['George II, King of Great Britain and Ireland', 'Caroline of Ansbach']
+  spouses: ['Augusta of Saxe-Gotha, Princess of Wales']
+  children: ['Augusta, Duchess of Brunswick-Wolfenbüttel', 'George III, King of Great Britain and Ireland']
+
+profile-g6000000003891753089 | Augusta of Saxe-Gotha, Princess of Wales | 1719-1772
+  parents: []
+  spouses: ['Frederick, Prince of Wales']
+  children: ['Augusta, Duchess of Brunswick-Wolfenbüttel', 'George III, King of Great Britain and Ireland']
+
+profile-g6000000001847933002 | Frederick II, Landgrave of Hesse-Kassel | 1720-1785
+  parents: []
+  spouses: ['Mary, Landgravine of Hesse-Kassel']
+  children: ['Prince Frederick of Hesse-Kassel']
+
+profile-g6000000002459929920 | Duchess Luise of Brunswick-Wolfenbüttel | 1722-1780
+  parents: []
+  spouses: ['Prince Augustus William of Prussia']
+  children: ['Frederick William II, King of Prussia']
+
+profile-g6000000003219727296 | Prince Augustus William of Prussia | 1722-1758
+  parents: ['Frederick William I, King in Prussia', 'Sophia Dorothea of Hanover, Queen in Prussia']
+  spouses: ['Duchess Luise of Brunswick-Wolfenbüttel']
+  children: ['Frederick William II, King of Prussia']
+
+profile-g312092994390004595 | Augusta, Duchess of Brunswick-Wolfenbüttel | 1737-1813
+  parents: ['Frederick, Prince of Wales', 'Augusta of Saxe-Gotha, Princess of Wales']
+  spouses: ['Charles William Ferdinand, Duke of Brunswick-Wolfenbüttel']
+  children: ['Caroline of Brunswick']
+
+profile-g6000000004178657304 | Frederick William II, King of Prussia | 1744-1797
+  parents: ['Prince Augustus William of Prussia', 'Duchess Luise of Brunswick-Wolfenbüttel']
+  spouses: ['Frederica Louisa of Hesse-Darmstadt, Queen of Prussia']
+  children: ['Prince William of Prussia']
+
+profile-g6000000002447248679 | Prince Frederick of Hesse-Kassel | 1747-1837
+  parents: ['Frederick II, Landgrave of Hesse-Kassel', 'Mary, Landgravine of Hesse-Kassel']
+  spouses: ['Princess Caroline of Nassau-Usingen']
+  children: ['Prince William of Hesse-Kassel', 'Augusta, Duchess of Cambridge']
+
+profile-g6000000000307247176 | Frederica Louisa of Hesse-Darmstadt, Queen of Prussia | 1751-1805
+  parents: []
+  spouses: ['Frederick William II, King of Prussia']
+  children: ['Prince William of Prussia']
+
+profile-g6000000007329600601 | Princess Caroline of Nassau-Usingen | 1762-1823
+  parents: []
+  spouses: ['Prince Frederick of Hesse-Kassel']
+  children: ['Prince William of Hesse-Kassel', 'Augusta, Duchess of Cambridge']
+
+profile-g6000000003232583515 | Prince William of Prussia | 1783-1851
+  parents: ['Frederick William II, King of Prussia', 'Frederica Louisa of Hesse-Darmstadt, Queen of Prussia']
+  spouses: ['Princess Maria Anna of Hesse-Homburg']
+  children: ['Princess Elisabeth of Prussia']
+
+profile-g6000000007329615678 | Princess Maria Anna of Hesse-Homburg | 1785-1846
+  parents: []
+  spouses: ['Prince William of Prussia']
+  children: ['Princess Elisabeth of Prussia']
+
+profile-4532996 | Prince William of Hesse-Kassel | 1787-1867
+  parents: ['Prince Frederick of Hesse-Kassel', 'Princess Caroline of Nassau-Usingen']
+  spouses: ['Princess Charlotte of Denmark']
+  children: ['Louise of Hesse-Kassel, Queen of Denmark']
+
+profile-g6000000007329601083 | Princess Elisabeth of Prussia | 1815-1885
+  parents: ['Prince William of Prussia', 'Princess Maria Anna of Hesse-Homburg']
+  spouses: ['Prince Charles of Hesse and by Rhine']
+  children: ['Louis IV, Grand Duke of Hesse and by Rhine']
+
+
+ROYAL-ADJACENT COMPONENTS
+
+Component 1: 157 profiles
+  Henry VII, King of England
+  Louis XII, King of France
+  Jeanne of France
+  Elizabeth of York, Queen consort of England
+  Manuel I, King of Portugal
+  James IV, King of Scots
+  Anne of Brittany
+  Philip I, King of Castile
+  Joanna I, Queen of Castile and Aragon
+  Maria of Aragon, Queen of Portugal
+  Charles Brandon, Duke of Suffolk
+  Catherine of Aragon
+  Arthur, Prince of Wales
+  Archibald Douglas, Earl of Angus
+  Margaret Tudor, Queen of Scots
+  Henry VIII, King of England
+  John Neville, Baron Latimer
+  Francis I, King of France
+  Henry Stewart, Lord Methven
+  Mary Tudor, Queen consort of France
+  Claude, Queen of France and Duchess of Brittany
+  Charles V, Holy Roman Emperor and King of Spain
+  Anne Boleyn
+  John III, King of Portugal
+  Isabella of Portugal, Holy Roman Empress and Queen of Spain
+  Catherine of Austria, Queen of Portugal
+  Edward Burgh
+  Jane Seymour
+  Thomas Seymour, Baron Sudeley
+  Louis II, Duke of Longueville
+  Catherine Parr
+  James V, King of Scots
+  Anne of Cleves
+  Margaret Douglas, Countess of Lennox
+  Mary of Guise
+  Mary I, Queen of England and Ireland
+  Matthew Stewart, 4th Earl of Lennox
+  Frances Brandon, Duchess of Suffolk
+  Henry Grey, Duke of Suffolk
+  Catherine de' Medici, Queen of France
+  Henry II, King of France
+  Madeleine of Valois
+  Catherine Howard
+  Maria Manuela, Princess of Portugal
+  Philip II, King of Spain
+  Elizabeth I, Queen of England and Ireland
+  Frederick II, King of Denmark and Norway
+  James Hepburn, Earl of Bothwell
+  Guildford Dudley
+  Edward VI, King of England and Ireland
+  Jane Grey, Queen of England in 1553
+  Mary, Queen of Scots
+  Francis II, King of France
+  Carlos, Prince of Asturias
+  Elisabeth of Valois
+  Henry Stuart, Lord Darnley, King consort of Scots
+  Jean Gordon
+  Anna of Austria, Queen of Spain
+  Charles IX, King of France
+  Henry III, King of France
+  Henry IV, King of France and Navarre
+  Margaret of Valois, Queen of France and Navarre
+  Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway
+  Infanta Isabella Clara Eugenia of Spain
+  James VI & I, King of Scots and later England and Ireland
+  Anne of Denmark
+  Frederick IV, Elector Palatine
+  Anne Catherine of Brandenburg, Queen of Denmark and Norway
+  Marie de' Medici, Queen of France
+  Louise Juliana of Nassau, Electress Palatine
+  Christian IV, King of Denmark and Norway
+  Philip III, King of Spain and Portugal
+  Elizabeth Stuart, Queen of Bohemia
+  Frederick V, Elector Palatine and King of Bohemia
+  Charles I, King of England
+  Louis XIII, King of France and Navarre
+  Frederick III, King of Denmark and Norway
+  Henrietta Maria of France
+  William II, Prince of Orange
+  Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway
+  Ernest Augustus, Elector of Hanover
+  Charles II, King of England
+  Sophia, Electress of Hanover
+  Mary, Princess Royal and Princess of Orange
+  James II & VII, King of England
+  Anne Hyde, Duchess of York
+  Catherine of Braganza
+  William III & II, King of England, Scotland and Ireland
+  Prince George of Denmark, Duke of Cumberland
+  Mary of Modena
+  George I, King of Great Britain and Ireland
+  Mary II, Queen of England, Scotland and Ireland
+  Anne Stuart, Queen of Great Britain and Ireland
+  Sophia Dorothea of Celle
+  Caroline of Ansbach
+  George II, King of Great Britain and Ireland
+  Sophia Dorothea of Hanover, Queen in Prussia
+  Frederick William I, King in Prussia
+  Frederick, Prince of Wales
+  Augusta of Saxe-Gotha, Princess of Wales
+  Duchess Luise of Brunswick-Wolfenbüttel
+  Prince Augustus William of Prussia
+  Mary, Landgravine of Hesse-Kassel
+  Charles William Ferdinand, Duke of Brunswick-Wolfenbüttel
+  Augusta, Duchess of Brunswick-Wolfenbüttel
+  George III, King of Great Britain and Ireland
+  Charlotte of Mecklenburg-Strelitz
+  Frederick William II, King of Prussia
+  Prince Frederick of Hesse-Kassel
+  Frederica Louisa of Hesse-Darmstadt, Queen of Prussia
+  Maria Fitzherbert
+  George IV, King of Great Britain and Ireland
+  Princess Caroline of Nassau-Usingen
+  Emich Carl, Prince of Leiningen
+  William IV, King of Great Britain and Ireland
+  Edward, Duke of Kent
+  Caroline of Brunswick
+  Adolphus, Duke of Cambridge
+  Prince William of Prussia
+  Victoria, Duchess of Kent and Strathearn
+  Prince William of Hesse-Kassel
+  Princess Charlotte of Denmark
+  Adelaide of Saxe-Meiningen
+  Charlotte Augusta of Wales
+  Louise of Hesse-Kassel, Queen of Denmark
+  Christian IX, King of Denmark
+  Albert, Prince Consort
+  Victoria, Queen of Great Britain and Ireland, Empress of India
+  Mary Adelaide, Duchess of Teck
+  Francis, Duke of Teck
+  Edward VII, King of Great Britain and Ireland
+  Alice, Grand Duchess of Hesse and by Rhine
+  Alexandra of Denmark
+  George I, King of the Hellenes
+  Olga Constantinovna of Russia, Queen of the Hellenes
+  Louis Mountbatten, 1st Marquess of Milford Haven
+  Victoria Mountbatten, Marchioness of Milford Haven
+  George V, King of Great Britain and Northern Ireland
+  Mary of Teck, Queen consort of Great Britain and Northern Ireland
+  Prince Andrew of Greece and Denmark
+  Edward VIII, King of Great Britain and Northern Ireland in 1936
+  George VI, King of Great Britain and Northern Ireland
+  Wallis, Duchess of Windsor
+  Elizabeth, the Queen Mother
+  Louis Mountbatten, 1st Earl Mountbatten of Burma
+  Philip, Duke of Edinburgh
+  Elizabeth II, Queen of Great Britain and Northern Ireland
+  Andrew Parker Bowles
+  Camilla, Queen of Great Britain and Northern Ireland
+  Charles III, King of Great Britain and Northern Ireland
+  Diana, Princess of Wales
+  Catherine, Princess of Wales
+  William, Prince of Wales
+  Harry, Duke of Sussex
+  Prince George of Wales
+  Princess Charlotte of Wales
+  Prince Louis of Wales

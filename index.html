@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=78">
+  <link rel="stylesheet" href="./styles.css?v=80">
 </head>
 <body>
   <div class="app-shell">
@@ -190,11 +190,14 @@
               </div>
             </div>
 
-            <div class="event-editor-section">
-              <span class="eyebrow">Personal events</span>
-              <div class="event-editor-list" id="personal-events-list"></div>
+            <div class="event-editor-section life-events-section">
+              <div class="life-events-heading">
+                <span class="eyebrow">Life events</span>
+                <small>One mark per row; family stays connected</small>
+              </div>
+              <div class="event-editor-list person-event-table" id="personal-events-list" aria-label="Chronological life events"></div>
               <div class="event-add-row personal-event-add-row">
-                <input id="personal-event-name" type="text" placeholder="Event name" aria-label="Personal event name">
+                <input id="personal-event-name" type="text" placeholder="Add a marked event" aria-label="Personal event name">
                 <input id="personal-event-start" type="text" inputmode="numeric" placeholder="Start" aria-label="Personal event start year">
                 <input id="personal-event-end" type="text" inputmode="numeric" placeholder="End" aria-label="Personal event end year">
                 <div id="personal-event-color" class="event-color-picker" aria-label="Personal event colour"></div>
@@ -278,7 +281,7 @@
           <button class="timeline-setting-toggle" id="timeline-as-of-toggle" type="button" aria-pressed="false">Off</button>
         </div>
         <div class="timeline-toggle-setting">
-          <span class="timeline-toggle-label">Personal events<small>Show or hide every personal-event band together</small></span>
+          <span class="timeline-toggle-label">Life-event marks<small>Show or hide marks for marriages, children’s births, and authored events</small></span>
           <button class="timeline-setting-toggle" id="timeline-personal-events-toggle" type="button" aria-pressed="true">On</button>
         </div>
         <div class="timeline-toggle-setting">
@@ -324,6 +327,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./geni-import.js?v=4"></script>
-  <script type="module" src="./app.js?v=147"></script>
+  <script type="module" src="./app.js?v=149"></script>
 </body>
 </html>

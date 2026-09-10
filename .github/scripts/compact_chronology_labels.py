@@ -108,25 +108,20 @@ replace_once(
 )
 
 side_path = Path('tests/side-panel-life-events.test.mjs')
-side = side_path.read_text(encoding='utf-8')
-old_heading = '  assert.match(html, /<span class="eyebrow">Life events<\\/span>/);'
-new_heading = '  assert.match(html, /<span class="eyebrow">Chronology<\\/span>/);'
-if side.count(old_heading) != 1:
-    raise SystemExit(f'chronology test heading: expected one occurrence, found {side.count(old_heading)}')
-side = side.replace(old_heading, new_heading, 1)
-old_child_label = '  assert.match(personEvents, /label: `Birth of \\${relativeName\\(child, birthYear, nameAtYear\\)}`/);'
-new_child_label = '  assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);'
-if side.count(old_child_label) != 1:
-    raise SystemExit(f'child-label test: expected one occurrence, found {side.count(old_child_label)}')
-side = side.replace(old_child_label, new_child_label, 1)
-insert_after = """test('every dated child remains an individual birth row in the side panel', () => {
-  assert.match(personEvents, /const childIds = unique\\(values\\(person\\.children\\)\\)/);
-  assert.match(personEvents, /kind: 'child-birth'/);
-  assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);
-});
-"""
+side_lines = side_path.read_text(encoding='utf-8').splitlines()
+heading_hits = 0
+child_label_hits = 0
+for index, line in enumerate(side_lines):
+    if 'assert.match(html, /<span class="eyebrow">Life events' in line:
+        side_lines[index] = line.replace('Life events', 'Chronology')
+        heading_hits += 1
+    if 'assert.match(personEvents, /label: `Birth of' in line:
+        side_lines[index] = "  assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);"
+        child_label_hits += 1
+if heading_hits != 1 or child_label_hits != 1:
+    raise SystemExit(f'side-panel test replacements: heading={heading_hits}, child-label={child_label_hits}')
+side = '\n'.join(side_lines) + '\n'
 addition = """
-
 test('relationship and child rows use compact names without redundant verbs', () => {
   assert.match(personEvents, /label: partnerName/);
   assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);
@@ -134,10 +129,12 @@ test('relationship and child rows use compact names without redundant verbs', ()
   assert.doesNotMatch(personEvents, /`Relationship with \\${partnerName}`/);
   assert.doesNotMatch(personEvents, /`Birth of \\${relativeName/);
 });
+
 """
-if side.count(insert_after) != 1:
-    raise SystemExit(f'compact-label insertion point: expected one occurrence, found {side.count(insert_after)}')
-side = side.replace(insert_after, insert_after + addition, 1)
+marker = "test('child births do not paint marks across node boxes on the main canvas', () => {"
+if side.count(marker) != 1:
+    raise SystemExit(f'compact-label insertion marker: expected one occurrence, found {side.count(marker)}')
+side = side.replace(marker, addition + marker, 1)
 side = side.replace("from './person-events.js\\?v=2'", "from './person-events.js\\?v=3'", 1)
 side = side.replace("\\.\\/app\\.js\\?v=150", "\\.\\/app\\.js\\?v=151", 1)
 side_path.write_text(side, encoding='utf-8')

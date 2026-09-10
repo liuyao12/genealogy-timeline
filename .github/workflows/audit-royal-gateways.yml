@@ -6,6 +6,7 @@ on:
       - .github/scripts/audit_royal_gateways.py
       - .github/scripts/audit_monarch_spouses.py
       - .github/scripts/probe_wikidata_geni_ids.py
+      - .github/scripts/probe_extra_geni_ids.py
       - .github/workflows/audit-royal-gateways.yml
 permissions:
   contents: write
@@ -22,11 +23,12 @@ jobs:
           python3 .github/scripts/audit_royal_gateways.py
           python3 .github/scripts/audit_monarch_spouses.py
           python3 .github/scripts/probe_wikidata_geni_ids.py
+          python3 .github/scripts/probe_extra_geni_ids.py
       - name: Commit audit reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/royal-gateway-audit.md .github/monarch-spouse-audit.md .github/wikidata-geni-probe.md
+          git add .github/royal-gateway-audit.md .github/monarch-spouse-audit.md .github/wikidata-geni-probe.md .github/wikidata-geni-extra-probe.md
           git diff --cached --quiet && exit 0
-          git commit -m "Record royal audits and Geni identity probe [skip ci]"
+          git commit -m "Record royal audits and Geni identity probes [skip ci]"
           git push origin HEAD:data/complete-foreign-royal-lines

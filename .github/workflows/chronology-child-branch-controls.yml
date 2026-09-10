@@ -23,7 +23,26 @@ jobs:
         run: python3 .github/scripts/clarify_chronology_branch_controls.py
       - name: Run unit, syntax, JSON, and whitespace checks
         run: |
-          npm test
+          set +e
+          npm test >/tmp/chronology-tests.log 2>&1
+          STATUS=$?
+          set -e
+          cat /tmp/chronology-tests.log
+          if [ "$STATUS" -ne 0 ]; then
+            {
+              grep -E '^(not ok|# Subtest:|  error:|    Expected|    actual:|    expected:|    operator:|    at |# fail )' /tmp/chronology-tests.log || true
+              echo
+              echo '--- tail ---'
+              tail -n 100 /tmp/chronology-tests.log
+            } > .github/chronology-test-failure.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/chronology-test-failure.txt
+            git commit -m "Record chronology test failure [skip ci]"
+            git push origin HEAD:fix/chronology-child-branch-controls
+            exit "$STATUS"
+          fi
+          rm -f .github/chronology-test-failure.txt
           node --check app.js
           node --check person-events.js
           node --check .github/scripts/check_chronology_branch_controls.mjs
@@ -64,6 +83,7 @@ jobs:
       - name: Commit the verified implementation
         run: |
           rm -f \
+            .github/chronology-test-failure.txt \
             .github/scripts/clarify_chronology_branch_controls.py \
             .github/scripts/check_chronology_branch_controls.mjs \
             .github/workflows/chronology-child-branch-controls.yml

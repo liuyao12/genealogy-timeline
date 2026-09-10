@@ -74,23 +74,23 @@ for (let attempt = 0; attempt < 120; attempt += 1) {
 const result = await evaluate(`(async () => {
   const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
   const input = document.getElementById('tree-filter');
-  input.value = 'George IV';
+  input.value = 'George III';
   input.dispatchEvent(new Event('input', { bubbles: true }));
   await pause(100);
   const profileButton = [...document.querySelectorAll('.person-list-item')]
-    .find(button => button.textContent.includes('George IV'));
-  if (!profileButton) throw new Error('Could not find George IV in the bundled royal example.');
+    .find(button => button.textContent.includes('George III'));
+  if (!profileButton) throw new Error('Could not find George III in the bundled royal example.');
   profileButton.click();
   await pause(150);
 
   const text = element => element?.textContent?.replace(/\\s+/g, ' ').trim() || '';
   const header = [...document.querySelectorAll('.person-event-table-header > span')].map(text);
   const rows = [...document.querySelectorAll('.person-event-row')];
-  const marriage = rows.find(row => row.classList.contains('marriage') && text(row).includes('Caroline'));
+  const marriage = rows.find(row => row.classList.contains('marriage') && text(row).includes('Charlotte'));
   const reign = rows.find(row => row.classList.contains('personal') && /Reign/i.test(text(row)));
   const children = rows.filter(row => row.classList.contains('child-birth'));
-  if (!marriage) throw new Error('George IV marriage row was not rendered. Rows: ' + rows.map(text).join(' || '));
-  if (!reign) throw new Error('George IV reign row was not rendered. Rows: ' + rows.map(text).join(' || '));
+  if (!marriage) throw new Error('George III marriage row was not rendered. Rows: ' + rows.map(text).join(' || '));
+  if (!reign) throw new Error('George III reign row was not rendered. Rows: ' + rows.map(text).join(' || '));
 
   const marriageKey = marriage.dataset.eventKey;
   const timelineMarkCount = key => [...document.querySelectorAll('#timeline-canvas [data-event-key]')]
@@ -120,6 +120,7 @@ const result = await evaluate(`(async () => {
       year: text(reign.querySelector('.person-event-year'))
     },
     childLabels: children.map(row => text(row.querySelector('.person-event-title'))),
+    familyChildCount: document.querySelectorAll('.relationship-row.child').length,
     relationshipEndRows: rows.filter(row => row.classList.contains('relationship-end')).length,
     marks: {
       beforeHide,
@@ -132,13 +133,15 @@ const result = await evaluate(`(async () => {
 })()`);
 
 assert.deepEqual(result.header, ['Age', 'Event', 'Mark']);
-assert.equal(result.marriage.age, '33');
-assert.match(result.marriage.label, /Married Caroline/);
-assert.equal(result.marriage.year, '· 1795–1821');
-assert.equal(result.marriage.detail, '26 years · spouse died');
-assert.equal(result.reign.age, '58');
-assert.match(result.reign.year, /^· 1820–1830$/);
-assert.ok(result.childLabels.some(label => /Birth of .*Charlotte.*· 1796/i.test(label)), 'Princess Charlotte birth should remain in the chronology.');
+assert.equal(result.marriage.age, '23');
+assert.match(result.marriage.label, /Married .*Charlotte/);
+assert.equal(result.marriage.year, '· 1761–1818');
+assert.equal(result.marriage.detail, '57 years · spouse died');
+assert.equal(result.reign.age, '22');
+assert.match(result.reign.year, /^· 1760–1820$/);
+assert.ok(result.childLabels.some(label => /Birth of .*George.*· 1762/i.test(label)), 'George IV birth should remain in George III’s chronology.');
+assert.ok(result.familyChildCount > 0, 'The selected profile should have stored children.');
+assert.equal(result.childLabels.length, result.familyChildCount, 'Every child listed in the family panel should have a birth row.');
 assert.equal(result.relationshipEndRows, 0);
 assert.ok(result.marks.beforeHide > 0, 'Marriage mark should initially be visible.');
 assert.equal(result.marks.afterHide, 0);

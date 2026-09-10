@@ -111,12 +111,12 @@ side_path = Path('tests/side-panel-life-events.test.mjs')
 side_lines = side_path.read_text(encoding='utf-8').splitlines()
 heading_hits = 0
 child_label_hits = 0
-for index, line in enumerate(side_lines):
+for line_index, line in enumerate(side_lines):
     if 'assert.match(html, /<span class="eyebrow">Life events' in line:
-        side_lines[index] = line.replace('Life events', 'Chronology')
+        side_lines[line_index] = line.replace('Life events', 'Chronology')
         heading_hits += 1
     if 'assert.match(personEvents, /label: `Birth of' in line:
-        side_lines[index] = "  assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);"
+        side_lines[line_index] = "  assert.match(personEvents, /label: relativeName\\(child, birthYear, nameAtYear\\)/);"
         child_label_hits += 1
 if heading_hits != 1 or child_label_hits != 1:
     raise SystemExit(f'side-panel test replacements: heading={heading_hits}, child-label={child_label_hits}')
@@ -148,16 +148,16 @@ replace_once(
 
 # Guard the intended information architecture explicitly.
 app = Path('app.js').read_text(encoding='utf-8')
-relationship_start = app.indexOf('function renderRelationshipHouseholds(person) {')
-relationship_end = app.indexOf('\nfunction renderGeniFamilyActions', relationship_start)
+relationship_start = app.index('function renderRelationshipHouseholds(person) {')
+relationship_end = app.index('\nfunction renderGeniFamilyActions', relationship_start)
 relationship_renderer = app[relationship_start:relationship_end]
 for forbidden in ('allPartnerIds(person)', 'householdChildren', "kind: 'spouse'", "kind: 'child'"):
     if forbidden in relationship_renderer:
         raise SystemExit(f'parentage renderer still contains duplicated family content: {forbidden}')
 if "event.kind === 'child-birth'" not in app or 'childBranchVisibilityButton' not in app:
     raise SystemExit('child chronology rows are not wired to branch visibility')
-timeline_start = app.indexOf('formalMarriagePartnerIds(id).forEach')
-timeline_end = app.indexOf('const childrenShownAtAnotherOccurrence', timeline_start)
+timeline_start = app.index('formalMarriagePartnerIds(id).forEach')
+timeline_end = app.index('const childrenShownAtAnotherOccurrence', timeline_start)
 if 'child-birth' in app[timeline_start:timeline_end]:
     raise SystemExit('child-birth marks are still emitted on the main canvas')
 

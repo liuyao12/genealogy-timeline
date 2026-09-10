@@ -9,6 +9,7 @@
 | Frederick, Hereditary Prince of Denmark | Frederick, Hereditary Prince of Denmark | Q374885 | 6000000003375460254 |
 | Duchess Sophia Frederica of Mecklenburg-Schwerin | Duchess Sophia Frederica of Mecklenburg-Schwerin | Q237793 | 6000000003375448733 |
 | Duchess Charlotte Frederica of Mecklenburg-Schwerin | Duchess Charlotte Frederica of Mecklenburg-Schwerin | Q254563 | 4532877 |
+| Juliana Maria of Brunswick-Wolfenbüttel | Juliana Maria of Brunswick-Wolfenbüttel | Q57637 | 4532743 |
 | Marie Joséphine of Savoy | Marie Joséphine of Savoy | Q231844 | — |
 | Edward, Duke of Guimarães | Edward, Duke of Guimarães | Q5341421 | — |
 | Teodósio II, Duke of Braganza | Teodósio II, Duke of Braganza | Q958736 | — |

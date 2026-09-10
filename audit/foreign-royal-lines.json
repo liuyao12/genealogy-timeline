@@ -1,0 +1,862 @@
+{
+  "starter_version": 30,
+  "profile_count": 187,
+  "foreign_consorts": [
+    {
+      "id": "profile-g6000000018001664573",
+      "name": "Joanna I, Queen of Castile and Aragon",
+      "title": "Queen of Castile and Aragon",
+      "birth": "1479",
+      "death": "1555",
+      "parents": [],
+      "children": [
+        "Charles V, Holy Roman Emperor and King of Spain",
+        "Catherine of Austria, Queen of Portugal"
+      ],
+      "spouses": [
+        "Philip I, King of Castile"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 2,
+      "source_id": "profile-g6000000018001664573"
+    },
+    {
+      "id": "profile-g6000000000830244922",
+      "name": "Maria of Aragon, Queen of Portugal",
+      "title": "Queen of Portugal",
+      "birth": "1482",
+      "death": "1517",
+      "parents": [],
+      "children": [
+        "John III, King of Portugal",
+        "Isabella of Portugal, Holy Roman Empress and Queen of Spain"
+      ],
+      "spouses": [
+        "Manuel I, King of Portugal"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 2,
+      "source_id": "profile-g6000000000830244922"
+    },
+    {
+      "id": "profile-g6000000000307250674",
+      "name": "Mary Tudor, Queen consort of France",
+      "title": "Queen consort of France",
+      "birth": "1496",
+      "death": "1533",
+      "parents": [
+        "Henry VII, King of England",
+        "Elizabeth of York, Queen consort of England"
+      ],
+      "children": [
+        "Frances Brandon, Duchess of Suffolk"
+      ],
+      "spouses": [
+        "Louis XII, King of France",
+        "Charles Brandon, Duke of Suffolk"
+      ],
+      "in_henry_descendants": true,
+      "parent_count": 2,
+      "child_count": 1,
+      "source_id": "profile-g6000000000307250674"
+    },
+    {
+      "id": "profile-g6000000003219788110",
+      "name": "Claude, Queen of France and Duchess of Brittany",
+      "title": "Queen of France and Duchess of Brittany",
+      "birth": "1499",
+      "death": "1524",
+      "parents": [
+        "Louis XII, King of France",
+        "Anne of Brittany"
+      ],
+      "children": [
+        "Henry II, King of France",
+        "Madeleine of Valois"
+      ],
+      "spouses": [
+        "Francis I, King of France"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 2,
+      "child_count": 2,
+      "source_id": "profile-g6000000003219788110"
+    },
+    {
+      "id": "profile-g5405903272180113463",
+      "name": "Isabella of Portugal, Holy Roman Empress and Queen of Spain",
+      "title": "Holy Roman Empress and Queen of Spain",
+      "birth": "1503",
+      "death": "1539",
+      "parents": [
+        "Manuel I, King of Portugal",
+        "Maria of Aragon, Queen of Portugal"
+      ],
+      "children": [
+        "Philip II, King of Spain"
+      ],
+      "spouses": [
+        "Charles V, Holy Roman Emperor and King of Spain"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 2,
+      "child_count": 1,
+      "source_id": "profile-g5405903272180113463"
+    },
+    {
+      "id": "profile-g6000000005597849712",
+      "name": "Catherine of Austria, Queen of Portugal",
+      "title": "Queen of Portugal",
+      "birth": "1507",
+      "death": "1578",
+      "parents": [
+        "Philip I, King of Castile",
+        "Joanna I, Queen of Castile and Aragon"
+      ],
+      "children": [
+        "Maria Manuela, Princess of Portugal"
+      ],
+      "spouses": [
+        "John III, King of Portugal"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 2,
+      "child_count": 1,
+      "source_id": "profile-g6000000005597849712"
+    },
+    {
+      "id": "profile-g6000000001063166988",
+      "name": "Catherine de' Medici, Queen of France",
+      "title": "Queen of France",
+      "birth": "1519",
+      "death": "1589",
+      "parents": [],
+      "children": [
+        "Francis II, King of France",
+        "Elisabeth of Valois",
+        "Charles IX, King of France",
+        "Henry III, King of France",
+        "Margaret of Valois, Queen of France and Navarre"
+      ],
+      "spouses": [
+        "Henry II, King of France"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 5,
+      "source_id": "profile-g6000000001063166988"
+    },
+    {
+      "id": "profile-g6000000001142154909",
+      "name": "Anna of Austria, Queen of Spain",
+      "title": "",
+      "birth": "1549",
+      "death": "1580",
+      "parents": [],
+      "children": [
+        "Philip III, King of Spain and Portugal"
+      ],
+      "spouses": [
+        "Philip II, King of Spain"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 1,
+      "source_id": "profile-g6000000001142154909"
+    },
+    {
+      "id": "profile-g6000000001479578007",
+      "name": "Margaret of Valois, Queen of France and Navarre",
+      "title": "Queen of France and Navarre",
+      "birth": "1553",
+      "death": "1615",
+      "parents": [
+        "Henry II, King of France",
+        "Catherine de' Medici, Queen of France"
+      ],
+      "children": [],
+      "spouses": [
+        "Henry IV, King of France and Navarre"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 2,
+      "child_count": 0,
+      "source_id": "profile-g6000000001479578007"
+    },
+    {
+      "id": "profile-4104601",
+      "name": "Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "birth": "1557",
+      "death": "1631",
+      "parents": [],
+      "children": [
+        "Anne of Denmark",
+        "Christian IV, King of Denmark and Norway"
+      ],
+      "spouses": [
+        "Frederick II, King of Denmark and Norway"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 2,
+      "source_id": "profile-4104601"
+    },
+    {
+      "id": "profile-4104768",
+      "name": "Anne Catherine of Brandenburg, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "birth": "1575",
+      "death": "1612",
+      "parents": [],
+      "children": [
+        "Frederick III, King of Denmark and Norway"
+      ],
+      "spouses": [
+        "Christian IV, King of Denmark and Norway"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 1,
+      "source_id": "profile-4104768"
+    },
+    {
+      "id": "profile-g6000000000851442057",
+      "name": "Marie de' Medici, Queen of France",
+      "title": "Queen of France",
+      "birth": "1575",
+      "death": "1642",
+      "parents": [],
+      "children": [
+        "Louis XIII, King of France and Navarre",
+        "Henrietta Maria of France"
+      ],
+      "spouses": [
+        "Henry IV, King of France and Navarre"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 2,
+      "source_id": "profile-g6000000000851442057"
+    },
+    {
+      "id": "profile-g6000000006727753685",
+      "name": "Louise Juliana of Nassau, Electress Palatine",
+      "title": "Electress Palatine",
+      "birth": "1576",
+      "death": "1644",
+      "parents": [],
+      "children": [
+        "Frederick V, Elector Palatine and King of Bohemia"
+      ],
+      "spouses": [
+        "Frederick IV, Elector Palatine"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 1,
+      "source_id": "profile-g6000000006727753685"
+    },
+    {
+      "id": "profile-g304430340510004215",
+      "name": "Elizabeth Stuart, Queen of Bohemia",
+      "title": "Queen of Bohemia",
+      "birth": "1596",
+      "death": "1662",
+      "parents": [
+        "James VI & I, King of Scots and later England and Ireland",
+        "Anne of Denmark"
+      ],
+      "children": [
+        "Sophia, Electress of Hanover"
+      ],
+      "spouses": [
+        "Frederick V, Elector Palatine and King of Bohemia"
+      ],
+      "in_henry_descendants": true,
+      "parent_count": 2,
+      "child_count": 1,
+      "source_id": "profile-g304430340510004215"
+    },
+    {
+      "id": "profile-4104869",
+      "name": "Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "birth": "1628",
+      "death": "1685",
+      "parents": [],
+      "children": [
+        "Prince George of Denmark, Duke of Cumberland"
+      ],
+      "spouses": [
+        "Frederick III, King of Denmark and Norway"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 1,
+      "source_id": "profile-4104869"
+    },
+    {
+      "id": "profile-g6000000003879438150",
+      "name": "Sophia, Electress of Hanover",
+      "title": "Electress of Hanover",
+      "birth": "1630",
+      "death": "1714",
+      "parents": [
+        "Frederick V, Elector Palatine and King of Bohemia",
+        "Elizabeth Stuart, Queen of Bohemia"
+      ],
+      "children": [
+        "George I, King of Great Britain and Ireland"
+      ],
+      "spouses": [
+        "Ernest Augustus, Elector of Hanover"
+      ],
+      "in_henry_descendants": true,
+      "parent_count": 2,
+      "child_count": 1,
+      "source_id": "profile-g6000000003879438150"
+    },
+    {
+      "id": "profile-g6000000000307247176",
+      "name": "Frederica Louisa of Hesse-Darmstadt, Queen of Prussia",
+      "title": "Queen of Prussia",
+      "birth": "1751",
+      "death": "1805",
+      "parents": [],
+      "children": [
+        "Prince William of Prussia"
+      ],
+      "spouses": [
+        "Frederick William II, King of Prussia"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 1,
+      "source_id": "profile-g6000000000307247176"
+    },
+    {
+      "id": "profile-g6000000003446622340",
+      "name": "Wilhelmine of Baden, Grand Duchess of Hesse and by Rhine",
+      "title": "Grand Duchess of Hesse and by Rhine",
+      "birth": "1788",
+      "death": "1836",
+      "parents": [],
+      "children": [
+        "Prince Charles of Hesse and by Rhine",
+        "Prince Alexander of Hesse and by Rhine"
+      ],
+      "spouses": [
+        "Louis II, Grand Duke of Hesse and by Rhine"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 2,
+      "source_id": "profile-g6000000003446622340"
+    },
+    {
+      "id": "profile-g4134741994550032164",
+      "name": "Louise of Hesse-Kassel, Queen of Denmark",
+      "title": "Queen of Denmark",
+      "birth": "1817",
+      "death": "1898",
+      "parents": [
+        "Prince William of Hesse-Kassel",
+        "Princess Charlotte of Denmark"
+      ],
+      "children": [
+        "Alexandra of Denmark",
+        "George I, King of the Hellenes"
+      ],
+      "spouses": [
+        "Christian IX, King of Denmark"
+      ],
+      "in_henry_descendants": true,
+      "parent_count": 2,
+      "child_count": 2,
+      "source_id": "profile-g4134741994550032164"
+    },
+    {
+      "id": "profile-g6000000001552709924",
+      "name": "Olga Constantinovna of Russia, Queen of the Hellenes",
+      "title": "Queen of the Hellenes",
+      "birth": "1851",
+      "death": "1926",
+      "parents": [],
+      "children": [
+        "Prince Andrew of Greece and Denmark"
+      ],
+      "spouses": [
+        "George I, King of the Hellenes"
+      ],
+      "in_henry_descendants": false,
+      "parent_count": 0,
+      "child_count": 1,
+      "source_id": "profile-g6000000001552709924"
+    }
+  ],
+  "foreign_sovereign_ids": [
+    "profile-g304430340510004215",
+    "profile-g304433105310001815",
+    "profile-g6000000003879438150",
+    "profile-g6000000003890906681",
+    "profile-g6000000000307250674",
+    "profile-g6000000001600060051",
+    "profile-g6000000000440363134",
+    "profile-g6000000000703378021",
+    "profile-g6000000001142154909",
+    "profile-g6000000002343276289",
+    "profile-g6000000003219788110",
+    "profile-4695498",
+    "profile-g6000000001841472088",
+    "profile-g6000000001063166988",
+    "profile-g6000000000307280059",
+    "profile-g6000000000307280073",
+    "profile-g6000000001479578007",
+    "profile-g6000000001479508039",
+    "profile-g6000000000851442057",
+    "profile-g6000000000842892424",
+    "profile-g6000000001976884495",
+    "profile-g6000000000830244922",
+    "profile-g376298089210013354",
+    "profile-g6000000018001664573",
+    "profile-g6000000001095643277",
+    "profile-g6000000002756902145",
+    "profile-g5405903272180113463",
+    "profile-g6000000005597849712",
+    "profile-g6000000000837486609",
+    "profile-4104556",
+    "profile-4104601",
+    "profile-4104731",
+    "profile-4104768",
+    "profile-g6000000004377641319",
+    "profile-4104869",
+    "profile-g6000000003065659343",
+    "profile-g4134741994550032164",
+    "profile-4533621",
+    "profile-g6000000001552709924",
+    "profile-g6000000006727753675",
+    "profile-g6000000006727753685",
+    "profile-g6000000040699313241",
+    "profile-g6000000003446622340",
+    "profile-g6000000000307244449",
+    "profile-g6000000004178657304",
+    "profile-g6000000000307247176"
+  ],
+  "fredericks": [
+    {
+      "id": "profile-g304433105310001815",
+      "name": "Frederick V, Elector Palatine and King of Bohemia",
+      "title": "Elector Palatine and King of Bohemia",
+      "birth": "1596",
+      "death": "1632",
+      "parents": [
+        "Frederick IV, Elector Palatine",
+        "Louise Juliana of Nassau, Electress Palatine"
+      ],
+      "children": [
+        "Sophia, Electress of Hanover"
+      ],
+      "spouses": [
+        "Elizabeth Stuart, Queen of Bohemia"
+      ]
+    },
+    {
+      "id": "profile-g6000000003891739213",
+      "name": "Frederick, Prince of Wales",
+      "title": "",
+      "birth": "1707",
+      "death": "1751",
+      "parents": [
+        "George II, King of Great Britain and Ireland",
+        "Caroline of Ansbach"
+      ],
+      "children": [
+        "Augusta, Duchess of Brunswick-Wolfenbüttel",
+        "George III, King of Great Britain and Ireland"
+      ],
+      "spouses": [
+        "Augusta of Saxe-Gotha, Princess of Wales"
+      ]
+    },
+    {
+      "id": "profile-g6000000003891753089",
+      "name": "Augusta of Saxe-Gotha, Princess of Wales",
+      "title": "Princess of Wales",
+      "birth": "1719",
+      "death": "1772",
+      "parents": [],
+      "children": [
+        "Augusta, Duchess of Brunswick-Wolfenbüttel",
+        "George III, King of Great Britain and Ireland"
+      ],
+      "spouses": [
+        "Frederick, Prince of Wales"
+      ]
+    },
+    {
+      "id": "profile-4104556",
+      "name": "Frederick II, King of Denmark and Norway",
+      "title": "King of Denmark and Norway",
+      "birth": "1534",
+      "death": "1588",
+      "parents": [],
+      "children": [
+        "Anne of Denmark",
+        "Christian IV, King of Denmark and Norway"
+      ],
+      "spouses": [
+        "Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway"
+      ]
+    },
+    {
+      "id": "profile-4104601",
+      "name": "Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "birth": "1557",
+      "death": "1631",
+      "parents": [],
+      "children": [
+        "Anne of Denmark",
+        "Christian IV, King of Denmark and Norway"
+      ],
+      "spouses": [
+        "Frederick II, King of Denmark and Norway"
+      ]
+    },
+    {
+      "id": "profile-g6000000004377641319",
+      "name": "Frederick III, King of Denmark and Norway",
+      "title": "King of Denmark and Norway",
+      "birth": "1609",
+      "death": "1670",
+      "parents": [
+        "Christian IV, King of Denmark and Norway",
+        "Anne Catherine of Brandenburg, Queen of Denmark and Norway"
+      ],
+      "children": [
+        "Prince George of Denmark, Duke of Cumberland"
+      ],
+      "spouses": [
+        "Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway"
+      ]
+    },
+    {
+      "id": "profile-4104869",
+      "name": "Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway",
+      "title": "Queen of Denmark and Norway",
+      "birth": "1628",
+      "death": "1685",
+      "parents": [],
+      "children": [
+        "Prince George of Denmark, Duke of Cumberland"
+      ],
+      "spouses": [
+        "Frederick III, King of Denmark and Norway"
+      ]
+    },
+    {
+      "id": "profile-g6000000006727753675",
+      "name": "Frederick IV, Elector Palatine",
+      "title": "Elector Palatine",
+      "birth": "1574",
+      "death": "1610",
+      "parents": [],
+      "children": [
+        "Frederick V, Elector Palatine and King of Bohemia"
+      ],
+      "spouses": [
+        "Louise Juliana of Nassau, Electress Palatine"
+      ]
+    },
+    {
+      "id": "profile-g6000000006727753685",
+      "name": "Louise Juliana of Nassau, Electress Palatine",
+      "title": "Electress Palatine",
+      "birth": "1576",
+      "death": "1644",
+      "parents": [],
+      "children": [
+        "Frederick V, Elector Palatine and King of Bohemia"
+      ],
+      "spouses": [
+        "Frederick IV, Elector Palatine"
+      ]
+    },
+    {
+      "id": "profile-g4040216435970129981",
+      "name": "Frederick Henry, Prince of Orange",
+      "title": "Prince of Orange",
+      "birth": "1584",
+      "death": "1647",
+      "parents": [],
+      "children": [
+        "William II, Prince of Orange"
+      ],
+      "spouses": [
+        "Amalia of Solms-Braunfels, Princess of Orange"
+      ]
+    },
+    {
+      "id": "profile-g4040221674860032328",
+      "name": "Amalia of Solms-Braunfels, Princess of Orange",
+      "title": "Princess of Orange",
+      "birth": "1602",
+      "death": "1675",
+      "parents": [],
+      "children": [
+        "William II, Prince of Orange"
+      ],
+      "spouses": [
+        "Frederick Henry, Prince of Orange"
+      ]
+    },
+    {
+      "id": "profile-g312092994390004595",
+      "name": "Augusta, Duchess of Brunswick-Wolfenbüttel",
+      "title": "Duchess of Brunswick-Wolfenbüttel",
+      "birth": "1737",
+      "death": "1813",
+      "parents": [
+        "Frederick, Prince of Wales",
+        "Augusta of Saxe-Gotha, Princess of Wales"
+      ],
+      "children": [
+        "Caroline of Brunswick"
+      ],
+      "spouses": [
+        "Charles William Ferdinand, Duke of Brunswick-Wolfenbüttel"
+      ]
+    },
+    {
+      "id": "profile-g6000000001847933002",
+      "name": "Frederick II, Landgrave of Hesse-Kassel",
+      "title": "Landgrave of Hesse-Kassel",
+      "birth": "1720",
+      "death": "1785",
+      "parents": [],
+      "children": [
+        "Prince Frederick of Hesse-Kassel"
+      ],
+      "spouses": [
+        "Mary, Landgravine of Hesse-Kassel"
+      ]
+    },
+    {
+      "id": "profile-g6000000002447248679",
+      "name": "Prince Frederick of Hesse-Kassel",
+      "title": "Prince of Hesse-Kassel",
+      "birth": "1747",
+      "death": "1837",
+      "parents": [
+        "Frederick II, Landgrave of Hesse-Kassel",
+        "Mary, Landgravine of Hesse-Kassel"
+      ],
+      "children": [
+        "Prince William of Hesse-Kassel",
+        "Augusta, Duchess of Cambridge"
+      ],
+      "spouses": [
+        "Princess Caroline of Nassau-Usingen"
+      ]
+    },
+    {
+      "id": "profile-g6000000007329600601",
+      "name": "Princess Caroline of Nassau-Usingen",
+      "title": "Princess of Nassau-Usingen",
+      "birth": "1762",
+      "death": "1823",
+      "parents": [],
+      "children": [
+        "Prince William of Hesse-Kassel",
+        "Augusta, Duchess of Cambridge"
+      ],
+      "spouses": [
+        "Prince Frederick of Hesse-Kassel"
+      ]
+    },
+    {
+      "id": "profile-4532996",
+      "name": "Prince William of Hesse-Kassel",
+      "title": "Prince of Hesse-Kassel",
+      "birth": "1787",
+      "death": "1867",
+      "parents": [
+        "Prince Frederick of Hesse-Kassel",
+        "Princess Caroline of Nassau-Usingen"
+      ],
+      "children": [
+        "Louise of Hesse-Kassel, Queen of Denmark"
+      ],
+      "spouses": [
+        "Princess Charlotte of Denmark"
+      ]
+    },
+    {
+      "id": "profile-g311771392100007035",
+      "name": "Frederick William I, King in Prussia",
+      "title": "King in Prussia",
+      "birth": "1688",
+      "death": "1740",
+      "parents": [],
+      "children": [
+        "Prince Augustus William of Prussia"
+      ],
+      "spouses": [
+        "Sophia Dorothea of Hanover, Queen in Prussia"
+      ]
+    },
+    {
+      "id": "profile-g6000000003219727296",
+      "name": "Prince Augustus William of Prussia",
+      "title": "Prince of Prussia",
+      "birth": "1722",
+      "death": "1758",
+      "parents": [
+        "Frederick William I, King in Prussia",
+        "Sophia Dorothea of Hanover, Queen in Prussia"
+      ],
+      "children": [
+        "Frederick William II, King of Prussia"
+      ],
+      "spouses": [
+        "Duchess Luise of Brunswick-Wolfenbüttel"
+      ]
+    },
+    {
+      "id": "profile-g6000000004178657304",
+      "name": "Frederick William II, King of Prussia",
+      "title": "King of Prussia",
+      "birth": "1744",
+      "death": "1797",
+      "parents": [
+        "Prince Augustus William of Prussia",
+        "Duchess Luise of Brunswick-Wolfenbüttel"
+      ],
+      "children": [
+        "Prince William of Prussia"
+      ],
+      "spouses": [
+        "Frederica Louisa of Hesse-Darmstadt, Queen of Prussia"
+      ]
+    },
+    {
+      "id": "profile-g6000000000307247176",
+      "name": "Frederica Louisa of Hesse-Darmstadt, Queen of Prussia",
+      "title": "Queen of Prussia",
+      "birth": "1751",
+      "death": "1805",
+      "parents": [],
+      "children": [
+        "Prince William of Prussia"
+      ],
+      "spouses": [
+        "Frederick William II, King of Prussia"
+      ]
+    },
+    {
+      "id": "profile-g6000000003232583515",
+      "name": "Prince William of Prussia",
+      "title": "Prince of Prussia",
+      "birth": "1783",
+      "death": "1851",
+      "parents": [
+        "Frederick William II, King of Prussia",
+        "Frederica Louisa of Hesse-Darmstadt, Queen of Prussia"
+      ],
+      "children": [
+        "Princess Elisabeth of Prussia"
+      ],
+      "spouses": [
+        "Princess Maria Anna of Hesse-Homburg"
+      ]
+    }
+  ],
+  "components": [
+    [
+      "Henry VII, King of England",
+      "Louis XII, King of France",
+      "Jeanne of France",
+      "Elizabeth of York, Queen consort of England",
+      "Manuel I, King of Portugal",
+      "Anne of Brittany",
+      "Philip I, King of Castile",
+      "Joanna I, Queen of Castile and Aragon",
+      "Maria of Aragon, Queen of Portugal",
+      "Charles Brandon, Duke of Suffolk",
+      "Francis I, King of France",
+      "Mary Tudor, Queen consort of France",
+      "Claude, Queen of France and Duchess of Brittany",
+      "Charles V, Holy Roman Emperor and King of Spain",
+      "John III, King of Portugal",
+      "Isabella of Portugal, Holy Roman Empress and Queen of Spain",
+      "Catherine of Austria, Queen of Portugal",
+      "Mary I, Queen of England and Ireland",
+      "Frances Brandon, Duchess of Suffolk",
+      "Catherine de' Medici, Queen of France",
+      "Henry II, King of France",
+      "Madeleine of Valois",
+      "Maria Manuela, Princess of Portugal",
+      "Philip II, King of Spain",
+      "Francis II, King of France",
+      "Carlos, Prince of Asturias",
+      "Elisabeth of Valois",
+      "Anna of Austria, Queen of Spain",
+      "Charles IX, King of France",
+      "Henry III, King of France",
+      "Henry IV, King of France and Navarre",
+      "Margaret of Valois, Queen of France and Navarre",
+      "Infanta Isabella Clara Eugenia of Spain",
+      "Marie de' Medici, Queen of France",
+      "Philip III, King of Spain and Portugal",
+      "Louis XIII, King of France and Navarre",
+      "Henrietta Maria of France"
+    ],
+    [
+      "Frederick II, King of Denmark and Norway",
+      "Sophie of Mecklenburg-Güstrow, Queen of Denmark and Norway",
+      "James VI & I, King of Scots and later England and Ireland",
+      "Anne of Denmark",
+      "Frederick IV, Elector Palatine",
+      "Anne Catherine of Brandenburg, Queen of Denmark and Norway",
+      "Louise Juliana of Nassau, Electress Palatine",
+      "Christian IV, King of Denmark and Norway",
+      "Elizabeth Stuart, Queen of Bohemia",
+      "Frederick V, Elector Palatine and King of Bohemia",
+      "Frederick III, King of Denmark and Norway",
+      "Sophie Amalie of Brunswick-Lüneburg, Queen of Denmark and Norway",
+      "Ernest Augustus, Elector of Hanover",
+      "Sophia, Electress of Hanover",
+      "Prince George of Denmark, Duke of Cumberland",
+      "George I, King of Great Britain and Ireland"
+    ],
+    [
+      "Duchess Luise of Brunswick-Wolfenbüttel",
+      "Prince Augustus William of Prussia",
+      "Frederick William II, King of Prussia",
+      "Frederica Louisa of Hesse-Darmstadt, Queen of Prussia",
+      "Louis II, Grand Duke of Hesse and by Rhine",
+      "Prince William of Prussia",
+      "Wilhelmine of Baden, Grand Duchess of Hesse and by Rhine",
+      "Prince Charles of Hesse and by Rhine",
+      "Princess Elisabeth of Prussia",
+      "Prince Alexander of Hesse and by Rhine",
+      "Louis IV, Grand Duke of Hesse and by Rhine",
+      "Alice, Grand Duchess of Hesse and by Rhine",
+      "Alexandrine von Hutten-Czapska",
+      "Victoria Mountbatten, Marchioness of Milford Haven"
+    ],
+    [
+      "Prince William of Hesse-Kassel",
+      "Princess Charlotte of Denmark",
+      "Louise of Hesse-Kassel, Queen of Denmark",
+      "Christian IX, King of Denmark",
+      "Alexandra of Denmark",
+      "George I, King of the Hellenes",
+      "Olga Constantinovna of Russia, Queen of the Hellenes",
+      "Prince Andrew of Greece and Denmark"
+    ]
+  ]
+}

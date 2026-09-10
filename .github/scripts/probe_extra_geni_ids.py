@@ -14,6 +14,8 @@ PAGES = [
     'Duchess Sophia Frederica of Mecklenburg-Schwerin',
     'Duchess Charlotte Frederica of Mecklenburg-Schwerin',
     'Juliana Maria of Brunswick-Wolfenbüttel',
+    'Ferdinand Albert II, Duke of Brunswick-Wolfenbüttel',
+    'Duchess Antoinette of Brunswick-Wolfenbüttel',
     'Marie Joséphine of Savoy',
     'Edward, Duke of Guimarães',
     'Teodósio II, Duke of Braganza',

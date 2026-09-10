@@ -1,0 +1,78 @@
+name: Verify chronology secondary lines
+on:
+  push:
+    branches: [ui/chronology-secondary-lines]
+    paths:
+      - .github/scripts/chronology_secondary_lines.py
+      - .github/scripts/check_chronology_secondary_lines.mjs
+      - .github/workflows/chronology-secondary-lines.yml
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/chronology-secondary-lines
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply chronology layout and control changes
+        run: python3 .github/scripts/chronology_secondary_lines.py
+      - name: Run focused chronology tests
+        run: |
+          node --test tests/person-events.test.mjs tests/side-panel-life-events.test.mjs tests/princess-charlotte-family.test.mjs
+      - name: Run complete test suite and syntax checks
+        run: |
+          npm test
+          node --check app.js
+          node --check person-events.js
+          node --check .github/scripts/check_chronology_secondary_lines.mjs
+          python3 -m json.tool data/british-royal-line.json >/dev/null
+          git diff --check
+      - name: Start the application and Chrome
+        run: |
+          python3 -m http.server 4173 >/tmp/lineage-http.log 2>&1 &
+          for attempt in $(seq 1 100); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep .1
+          done
+          curl -fsS http://127.0.0.1:4173/ >/dev/null
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --no-first-run --no-default-browser-check \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/lineage-chronology-secondary about:blank \
+            >/tmp/lineage-chrome.log 2>&1 &
+          CHROME_PID=$!
+          for attempt in $(seq 1 300); do
+            if curl -fsS http://127.0.0.1:9222/json/list >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$CHROME_PID" 2>/dev/null; then
+              cat /tmp/lineage-chrome.log
+              exit 1
+            fi
+            sleep .1
+          done
+          curl -fsS http://127.0.0.1:9222/json/list >/dev/null || {
+            cat /tmp/lineage-chrome.log
+            exit 1
+          }
+      - name: Verify secondary lines and both circle behaviors
+        run: node .github/scripts/check_chronology_secondary_lines.mjs http://127.0.0.1:4173/ 9222
+      - name: Commit verified implementation
+        run: |
+          rm -f \
+            .github/scripts/chronology_secondary_lines.py \
+            .github/scripts/check_chronology_secondary_lines.mjs \
+            .github/workflows/chronology-secondary-lines.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Move chronology dates to secondary lines [skip ci]"
+          git push origin HEAD:ui/chronology-secondary-lines

@@ -1,0 +1,27 @@
+name: Audit royal gateways
+on:
+  push:
+    branches: [data/complete-foreign-royal-lines]
+    paths:
+      - .github/scripts/audit_royal_gateways.py
+      - .github/workflows/audit-royal-gateways.yml
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: data/complete-foreign-royal-lines
+          fetch-depth: 0
+      - name: Build royal gateway audit
+        run: python3 .github/scripts/audit_royal_gateways.py
+      - name: Commit audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/royal-gateway-audit.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Record foreign royal gateway audit [skip ci]"
+          git push origin HEAD:data/complete-foreign-royal-lines

@@ -49,10 +49,10 @@ test('keeps one simple chronology and folds divorce into the marriage range', ()
   assert.deepEqual(
     events.map(event => [event.kind, event.startYear, event.label]),
     [
-      ['marriage', 1995, 'Married Sam Example'],
-      ['child-birth', 1998, 'Birth of First Child'],
+      ['marriage', 1995, 'Sam Example'],
+      ['child-birth', 1998, 'First Child'],
       ['personal', 1999, 'Research fellowship'],
-      ['child-birth', 2001, 'Birth of Second Child']
+      ['child-birth', 2001, 'Second Child']
     ]
   );
   const marriage = events[0];
@@ -105,12 +105,13 @@ test('uses stable keys for independently switchable timeline marks', () => {
   assert.equal(personalEventId(authored.sourceEvent), personalEventId({ ...authored.sourceEvent }));
 });
 
-test('showing and hiding a mark does not alter the event or relationship data', () => {
+test('showing and hiding a timeline mark does not alter marriage or child data', () => {
   const person = structuredClone(people.p);
-  const key = childBirthEventKey('c1');
+  const key = marriageEventKey('s');
   assert.equal(personEventIsVisible(person, key), true);
   setPersonEventVisibility(person, key, false);
   assert.equal(personEventIsVisible(person, key), false);
+  assert.deepEqual(person.spouses, ['s']);
   assert.deepEqual(person.children, ['c1', 'c2']);
   setPersonEventVisibility(person, key, true);
   assert.equal(personEventIsVisible(person, key), true);

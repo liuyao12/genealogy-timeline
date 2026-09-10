@@ -11,7 +11,7 @@ const timelineEnd = app.indexOf('const childrenShownAtAnotherOccurrence', timeli
 const timelineMarks = app.slice(timelineStart, timelineEnd);
 
 test('the side panel presents a vertical Age, Event, and Mark chronology', () => {
-  assert.match(html, /<span class="eyebrow">Life events<\/span>/);
+  assert.match(html, /<span class="eyebrow">Chronology<\/span>/);
   assert.match(html, /aria-label="Chronological life events"/);
   assert.match(app, /\['Age', 'Event', 'Mark'\]/);
   assert.match(app, /years\.textContent = `· \$\{personEventYearLabel\(event\)\}`/);
@@ -35,7 +35,16 @@ test('divorce is folded into its marriage instead of becoming a separate row', (
 test('every dated child remains an individual birth row in the side panel', () => {
   assert.match(personEvents, /const childIds = unique\(values\(person\.children\)\)/);
   assert.match(personEvents, /kind: 'child-birth'/);
-  assert.match(personEvents, /label: `Birth of \$\{relativeName\(child, birthYear, nameAtYear\)\}`/);
+  assert.match(personEvents, /label: relativeName\(child, birthYear, nameAtYear\)/);
+});
+
+
+test('relationship and child rows use compact names without redundant verbs', () => {
+  assert.match(personEvents, /label: partnerName/);
+  assert.match(personEvents, /label: relativeName\(child, birthYear, nameAtYear\)/);
+  assert.doesNotMatch(personEvents, /`Married \${partnerName}`/);
+  assert.doesNotMatch(personEvents, /`Relationship with \${partnerName}`/);
+  assert.doesNotMatch(personEvents, /`Birth of \${relativeName/);
 });
 
 test('child births do not paint marks across node boxes on the main canvas', () => {
@@ -76,7 +85,7 @@ test('event visibility survives normalization, merging, and profile-id remapping
 });
 
 test('the revised static assets use fresh cache keys', () => {
-  assert.match(app, /from '\.\/person-events\.js\?v=2'/);
+  assert.match(app, /from '\.\/person-events\.js\?v=3'/);
   assert.match(html, /\.\/styles\.css\?v=81/);
-  assert.match(html, /\.\/app\.js\?v=150/);
+  assert.match(html, /\.\/app\.js\?v=151/);
 });

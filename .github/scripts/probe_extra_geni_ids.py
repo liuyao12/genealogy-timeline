@@ -10,6 +10,13 @@ PAGES = [
     'Mariana of Austria',
     'Princess Victoria Louise of Prussia',
     'Ernest Augustus, Duke of Brunswick',
+    'Frederick, Hereditary Prince of Denmark',
+    'Duchess Sophia Frederica of Mecklenburg-Schwerin',
+    'Duchess Charlotte Frederica of Mecklenburg-Schwerin',
+    'Marie Joséphine of Savoy',
+    'Edward, Duke of Guimarães',
+    'Teodósio II, Duke of Braganza',
+    'John IV of Portugal',
 ]
 HEADERS = {'User-Agent': 'Lineage genealogy audit/1.0 (https://github.com/liuyao12/genealogy-timeline)'}
 

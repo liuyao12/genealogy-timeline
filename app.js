@@ -11,7 +11,7 @@ import {
   personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
   personEventReferencesProfile, remapPersonEventVisibility,
   setPersonEventVisibility
-} from './person-events.js?v=1';
+} from './person-events.js?v=2';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -3446,7 +3446,7 @@ function renderTimeline() {
     });
     if (state.showPersonalEvents) {
       buildPersonTimelineEvents(person, state.people, { nameAtYear })
-        .filter(event => ['relationship', 'child-birth', 'relationship-end'].includes(event.kind))
+        .filter(event => ['relationship', 'child-birth'].includes(event.kind))
         .forEach(event => {
           if (!personEventIsVisible(person, event.key)) return;
           const localX = (event.startYear - birthYear(person)) * yearWidth;
@@ -4079,7 +4079,6 @@ function personEventKindSymbol(event) {
   if (event.kind === 'marriage') return '⚭';
   if (event.kind === 'relationship') return '◇';
   if (event.kind === 'child-birth') return '•';
-  if (event.kind === 'relationship-end') return event.status === 'annulled' ? '≠' : '∕';
   return '';
 }
 
@@ -4087,8 +4086,18 @@ function personEventAgeCell(person, event) {
   const age = document.createElement('span');
   age.className = 'person-event-age';
   age.textContent = personEventAgeLabel(person, event);
-  age.title = 'Approximate age from year-only dates; the exact age can be one year lower.';
+  age.title = 'Age at the beginning of the event, calculated from year-only dates; the exact age can be one year lower.';
   return age;
+}
+
+function personEventYearLabel(event) {
+  const startYear = numericYear(event?.startYear);
+  if (startYear == null) return '';
+  if (event?.ongoing) return `${startYear}–present`;
+  const endYear = numericYear(event?.endYear);
+  return endYear == null || endYear === startYear
+    ? String(startYear)
+    : `${startYear}–${endYear}`;
 }
 
 function personEventVisibilityButton(person, event, shown) {
@@ -4204,15 +4213,21 @@ function renderPersonalEvents(person) {
     kind.setAttribute('aria-hidden', 'true');
     const name = document.createElement('strong');
     name.textContent = event.label;
-    title.append(kind, name);
+    const years = document.createElement('span');
+    years.className = 'person-event-year';
+    years.textContent = `· ${personEventYearLabel(event)}`;
+    title.append(kind, name, years);
     if (event.editable) {
       const edit = rowActionButton('person-event-edit row-edit', '✎', `Edit ${event.label}`, () => beginPersonalEventEdit(row, person, event));
       title.append(edit);
     }
-    const years = document.createElement('small');
-    years.className = 'person-event-years';
-    years.textContent = formatEventYearRange(event.startYear, event.endYear);
-    copy.append(title, years);
+    copy.append(title);
+    if (event.detail) {
+      const detail = document.createElement('small');
+      detail.className = 'person-event-detail';
+      detail.textContent = event.detail;
+      copy.append(detail);
+    }
     row.append(personEventAgeCell(person, event), copy, personEventVisibilityButton(person, event, shown));
     return row;
   });

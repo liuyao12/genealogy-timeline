@@ -65,5 +65,5 @@ test('future imports and old saved trees pass through the same title normalizer'
   assert.match(app, /const name = normalizeBritishRoyalPlaceName\(rawName, startYear \?\? endYear\)/);
   assert.match(app, /title: normalizeBritishRoyalPlaceName/);
   assert.match(app, /note: normalizeBritishRoyalPlaceName/);
-  assert.match(html, /\.\/app\.js\?v=148/);
+  assert.match(html, /\.\/app\.js\?v=149/);
 });

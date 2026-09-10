@@ -110,11 +110,10 @@ export function personEventReferencesProfile(key, profileId) {
 export function personEventAgeLabel(person, event) {
   const birthYear = numericYear(person?.birthYear);
   const startYear = numericYear(event?.startYear);
-  const endYear = numericYear(event?.endYear) ?? startYear;
   if (birthYear == null || startYear == null || startYear < birthYear) return '—';
-  const startAge = startYear - birthYear;
-  const endAge = Math.max(startAge, (endYear ?? startYear) - birthYear);
-  return endAge === startAge ? String(startAge) : `${startAge}–${endAge}`;
+  // A ranged event belongs in the chronology at its beginning. The duration
+  // remains in the event column rather than turning the age cell into a range.
+  return String(startYear - birthYear);
 }
 
 function relativeName(relative, year, nameAtYear) {
@@ -136,15 +135,62 @@ function relationshipStatus(person, partner) {
   return markedEnded ? 'divorced' : '';
 }
 
-function relationshipEndLabel(status, partnerName, formal) {
-  if (status === 'annulled') return `Marriage to ${partnerName} annulled`;
-  if (status === 'divorced') return `Divorced from ${partnerName}`;
-  return `${formal ? 'Marriage to' : 'Relationship with'} ${partnerName} ended`;
+function relationshipEndState(person, partner, startYear, currentYear) {
+  const partnerId = clean(partner?.id);
+  const personId = clean(person?.id);
+  const explicitEndYear = numericYear(
+    person?.relationshipEndYears?.[partnerId]
+      ?? partner?.relationshipEndYears?.[personId]
+  );
+  const status = relationshipStatus(person, partner);
+  if (explicitEndYear != null && explicitEndYear >= startYear) {
+    return { endYear: explicitEndYear, reason: status || 'ended', ongoing: false, currentYear };
+  }
+  // A known divorce or annulment without a year must not be silently replaced
+  // by a later death date. Keep the reason and say that the end year is unknown.
+  if (status) return { endYear: null, reason: status, ongoing: false, currentYear };
+
+  const personDeathYear = numericYear(person?.deathYear);
+  const partnerDeathYear = numericYear(partner?.deathYear);
+  if (partnerDeathYear != null
+    && partnerDeathYear >= startYear
+    && (personDeathYear == null || partnerDeathYear < personDeathYear)) {
+    return { endYear: partnerDeathYear, reason: 'partner-died', ongoing: false, currentYear };
+  }
+  if (personDeathYear != null && personDeathYear >= startYear) {
+    return { endYear: personDeathYear, reason: 'person-died', ongoing: false, currentYear };
+  }
+  const ongoing = person?.isLiving === true && partner?.isLiving === true;
+  return { endYear: null, reason: ongoing ? 'ongoing' : '', ongoing, currentYear };
+}
+
+function relationshipEndNote(reason, formal) {
+  if (reason === 'annulled') return 'annulled';
+  if (reason === 'divorced') return 'divorced';
+  if (reason === 'ended') return formal ? 'marriage ended' : 'relationship ended';
+  if (reason === 'partner-died') return formal ? 'spouse died' : 'partner died';
+  if (reason === 'ongoing') return 'ongoing';
+  // When the selected person dies first, the lifespan already supplies that
+  // endpoint; no redundant “person died” note is needed in the marriage row.
+  return '';
+}
+
+function relationshipDurationDetail(startYear, endState, formal) {
+  const note = relationshipEndNote(endState.reason, formal);
+  const effectiveEndYear = endState.endYear
+    ?? (endState.ongoing ? numericYear(endState.currentYear) : null);
+  if (effectiveEndYear == null) return note ? `${note} · end year unknown` : '';
+  const elapsedYears = Math.max(0, effectiveEndYear - startYear);
+  const duration = elapsedYears === 0
+    ? 'under 1 year'
+    : `${elapsedYears} year${elapsedYears === 1 ? '' : 's'}`;
+  return [duration, note].filter(Boolean).join(' · ');
 }
 
 export function buildPersonTimelineEvents(person, people = {}, options = {}) {
   if (!person) return [];
   const nameAtYear = options.nameAtYear;
+  const currentYear = numericYear(options.currentYear) ?? new Date().getFullYear();
   const events = [];
   const personId = clean(person.id);
   const partnerIds = unique([
@@ -162,46 +208,32 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
       || values(partner.spouses).includes(personId)
       || Object.hasOwn(person.marriageYears || {}, partnerId)
       || Object.hasOwn(partner.marriageYears || {}, personId);
-    const marriageYear = numericYear(
+    const relationshipYear = numericYear(
       person.marriageYears?.[partnerId] ?? partner.marriageYears?.[personId]
     );
-    if (marriageYear != null) {
-      const partnerName = relativeName(partner, marriageYear, nameAtYear);
-      events.push({
-        key: formal ? marriageEventKey(partnerId) : relationshipEventKey(partnerId),
-        kind: formal ? 'marriage' : 'relationship',
-        label: formal ? `Married ${partnerName}` : `Relationship with ${partnerName}`,
-        startYear: marriageYear,
-        endYear: marriageYear,
-        relativeId: partnerId,
-        source: 'family',
-        editable: false
-      });
-    }
+    // A divorce whose marriage year is unknown cannot be placed honestly in a
+    // beginning-year chronology, so it is not promoted to a standalone row.
+    if (relationshipYear == null) return;
 
-    const endYear = numericYear(
-      person.relationshipEndYears?.[partnerId] ?? partner.relationshipEndYears?.[personId]
-    );
-    const status = relationshipStatus(person, partner);
-    if (endYear != null && status) {
-      const partnerName = relativeName(partner, endYear, nameAtYear);
-      events.push({
-        key: relationshipEndEventKey(partnerId),
-        kind: 'relationship-end',
-        status,
-        label: relationshipEndLabel(status, partnerName, formal),
-        startYear: endYear,
-        endYear,
-        relativeId: partnerId,
-        source: 'family',
-        editable: false
-      });
-    }
+    const partnerName = relativeName(partner, relationshipYear, nameAtYear);
+    const endState = relationshipEndState(person, partner, relationshipYear, currentYear);
+    events.push({
+      key: formal ? marriageEventKey(partnerId) : relationshipEventKey(partnerId),
+      kind: formal ? 'marriage' : 'relationship',
+      label: formal ? `Married ${partnerName}` : `Relationship with ${partnerName}`,
+      startYear: relationshipYear,
+      endYear: endState.endYear ?? relationshipYear,
+      ongoing: endState.ongoing,
+      endReason: endState.reason,
+      detail: relationshipDurationDetail(relationshipYear, endState, formal),
+      relativeId: partnerId,
+      source: 'family',
+      editable: false
+    });
   });
 
-  // Family normalization keeps this relationship reciprocal. Reading the
-  // selected person's child list avoids scanning the entire tree once per
-  // visible timeline occurrence.
+  // Keep every dated child as its own chronological birth row. Family
+  // normalization makes this list reciprocal, so no whole-tree scan is needed.
   const childIds = unique(values(person.children));
   childIds.forEach(childId => {
     const child = people[childId];
@@ -240,8 +272,7 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
   });
 
   const kindOrder = new Map([
-    ['marriage', 0], ['relationship', 0], ['child-birth', 1],
-    ['personal', 2], ['relationship-end', 3]
+    ['marriage', 0], ['relationship', 0], ['child-birth', 1], ['personal', 2]
   ]);
   return [...new Map(events.map(event => [event.key, event])).values()]
     .sort((first, second) =>

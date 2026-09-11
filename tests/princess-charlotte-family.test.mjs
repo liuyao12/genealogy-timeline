@@ -17,7 +17,7 @@ const george = findUnique(person => person.birthYear === '1762' && names(person)
 const caroline = findUnique(person => person.birthYear === '1768' && names(person).includes('Caroline of Brunswick'));
 
 test('the bundled example includes George IV and Caroline’s only child with her Geni identity', () => {
-  assert.equal(data.version, 30);
+  assert.equal(data.version, 31);
   assert.ok(charlotte);
   assert.equal(charlotte.displayName, 'Charlotte Augusta of Wales');
   assert.equal(charlotte.birthYear, '1796');

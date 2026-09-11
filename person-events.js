@@ -225,6 +225,7 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
       endYear: endState.endYear ?? relationshipYear,
       ongoing: endState.ongoing,
       endReason: endState.reason,
+      relationshipEndYear: endState.endYear,
       detail: relationshipDurationDetail(relationshipYear, endState, formal),
       relativeId: partnerId,
       source: 'family',
@@ -281,4 +282,29 @@ export function buildPersonTimelineEvents(person, people = {}, options = {}) {
       || (kindOrder.get(first.kind) ?? 9) - (kindOrder.get(second.kind) ?? 9)
       || first.label.localeCompare(second.label)
     );
+}
+
+// Calendar facts belong below the name. Do not confuse a same-year ending
+// with the fallback endYear used to position an undated relationship endpoint.
+export function personEventSecondLine(event) {
+  const startYear = numericYear(event?.startYear);
+  if (startYear == null) return '';
+  if (event.kind === 'child-birth') return `born ${startYear}`;
+  if (event.kind === 'marriage' || event.kind === 'relationship') {
+    const begins = `${event.kind === 'marriage' ? 'married' : 'partnered'} ${startYear}`;
+    if (event.ongoing) return `${begins}; ongoing`;
+    const endYear = numericYear(event.relationshipEndYear);
+    const ending = {
+      divorced: 'divorced', annulled: 'annulled', ended: 'ended',
+      'partner-died': event.kind === 'marriage' ? 'spouse died' : 'partner died',
+      'person-died': 'died'
+    }[event.endReason];
+    if (!ending) return begins;
+    return `${begins}; ${ending} ${endYear ?? '(year unknown)'}`;
+  }
+  const endYear = numericYear(event.endYear);
+  if (event.ongoing) return `${startYear}–present`;
+  if (endYear == null || endYear === startYear) return String(startYear);
+  const years = endYear - startYear;
+  return `${startYear}–${endYear} · ${years} year${years === 1 ? '' : 's'}`;
 }

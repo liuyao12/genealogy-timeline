@@ -8,10 +8,10 @@ import { layoutGlobalEventLabels } from './timeline-event-labels.js?v=1';
 import { birthOrderPairs, packTimelineRunsSourceFirst } from './timeline-compaction.js?v=3';
 import {
   buildPersonTimelineEvents, marriageEventKey, normalizePersonEventVisibility,
-  personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible,
+  personalEventId, personalEventKey, personEventAgeLabel, personEventIsVisible, personEventSecondLine,
   personEventReferencesProfile, remapPersonEventVisibility,
   setPersonEventVisibility
-} from './person-events.js?v=3';
+} from './person-events.js?v=4';
 
 const STORAGE_KEY = 'lineage-web-v1';
 const LEGACY_STORAGE_KEY = 'jiapu-web-v1';
@@ -4079,22 +4079,13 @@ function personEventAgeCell(person, event) {
   return age;
 }
 
-function personEventYearLabel(event) {
-  const startYear = numericYear(event?.startYear);
-  if (startYear == null) return '';
-  if (event?.ongoing) return `${startYear}–present`;
-  const endYear = numericYear(event?.endYear);
-  return endYear == null || endYear === startYear
-    ? String(startYear)
-    : `${startYear}–${endYear}`;
-}
-
 function personEventVisibilityButton(person, event, shown) {
   const toggle = document.createElement('button');
   toggle.type = 'button';
-  toggle.className = 'person-event-visibility';
-  toggle.textContent = shown ? 'Hide' : 'Show';
+  toggle.className = 'person-event-visibility person-event-circle-control';
+  toggle.textContent = '';
   toggle.setAttribute('aria-pressed', String(shown));
+  toggle.dataset.markState = shown ? 'shown' : 'hidden';
   toggle.setAttribute('aria-label', `${shown ? 'Hide' : 'Show'} the ${event.label} mark on ${visibleName(person)}'s timeline`);
   toggle.title = `${shown ? 'Hide' : 'Show'} this mark; family relationships and event data remain unchanged`;
   toggle.addEventListener('click', () => {
@@ -4129,7 +4120,7 @@ function childBranchVisibilityButton(person, event, shown) {
   const childName = child ? visibleName(child) : event.label;
   const toggle = document.createElement('button');
   toggle.type = 'button';
-  toggle.className = 'person-event-branch-visibility';
+  toggle.className = 'person-event-branch-visibility person-event-circle-control';
   toggle.textContent = '';
   toggle.disabled = !canToggle;
   toggle.setAttribute('aria-pressed', String(shown));
@@ -4258,19 +4249,17 @@ function renderPersonalEvents(person) {
         else selectPerson(relative.id, { allowOutsideScope: true });
       });
     }
-    const years = document.createElement('span');
-    years.className = 'person-event-year';
-    years.textContent = `· ${personEventYearLabel(event)}`;
-    title.append(kind, name, years);
+    title.append(kind, name);
     if (event.editable) {
       const edit = rowActionButton('person-event-edit row-edit', '✎', `Edit ${event.label}`, () => beginPersonalEventEdit(row, person, event));
       title.append(edit);
     }
     copy.append(title);
-    if (event.detail) {
+    const chronology = personEventSecondLine(event);
+    if (chronology) {
       const detail = document.createElement('small');
       detail.className = 'person-event-detail';
-      detail.textContent = event.detail;
+      detail.textContent = chronology;
       copy.append(detail);
     }
     const control = isChildBranch

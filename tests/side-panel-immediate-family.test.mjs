@@ -32,5 +32,5 @@ test('the side-panel copy describes parentage rather than a duplicated family li
   assert.match(html, /Parents in this tree/);
   assert.match(html, /id="known-family-count">0 parents/);
   assert.match(app, /knownParentIds\.length} parent/);
-  assert.match(html, /\.\/app\.js\?v=151/);
+  assert.match(html, /\.\/app\.js\?v=152/);
 });

@@ -14,11 +14,13 @@ The **As of** snapshot can be placed directly from the sticky year ruler: hoveri
 
 The bundled British royal line includes dated names across the dynastic spine and present family. For example, William changes from Prince William of Wales to William, Duke of Cambridge in 2011 and William, Prince of Wales in 2022. These records follow published “Titles and styles” chronologies while omitting ceremonial prefixes such as HM and HRH.
 
-A fresh visit immediately shows a bundled British royal line from Henry VII, pre-filtered with `king queen`. It does not contact Geni or open authorization. The historical records—including the line's confirmed spouses and Charles III's living descendant families through William and Harry—and their stable public profile IDs live in the single canonical [`data/british-royal-line.json`](data/british-royal-line.json) file. The left-column restore button replaces the working copy with this bundled baseline.
+A fresh visit immediately shows a bundled British royal line from Henry VII, pre-filtered with `king queen`. It does not contact Geni or open authorization. The historical records—including the line's confirmed spouses and Charles III's living descendant families through William and Harry—and their stable public profile IDs live in the single canonical [`data/british-royal-line.json`](data/british-royal-line.json) file. The left-column restore button replaces the working copy with this bundled baseline. Version 31 contains 568 profiles, with connected Prussian, French, Iberian, Scandinavian, Dutch, Russian, Greek, and Romanian royal branches. Existing Geni identities are preserved; new research records retain direct encyclopedia source links. See the [royal-line audit](docs/royal-line-audit.md) for descent paths, sources, and coverage limits.
 
 Timeline rows use the mini-program's two-pass bottom-up compaction approach. Branches move upward in half-row steps when their lifespan-plus-label ranges fit, retain a half-row of breathing room, and stay put whenever a node or external connector would be crossed. The final packing pass treats consecutive spouses, parents and children, and siblings as rigid direct-family runs at the closest row distance. Unrelated rows keep an additional six-pixel minimum gutter wherever their complete node ranges overlap horizontally, while obstacles may leave a larger gap.
 
 Within each branch, rows are ordered by parental union rather than collecting all spouses beside the principal profile. Spouse households are ordered by recorded marriage year, including marriages without children; undated marriages follow dated ones. Each spouse appears immediately before that couple's children, and a later spouse begins a new group with its own marriage-aligned vertical stem.
+
+The profile chronology puts calendar facts on a small second line: `married 1558; divorced 1560`, `married 1558; spouse died 1580`, or `born 1559`. Personal events show their year or full date range and duration below the event name. Same-year endings remain explicit; an unknown ending year is never inferred from the marriage year. Filled circular controls indicate visible marks or child branches.
 
 Child visibility is household-wide: hiding a child from either parent's profile hides both parental edges, and showing the child restores the complete parental union. A child therefore cannot reappear on a stray one-parent stem after being hidden.
 
@@ -69,4 +71,4 @@ Then open <http://localhost:4173>.
 
 ## GitHub Pages
 
-The workflow in `.github/workflows/pages.yml` publishes the repository root. In the repository settings, select **GitHub Actions** as the Pages source, then push to the default branch.
+The established site is [liuyao12.github.io/genealogy-timeline](https://liuyao12.github.io/genealogy-timeline/). GitHub Pages publishes the repository root from `main`. The chronology workflow runs the unit suite, syntax checks, and a headless Chrome check on pushes and pull requests.

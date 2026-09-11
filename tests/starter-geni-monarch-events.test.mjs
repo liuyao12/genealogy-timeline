@@ -12,10 +12,18 @@ function byName(name) {
   return entries[0];
 }
 
-test('every bundled profile is keyed and indexed by a Geni identity', () => {
+test('existing Geni identities are retained and new source identities are explicit', () => {
   assert.equal(Object.keys(starter.idAliases || {}).length, 41);
-  assert.equal(Object.keys(people).length, 187);
+  assert.equal(Object.keys(people).length, 568);
+  assert.equal(Object.values(people).filter(person => person.sourceProvider === 'wikipedia').length, 381);
   for (const [id, person] of Object.entries(people)) {
+    if (person.sourceProvider === 'wikipedia') {
+      assert.match(id, /^royal-[a-z0-9]+-\d{4}$/i);
+      assert.ok(person.sourceId);
+      assert.ok(person.sourceUrl.startsWith('https://en.wikipedia.org/wiki/'));
+      assert.equal(primaryGeniIdentity(person, id), '', 'Do not invent Geni identities for encyclopedia sources');
+      continue;
+    }
     assert.match(id, /^profile-g?\d+$/i, `${person.displayName} has a non-Geni key`);
     assert.match(person.sourceId || '', /^profile-g?\d+$/i, `${person.displayName} lacks a Geni sourceId`);
     assert.ok(person.geniAliases?.includes(person.sourceId), `${person.displayName} lacks its sourceId alias`);
@@ -38,7 +46,7 @@ test('Claude is represented once by her Geni profile and retains the Francis I m
 test('all monarch events use one kind, two synchronized groups, and distinct colours', () => {
   const events = Object.values(people).flatMap(person => person.personalEvents || []);
   const monarchEvents = events.filter(event => event.kind === 'monarch-reign');
-  assert.equal(monarchEvents.length, 53);
+  assert.equal(monarchEvents.length, 196);
   assert.equal(monarchEvents.every(event => /^Reign(?:\b|\s*·)/i.test(event.name)), true);
   assert.equal(monarchEvents.every(event => ['british', 'other'].includes(event.monarchGroup)), true);
   assert.equal(monarchEvents.every(event => event.color === (event.monarchGroup === 'british' ? '#c62828' : '#3949ab')), true);

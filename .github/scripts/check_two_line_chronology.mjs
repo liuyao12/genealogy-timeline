@@ -73,7 +73,7 @@ const result = await evaluate(`(async () => {
   const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
   const text = element => element?.textContent?.replace(/\\s+/g, ' ').trim() || '';
   const input = document.getElementById('tree-filter');
-  input.value = 'George III';
+  input.value = 'king queen';
   input.dispatchEvent(new Event('input', { bubbles: true }));
   await pause(120);
   const profileButton = [...document.querySelectorAll('.person-list-item')]
@@ -82,9 +82,13 @@ const result = await evaluate(`(async () => {
   profileButton.click();
   await pause(180);
 
+  const close = document.getElementById('close-detail');
+  close.scrollIntoView({ block: 'nearest' });
+  const bounds = close.getBoundingClientRect();
+  const closeAccessible = close.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
   const rows = [...document.querySelectorAll('.person-event-row')];
   const marriage = rows.find(row => row.classList.contains('marriage') && text(row).includes('Charlotte'));
-  const child = rows.find(row => row.classList.contains('child-birth') && text(row).includes('George IV'));
+  const child = rows.find(row => row.dataset.eventKey === 'child-birth:profile-g4137986493320052463');
   const reign = rows.find(row => row.classList.contains('personal') && text(row).includes('Reign'));
   if (!marriage || !child || !reign) {
     throw new Error('Expected George III chronology rows were not rendered: ' + rows.map(text).join(' || '));
@@ -135,9 +139,10 @@ const result = await evaluate(`(async () => {
   await pause(180);
   const georgeAfterRestore = document.querySelectorAll('#timeline-canvas .timeline-node[data-person-id="profile-g4137986493320052463"]').length;
 
-  return { before, marriageAfterHide, georgeAfterHide, childAfterHide, georgeAfterRestore };
+  return { before, marriageAfterHide, georgeAfterHide, childAfterHide, georgeAfterRestore, closeAccessible };
 })()`);
 
+assert.equal(result.closeAccessible, true, 'Tree tabs must not cover the drawer close button.');
 assert.deepEqual(result.before.header, ['Age', 'Event', 'Mark']);
 assert.equal(result.before.marriage.label.includes('Married'), false);
 assert.equal(result.before.marriage.secondLine, 'married 1761; spouse died 1818');

@@ -15,16 +15,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Inspect bundled tree
+      - name: Collect historical evidence for review
         run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          d=json.loads(Path('data/british-royal-line.json').read_text())
-          print('METADATA', {k:v for k,v in d.items() if k!='people'})
-          for id,p in d['people'].items():
-              print(json.dumps({k:p.get(k) for k in ['id','displayName','birthYear','deathYear','parents','spouses','children','marriageYears','notes','titles','personalEvents']},ensure_ascii=False))
-          PY
+          if ! test -f .github/scripts/apply_royal_audit.py; then
+            pip install mwparserfromhell
+            python3 .github/scripts/collect_royal_sources.py
+          fi
       - name: Apply audited updates when present
         run: |
           if test -f .github/scripts/apply_royal_audit.py; then python3 .github/scripts/apply_royal_audit.py; fi
@@ -34,7 +30,7 @@ jobs:
           node --check app.js
           node --check person-events.js
           git diff --check
-      - name: Archive verified working tree
+      - name: Archive review snapshot and tested application
         if: always()
         run: tar --exclude=.git -czf /tmp/royal-audit-source.tar.gz .
       - uses: actions/upload-artifact@v4

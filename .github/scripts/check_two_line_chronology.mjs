@@ -62,6 +62,7 @@ async function evaluate(expression) {
 
 await send('Page.enable');
 await send('Runtime.enable');
+await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 await send('Page.navigate', { url: appUrl });
 for (let attempt = 0; attempt < 180; attempt += 1) {
   if (await evaluate(`document.readyState === 'complete' && Boolean(document.querySelector('.person-list-item'))`)) break;
@@ -82,6 +83,7 @@ const result = await evaluate(`(async () => {
   profileButton.click();
   await pause(180);
 
+  await Promise.all(document.getElementById('detail-sidebar').getAnimations().map(animation => animation.finished));
   const close = document.getElementById('close-detail');
   close.scrollIntoView({ block: 'nearest' });
   const bounds = close.getBoundingClientRect();

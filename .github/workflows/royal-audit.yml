@@ -19,7 +19,7 @@ jobs:
         run: |
           if ! test -f .github/scripts/apply_royal_audit.py; then
             pip install mwparserfromhell
-            python3 .github/scripts/collect_more_royal_sources.py
+            python3 .github/scripts/collect_final_royal_sources.py
           fi
       - name: Apply audited updates when present
         run: |

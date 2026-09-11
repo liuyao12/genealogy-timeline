@@ -1,0 +1,53 @@
+name: Royal tree and chronology audit
+on:
+  push:
+    branches: [fix/chronology-royal-audit]
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/chronology-royal-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Inspect bundled tree
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('data/british-royal-line.json').read_text())
+          print('METADATA', {k:v for k,v in d.items() if k!='people'})
+          for id,p in d['people'].items():
+              print(json.dumps({k:p.get(k) for k in ['id','displayName','birthYear','deathYear','parents','spouses','children','marriageYears','notes','titles','personalEvents']},ensure_ascii=False))
+          PY
+      - name: Apply audited updates when present
+        run: |
+          if test -f .github/scripts/apply_royal_audit.py; then python3 .github/scripts/apply_royal_audit.py; fi
+      - name: Tests
+        run: |
+          npm test
+          node --check app.js
+          node --check person-events.js
+          git diff --check
+      - name: Archive verified working tree
+        if: always()
+        run: tar --exclude=.git -czf /tmp/royal-audit-source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: royal-audit-source
+          path: /tmp/royal-audit-source.tar.gz
+      - name: Commit verified updates
+        run: |
+          if ! test -f .github/scripts/apply_royal_audit.py; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js person-events.js index.html styles.css data docs tests README.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Apply audited royal branches and dated chronology subtitles'
+          git push origin HEAD:fix/chronology-royal-audit

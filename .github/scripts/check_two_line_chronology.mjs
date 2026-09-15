@@ -77,6 +77,38 @@ const result = await evaluate(`(async () => {
   input.value = 'king queen';
   input.dispatchEvent(new Event('input', { bubbles: true }));
   await pause(120);
+  // Check actual packed SVG geometry at every supported node height. This
+  // catches both cross-branch collisions and spacing lost inside rigid runs.
+  const spacingChecks = [];
+  const down = document.getElementById('timeline-height-down');
+  const up = document.getElementById('timeline-height-up');
+  while (!down.disabled) down.click();
+  for (const expectedHeight of [24, 28, 32, 36, 42]) {
+    const boxes = [...document.querySelectorAll('#timeline-canvas .timeline-node')].map(node => {
+      const rect = node.querySelector('.lifespan').getBBox();
+      const position = node.transform.baseVal.consolidate().matrix;
+      return { id: node.dataset.nodeKey, x: position.e + rect.x, y: position.f + rect.y, width: rect.width, height: rect.height };
+    });
+    let overlappingPairs = 0;
+    let minimumGap = Infinity;
+    for (let first = 0; first < boxes.length; first += 1) {
+      if (boxes[first].height !== expectedHeight) throw new Error('Height setting did not update the layout.');
+      for (let second = first + 1; second < boxes.length; second += 1) {
+        const a = boxes[first], b = boxes[second];
+        if (a.x >= b.x + b.width || b.x >= a.x + a.width) continue;
+        overlappingPairs += 1;
+        const gap = Math.abs(a.y - b.y) - expectedHeight;
+        minimumGap = Math.min(minimumGap, gap);
+        if (gap + 0.01 < expectedHeight / 2) {
+          throw new Error('Insufficient branch clearance: ' + JSON.stringify({ a: a.id, b: b.id, expectedHeight, gap }));
+        }
+      }
+    }
+    if (!overlappingPairs) throw new Error('Spacing check needs overlapping lifespans.');
+    spacingChecks.push({ height: expectedHeight, nodes: boxes.length, overlappingPairs, minimumGap });
+    if (!up.disabled) up.click();
+  }
+  down.click(); down.click(); down.click(); // Restore the default 28 px height.
   const profileButton = [...document.querySelectorAll('.person-list-item')]
     .find(button => text(button).includes('George III'));
   if (!profileButton) throw new Error('Could not find George III.');
@@ -141,7 +173,7 @@ const result = await evaluate(`(async () => {
   await pause(180);
   const georgeAfterRestore = document.querySelectorAll('#timeline-canvas .timeline-node[data-person-id="profile-g4137986493320052463"]').length;
 
-  return { before, marriageAfterHide, georgeAfterHide, childAfterHide, georgeAfterRestore, closeAccessible };
+  return { before, marriageAfterHide, georgeAfterHide, childAfterHide, georgeAfterRestore, closeAccessible, spacingChecks };
 })()`);
 
 assert.equal(result.closeAccessible, true, 'Tree tabs must not cover the drawer close button.');
@@ -168,5 +200,5 @@ assert.equal(result.georgeAfterHide, 0);
 assert.equal(result.childAfterHide, 'false');
 assert.ok(result.georgeAfterRestore > 0);
 
-console.log('Two-line chronology and circular-control browser check passed.');
+console.log('Chronology, circular controls, and half-height branch spacing passed:', JSON.stringify(result.spacingChecks));
 socket.close();

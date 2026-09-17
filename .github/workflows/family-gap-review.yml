@@ -1,0 +1,29 @@
+name: Review immediate-family gaps
+on:
+  push:
+    branches: [fix/immediate-family-gaps]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests
+        run: npm test
+      - name: Compare deployed assets
+        run: |
+          mkdir -p /tmp/gap-review
+          curl --fail --retry 2 -sS 'https://liuyao12.github.io/genealogy-timeline/' -o /tmp/gap-review/live-index.html
+          curl --fail --retry 2 -sS 'https://liuyao12.github.io/genealogy-timeline/app.js' -o /tmp/gap-review/live-app.js
+          git rev-parse HEAD > /tmp/gap-review/commit.txt
+          sha256sum app.js /tmp/gap-review/live-app.js
+          tar --exclude=.git -czf /tmp/gap-review/source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: family-gap-review
+          path: /tmp/gap-review/
+          retention-days: 7

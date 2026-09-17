@@ -1,0 +1,62 @@
+name: Verify published family gaps
+on:
+  push:
+    branches: [fix/immediate-family-gaps]
+    paths: [.github/workflows/verify-published-family-gaps.yml]
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6807e98ffdb4c8f86ec15a92c159043f56065ff2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify the exact published assets
+        run: |
+          mkdir -p /tmp/live-gap-verification
+          verified=false
+          for attempt in $(seq 1 45); do
+            curl --fail --silent --show-error 'https://liuyao12.github.io/genealogy-timeline/' -o /tmp/live-gap-verification/index.html
+            curl --fail --silent --show-error 'https://liuyao12.github.io/genealogy-timeline/app.js?v=154' -o /tmp/live-gap-verification/app.js
+            if cmp -s index.html /tmp/live-gap-verification/index.html && cmp -s app.js /tmp/live-gap-verification/app.js; then
+              verified=true
+              break
+            fi
+            sleep 4
+          done
+          test "$verified" = true
+          sha256sum app.js /tmp/live-gap-verification/app.js > /tmp/live-gap-verification/asset-checksums.txt
+          git rev-parse HEAD > /tmp/live-gap-verification/commit.txt
+          cat /tmp/live-gap-verification/asset-checksums.txt
+      - name: Start Chrome
+        run: |
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME_BIN"
+          "$CHROME_BIN" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --no-first-run --no-default-browser-check \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/lineage-live-family-gaps about:blank \
+            >/tmp/live-gap-verification/chrome.log 2>&1 &
+          CHROME_PID=$!
+          for attempt in $(seq 1 300); do
+            if curl -fsS http://127.0.0.1:9222/json/list >/dev/null; then break; fi
+            if ! kill -0 "$CHROME_PID" 2>/dev/null; then cat /tmp/live-gap-verification/chrome.log; exit 1; fi
+            sleep .1
+          done
+          curl -fsS http://127.0.0.1:9222/json/list >/dev/null
+      - name: Test the live webapp in Chrome
+        env:
+          LINEAGE_REPORT: /tmp/live-gap-verification/geometry.json
+          LINEAGE_SCREENSHOT: /tmp/live-gap-verification/layout.png
+        run: node .github/scripts/check_two_line_chronology.mjs https://liuyao12.github.io/genealogy-timeline/ 9222
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-family-gap-verification
+          path: /tmp/live-gap-verification/
+          retention-days: 7

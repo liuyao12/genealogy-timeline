@@ -2299,7 +2299,7 @@ function timelineNodesAreImmediateFamily(firstNode, secondNode) {
 }
 
 function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
-  // Direct relatives retain the half-node-height row gutter. People
+  // Direct relatives retain a compact six-pixel row gutter. People
   // with no direct relationship—such as two spouses of one person—
   // receive a visibly wider separation without becoming hard blocks.
   const unrelatedExtraGutter = 10;
@@ -2308,8 +2308,8 @@ function timelineVerticalSeparation(firstIndex, secondIndex, nodes, rowStep) {
 
 function stabilizeTimelineOrder(nodes, displayParentByKey, rowHeight, rowStep, horizontalRangesByKey) {
   const ranges = nodes.map(timelineNodeRange);
-  // Intersecting horizontal ranges keep at least half a node height of clear
-  // space after both compaction passes, including within rigid family runs.
+  // Intersecting horizontal ranges keep their relationship-aware clearance
+  // after both compaction passes, including within rigid family runs.
   const requiredVerticalSeparation = Math.max(rowHeight, rowStep);
   const indexByKey = new Map(nodes.map((node, index) => [node.key, index]));
   const childrenByIndex = new Map(nodes.map((_, index) => [index, []]));
@@ -2570,7 +2570,9 @@ function renderTimeline() {
   if (historicalYear == null) timelineAsOfGripClientY = null;
   const yearWidth = state.timelineYearWidth;
   const rowHeight = state.timelineNodeHeight;
-  const rowStep = rowHeight * 1.5;
+  // Immediate relatives stay visibly close at every node-height setting.
+  // timelineVerticalSeparation adds a further 10 px for everyone else.
+  const rowStep = rowHeight + 6;
   const left = 36;
   const birthYear = person => numericYear(person.birthYear);
   // Living profiles always terminate exactly at the current-year line. A

@@ -89,5 +89,5 @@ test('event visibility survives normalization, merging, and profile-id remapping
 test('the revised static assets use fresh cache keys', () => {
   assert.match(app, /from '\.\/person-events\.js\?v=4'/);
   assert.match(html, /\.\/styles\.css\?v=82/);
-  assert.match(html, /\.\/app\.js\?v=153/);
+  assert.match(html, /\.\/app\.js\?v=154/);
 });

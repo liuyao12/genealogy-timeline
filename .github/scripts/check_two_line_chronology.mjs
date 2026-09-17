@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { writeFileSync } from 'node:fs';
 
 const appUrl = process.argv[2] || 'http://127.0.0.1:4173/';
 const debuggingPort = Number(process.argv[3] || 9222);
@@ -77,8 +78,21 @@ const result = await evaluate(`(async () => {
   input.value = 'king queen';
   input.dispatchEvent(new Event('input', { bubbles: true }));
   await pause(120);
-  // Check actual packed SVG geometry at every supported node height. This
-  // catches both cross-branch collisions and spacing lost inside rigid runs.
+  // Check rendered geometry, not just a shared lower bound. The September
+  // 2026 regression gave relatives half-height gaps and passed a collision-only
+  // test. Require both compact relatives AND wider unrelated rows at every size.
+  const people = (await fetch(new URL('./data/british-royal-line.json', location.href))
+    .then(response => response.json())).people;
+  const relationship = (a, b) => {
+    if (a.personId === b.personId) return 'same-profile';
+    const first = people[a.personId], second = people[b.personId];
+    if (!first || !second) throw new Error('Geometry check encountered an unknown profile.');
+    if (first.spouses.includes(second.id) || second.spouses.includes(first.id)) return 'spouses';
+    if (first.parents.includes(second.id) || second.parents.includes(first.id)
+      || first.children.includes(second.id) || second.children.includes(first.id)) return 'parent-child';
+    if (first.parents.some(id => second.parents.includes(id))) return 'siblings';
+    return 'other';
+  };
   const spacingChecks = [];
   const down = document.getElementById('timeline-height-down');
   const up = document.getElementById('timeline-height-up');
@@ -87,25 +101,36 @@ const result = await evaluate(`(async () => {
     const boxes = [...document.querySelectorAll('#timeline-canvas .timeline-node')].map(node => {
       const rect = node.querySelector('.lifespan').getBBox();
       const position = node.transform.baseVal.consolidate().matrix;
-      return { id: node.dataset.nodeKey, x: position.e + rect.x, y: position.f + rect.y, width: rect.width, height: rect.height };
+      return { id: node.dataset.nodeKey, personId: node.dataset.personId,
+        x: position.e + rect.x, y: position.f + rect.y, width: rect.width, height: rect.height };
     });
+    const minimumByRelationship = {};
     let overlappingPairs = 0;
-    let minimumGap = Infinity;
     for (let first = 0; first < boxes.length; first += 1) {
       if (boxes[first].height !== expectedHeight) throw new Error('Height setting did not update the layout.');
       for (let second = first + 1; second < boxes.length; second += 1) {
         const a = boxes[first], b = boxes[second];
         if (a.x >= b.x + b.width || b.x >= a.x + a.width) continue;
         overlappingPairs += 1;
+        const kind = relationship(a, b);
         const gap = Math.abs(a.y - b.y) - expectedHeight;
-        minimumGap = Math.min(minimumGap, gap);
-        if (gap + 0.01 < expectedHeight / 2) {
-          throw new Error('Insufficient branch clearance: ' + JSON.stringify({ a: a.id, b: b.id, expectedHeight, gap }));
+        minimumByRelationship[kind] = Math.min(minimumByRelationship[kind] ?? Infinity, gap);
+        const requiredGap = kind === 'other' ? 16 : 6;
+        if (gap + 0.01 < requiredGap) {
+          throw new Error('Insufficient relationship-aware clearance: ' + JSON.stringify({ a: a.id, b: b.id, kind, expectedHeight, gap }));
         }
       }
     }
-    if (!overlappingPairs) throw new Error('Spacing check needs overlapping lifespans.');
-    spacingChecks.push({ height: expectedHeight, nodes: boxes.length, overlappingPairs, minimumGap });
+    // Each category must actually be exercised and attain its compact minimum.
+    // Checking only >= would fail to catch a return to uniformly large gaps.
+    for (const kind of ['spouses', 'parent-child', 'siblings', 'other']) {
+      const expectedGap = kind === 'other' ? 16 : 6;
+      if (!Number.isFinite(minimumByRelationship[kind])
+        || Math.abs(minimumByRelationship[kind] - expectedGap) > 0.01) {
+        throw new Error('Compact spacing missing: ' + JSON.stringify({ kind, expectedHeight, expectedGap, minimumByRelationship }));
+      }
+    }
+    spacingChecks.push({ height: expectedHeight, nodes: boxes.length, overlappingPairs, minimumByRelationship });
     if (!up.disabled) up.click();
   }
   down.click(); down.click(); down.click(); // Restore the default 28 px height.
@@ -200,5 +225,12 @@ assert.equal(result.georgeAfterHide, 0);
 assert.equal(result.childAfterHide, 'false');
 assert.ok(result.georgeAfterRestore > 0);
 
-console.log('Chronology, circular controls, and half-height branch spacing passed:', JSON.stringify(result.spacingChecks));
+console.log('Chronology, circular controls, and relationship-aware spacing passed:', JSON.stringify(result.spacingChecks));
+if (process.env.LINEAGE_REPORT) writeFileSync(process.env.LINEAGE_REPORT, JSON.stringify(result, null, 2) + '\n');
+if (process.env.LINEAGE_SCREENSHOT) {
+  await evaluate("document.getElementById('close-detail').click()");
+  await sleep(300);
+  const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+  writeFileSync(process.env.LINEAGE_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+}
 socket.close();
